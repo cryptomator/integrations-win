@@ -35,6 +35,7 @@ jobs:
           v=$(mvn help:evaluate "-Dexpression=project.version" -q -DforceStdout)
           echo "::set-env name=BUILD_VERSION::${v}"
           echo "::set-output name=version::${v}"
+        shell: bash
       - name: Build and Test
         run: mvn -B install
       - name: Upload snapshot artifact integrations-win-${{ env.BUILD_VERSION }}.jar build on Linux
