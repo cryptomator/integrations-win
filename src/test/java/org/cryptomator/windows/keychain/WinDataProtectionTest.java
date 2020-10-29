@@ -1,16 +1,9 @@
 package org.cryptomator.windows.keychain;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class WinDataProtectionTest {
-
-	@BeforeAll
-	public static void setup() {
-		System.loadLibrary("integrations");
-	}
 
 	@Test
 	public void testProtectAndUnprotect() {

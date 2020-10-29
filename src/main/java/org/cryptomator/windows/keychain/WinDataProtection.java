@@ -1,6 +1,12 @@
 package org.cryptomator.windows.keychain;
 
+import org.cryptomator.windows.common.NativeLibLoader;
+
 class WinDataProtection {
+
+	static {
+		NativeLibLoader.loadLib();
+	}
 
 	/**
 	 * Encrypts the given cleartext using a key provided by Windows for the currently logged-in user.
