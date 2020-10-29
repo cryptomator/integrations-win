@@ -18,7 +18,7 @@ public class NativeLibLoader {
 	 * Attempts to load the .dll file required for native calls.
 	 * @throws UnsatisfiedLinkError If loading the library failed.
 	 */
-	public static synchronized void loadLib() throws UnsatisfiedLinkError {
+	public static synchronized void loadLib() {
 		if (!loaded) {
 			try (var dll = NativeLibLoader.class.getResourceAsStream(LIB)) {
 				Path tmpPath = Files.createTempFile("lib", ".dll");
@@ -27,7 +27,8 @@ public class NativeLibLoader {
 				loaded = true;
 			} catch (IOException e) {
 				LOG.error("Failed to copy " + LIB + " to temp dir.", e);
-				throw new UnsatisfiedLinkError("Failed to copy .dll included in jar file to temp dir.");
+			} catch (UnsatisfiedLinkError e) {
+				LOG.error("Failed to load lib from " + LIB, e);
 			}
 		}
 	}
