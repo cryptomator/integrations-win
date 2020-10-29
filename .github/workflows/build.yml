@@ -38,11 +38,16 @@ jobs:
         shell: bash
       - name: Build and Test
         run: mvn -B install
-      - name: Upload snapshot artifact integrations-win-${{ env.BUILD_VERSION }}.jar build on Linux
+      - name: Upload .jar
         uses: actions/upload-artifact@v2
         with:
           name: integrations-win-${{ env.BUILD_VERSION }}.jar
           path: target/integrations-win-*.jar
+      - name: Upload .dll
+        uses: actions/upload-artifact@v2
+        with:
+          name: integrations-${{ env.BUILD_VERSION }}.dll
+          path: integrations.dll
       - name: Build and deploy to jcenter
         if: startsWith(github.ref, 'refs/tags/')
         run: mvn -B deploy -DskipTests

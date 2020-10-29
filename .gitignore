@@ -1,5 +1,6 @@
 *.class
 *.jar
+*.dll
 
 # Maven #
 target/

@@ -114,12 +114,11 @@
                 <configuration>
                     <compilerArgs>
                         <arg>-h</arg>
-                        <arg>target/headers</arg>
+                        <arg>${project.basedir}/src/main/cpp</arg>
                     </compilerArgs>
                     <release>11</release>
                 </configuration>
             </plugin>
-            <!--
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -132,7 +131,7 @@
                         <phase>compile</phase>
                         <configuration>
                             <executable>mingw32-make</executable>
-                            <workingDirectory>${project.basedir}/../WinFunctions</workingDirectory>
+                            <workingDirectory>${project.basedir}</workingDirectory>
                             <environmentVariables>
                                 <JAVA_HOME>${java.home}</JAVA_HOME>
                             </environmentVariables>
@@ -142,7 +141,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin> -->
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
