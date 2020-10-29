@@ -27,7 +27,7 @@ public class NativeLibLoader {
 				loaded = true;
 			} catch (IOException e) {
 				LOG.error("Failed to copy " + LIB + " to temp dir.", e);
-			} catch (UnsatisfiedLinkError e) {
+			} catch (UnsatisfiedLinkError | RuntimeException e) {
 				LOG.error("Failed to load lib from " + LIB, e);
 			}
 		}
