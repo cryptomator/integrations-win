@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Objects;
 
 public class NativeLibLoader {
 
@@ -21,13 +22,16 @@ public class NativeLibLoader {
 	public static synchronized void loadLib() {
 		if (!loaded) {
 			try (var dll = NativeLibLoader.class.getResourceAsStream(LIB)) {
+				Objects.requireNonNull(dll);
 				Path tmpPath = Files.createTempFile("lib", ".dll");
 				Files.copy(dll, tmpPath, StandardCopyOption.REPLACE_EXISTING);
 				System.load(tmpPath.toString());
 				loaded = true;
+			} catch (NullPointerException e) {
+				LOG.error("Did not find resource " + LIB, e);
 			} catch (IOException e) {
 				LOG.error("Failed to copy " + LIB + " to temp dir.", e);
-			} catch (UnsatisfiedLinkError | RuntimeException e) {
+			} catch (UnsatisfiedLinkError e) {
 				LOG.error("Failed to load lib from " + LIB, e);
 			}
 		}

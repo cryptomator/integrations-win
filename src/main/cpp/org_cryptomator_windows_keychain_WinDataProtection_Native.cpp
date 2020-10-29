@@ -1,9 +1,9 @@
 #include <jni.h>
 #include <windows.h>
 #include <wincrypt.h>
-#include "org_cryptomator_windows_keychain_WinDataProtection.h"
+#include "org_cryptomator_windows_keychain_WinDataProtection_Native.h"
 
-JNIEXPORT jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinDataProtection_protect0(JNIEnv *env, jobject thisObj, jbyteArray cleartext, jbyteArray salt) {
+JNIEXPORT jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinDataProtection_00024Native_protect(JNIEnv *env, jobject thisObj, jbyteArray cleartext, jbyteArray salt) {
   DATA_BLOB cleartextBlob;
   cleartextBlob.pbData = (BYTE *) env->GetByteArrayElements(cleartext, JNI_FALSE);
   cleartextBlob.cbData = (DWORD) env->GetArrayLength(cleartext);
@@ -26,7 +26,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinDataProtec
   }
 }
 
-JNIEXPORT jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinDataProtection_unprotect0(JNIEnv *env, jobject thisObj, jbyteArray ciphertext, jbyteArray salt) {
+JNIEXPORT jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinDataProtection_00024Native_unprotect(JNIEnv *env, jobject thisObj, jbyteArray ciphertext, jbyteArray salt) {
   DATA_BLOB ciphertextBlob;
   ciphertextBlob.pbData = (BYTE *) env->GetByteArrayElements(ciphertext, JNI_FALSE);
   ciphertextBlob.cbData = (DWORD) env->GetArrayLength(ciphertext);

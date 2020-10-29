@@ -4,10 +4,6 @@ import org.cryptomator.windows.common.NativeLibLoader;
 
 class WinDataProtection {
 
-	static {
-		NativeLibLoader.loadLib();
-	}
-
 	/**
 	 * Encrypts the given cleartext using a key provided by Windows for the currently logged-in user.
 	 *
@@ -16,10 +12,8 @@ class WinDataProtection {
 	 * @return The ciphertext or <code>null</code> if encryption failed.
 	 */
 	public byte[] protect(byte[] cleartext, byte[] salt) {
-		return protect0(cleartext, salt);
+		return Native.INSTANCE.protect(cleartext, salt);
 	}
-
-	private native byte[] protect0(byte[] cleartext, byte[] salt);
 
 	/**
 	 * Decrypts the given ciphertext using a key provided by Windows for the currently logged-in user.
@@ -29,9 +23,20 @@ class WinDataProtection {
 	 * @return The cleartext or <code>null</code> if decryption failed (wrong salt?).
 	 */
 	public byte[] unprotect(byte[] ciphertext, byte[] salt) {
-		return unprotect0(ciphertext, salt);
+		return Native.INSTANCE.unprotect(ciphertext, salt);
 	}
 
-	private native byte[] unprotect0(byte[] ciphertext, byte[] salt);
+	// initialization-on-demand pattern, as loading the .dll is an expensive operation
+	private static class Native {
+		static final Native INSTANCE = new Native();
+
+		private Native() {
+			NativeLibLoader.loadLib();
+		}
+
+		public native byte[] protect(byte[] cleartext, byte[] salt);
+
+		public native byte[] unprotect(byte[] ciphertext, byte[] salt);
+	}
 
 }
