@@ -108,13 +108,29 @@
     <build>
         <plugins>
             <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>3.1.0</version>
+                    <configuration>
+                        <filesets>
+                            <fileset>
+                                <directory>${project.basedir}/src/main/headers</directory>
+                                <followSymlinks>false</followSymlinks>
+                                <includes>
+                                    <include>*.h</include>
+                                </includes>
+                            </fileset>
+                        </filesets>
+                    </configuration>
+                </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.0</version>
                 <configuration>
                     <compilerArgs>
                         <arg>-h</arg>
-                        <arg>${project.basedir}/src/main/cpp</arg>
+                        <arg>${project.basedir}/src/main/headers</arg>
                     </compilerArgs>
                     <release>11</release>
                 </configuration>
