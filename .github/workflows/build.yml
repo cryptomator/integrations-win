@@ -29,6 +29,7 @@ jobs:
       - name: Ensure to use tagged version
         run: mvn versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
         if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
       - name: Export the project version to the job environment and fix it as an ouput of this job
         id: setversion
         run: |
