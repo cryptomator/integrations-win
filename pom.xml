@@ -23,6 +23,13 @@
             <organization>Skymatic GmbH</organization>
             <organizationUrl>http://skymatic.de</organizationUrl>
         </developer>
+        <developer>
+            <name>Armin Schrenk</name>
+            <email>armin.schrenk@skymatic.de</email>
+            <timezone>+1</timezone>
+            <organization>Skymatic GmbH</organization>
+            <organizationUrl>http://skymatic.de</organizationUrl>
+        </developer>
     </developers>
 
     <properties>
