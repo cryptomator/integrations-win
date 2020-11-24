@@ -7,8 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * OS specific class to check, en- and disable the auto start on Windows.
@@ -21,7 +19,6 @@ import java.util.concurrent.TimeoutException;
  * To check if the feature is active, both strategies are applied.
  * To enable the feature, first the registry is tried and only on failure the autostart folder is used.
  * To disable it, first it is determined by an internal state, which strategies must be used and in the second step those are executed.
- *
  */
 public class WindowsAutoStart implements AutoStartProvider {
 
@@ -43,10 +40,13 @@ public class WindowsAutoStart implements AutoStartProvider {
 	@Override
 	public synchronized boolean isEnabled() {
 		try {
-			return registryStrategy.isEnabled().
-					thenCombine(startupFolderStrategy.isEnabled(), (bReg, bFolder) -> bReg || bFolder)
-					.get(1000, TimeUnit.MILLISECONDS);
-		} catch (InterruptedException | ExecutionException | TimeoutException e) {
+			return registryStrategy.isEnabled()
+					.thenAccept(result -> this.activatedUsingRegistry = result)
+					.thenCompose((Void v) -> startupFolderStrategy.isEnabled())
+					.thenAccept(result -> this.activatedUsingFolder = result)
+					.thenApply((Void v) -> activatedUsingFolder || activatedUsingRegistry)
+					.get();
+		} catch (InterruptedException | ExecutionException e) {
 			return false;
 		}
 	}
@@ -57,11 +57,10 @@ public class WindowsAutoStart implements AutoStartProvider {
 			registryStrategy.enable()
 					.thenAccept((Void v) -> this.activatedUsingRegistry = true)
 					.handle((result, exception) -> {
-						if(exception != null){
+						if (exception != null) {
 							LOG.debug("Falling back to autostart folder.");
 							return startupFolderStrategy.enable();
-						}
-						else {
+						} else {
 							return CompletableFuture.completedFuture(result);
 						}
 					})
@@ -87,7 +86,6 @@ public class WindowsAutoStart implements AutoStartProvider {
 				}
 			});
 		}
-
 		if (activatedUsingFolder) {
 			startupFolderStrategy.disable().whenComplete((voit, ex) -> {
 				if (ex == null) {
@@ -95,7 +93,6 @@ public class WindowsAutoStart implements AutoStartProvider {
 				}
 			});
 		}
-
 		if (activatedUsingRegistry || activatedUsingFolder) {
 			throw new ToggleAutoStartFailedException("Disabling auto start failed using registry and/or auto start folder.");
 		}
