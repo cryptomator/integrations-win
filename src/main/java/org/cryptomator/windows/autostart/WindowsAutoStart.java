@@ -31,10 +31,15 @@ public class WindowsAutoStart implements AutoStartProvider {
 	private boolean activatedUsingRegistry;
 
 	public WindowsAutoStart(String exePath) {
-		this.activatedUsingFolder = false;
-		this.activatedUsingRegistry = false;
-		this.startupFolderStrategy = new StartupFolderStrategy(exePath);
-		this.registryStrategy = new RegistryStrategy(exePath);
+		this(new StartupFolderStrategy(exePath), new RegistryStrategy(exePath), false, false);
+	}
+
+	//Visisble for testing
+	WindowsAutoStart(StartupFolderStrategy folderStrategy, RegistryStrategy registryStrategy, boolean initFolderState, boolean initRegistryState) {
+		this.activatedUsingFolder = initFolderState;
+		this.activatedUsingRegistry = initRegistryState;
+		this.startupFolderStrategy = folderStrategy;
+		this.registryStrategy = registryStrategy;
 	}
 
 	@Override
