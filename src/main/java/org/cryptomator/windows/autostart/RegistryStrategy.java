@@ -9,6 +9,11 @@ import java.util.concurrent.TimeUnit;
 
 import static org.cryptomator.windows.autostart.AutoStartUtil.waitForProcessOrCancel;
 
+/**
+ * A strategy to check, en- and disable autostart on Windows using the registry.
+ * <p>
+ * The above actions are done by checking/adding/removing at the registry key {@value HKCU_AUTOSTART_KEY} the entry "Cryptomator".
+ */
 class RegistryStrategy implements WindowsAutoStartStrategy {
 
 	private static final Logger LOG = LoggerFactory.getLogger(RegistryStrategy.class);
@@ -58,6 +63,16 @@ class RegistryStrategy implements WindowsAutoStartStrategy {
 
 	@Override
 	public CompletableFuture<Void> disable() {
+		return isEnabled().thenCompose(result -> {
+			if (result) {
+				return disableInternal();
+			} else {
+				return CompletableFuture.completedFuture(null);
+			}
+		});
+	}
+
+	private CompletableFuture<Void> disableInternal() {
 		ProcessBuilder regRemove = new ProcessBuilder("reg", "delete", HKCU_AUTOSTART_KEY, //
 				"/v", AUTOSTART_VALUE, //
 				"/f");

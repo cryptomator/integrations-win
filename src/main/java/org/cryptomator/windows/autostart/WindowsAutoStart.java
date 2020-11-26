@@ -9,16 +9,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
- * OS specific class to check, en- and disable the auto start on Windows.
+ * Checks, en- and disables the auto start on Windows.
  * <p>
  * Two strategies are implemented for this feature, the first uses the registry and the second one the autostart folder.
  * <p>
- * The registry strategy checks/add/removes at the registry key {@code HKCU_AUTOSTART_KEY} an entry for Cryptomator. //TODO
- * The folder strategy checks/add/removes at the location {@code WINDOWS_START_MENU_ENTRY}. //TODO
- * <p>
- * To check if the feature is active, both strategies are applied.
+ * To check and disable this feature, both strategies are applied.
  * To enable the feature, first the registry is tried and only on failure the autostart folder is used.
- * To disable it, first it is determined by an internal state, which strategies must be used and in the second step those are executed.
+ *
+ * @see RegistryStrategy
+ * @see StartupFolderStrategy
  */
 public class WindowsAutoStart implements AutoStartProvider {
 
@@ -27,17 +26,12 @@ public class WindowsAutoStart implements AutoStartProvider {
 	private final WindowsAutoStartStrategy startupFolderStrategy;
 	private final WindowsAutoStartStrategy registryStrategy;
 
-	private boolean activatedUsingFolder;
-	private boolean activatedUsingRegistry;
-
 	public WindowsAutoStart(String exePath) {
-		this(new StartupFolderStrategy(exePath), new RegistryStrategy(exePath), false, false);
+		this(new StartupFolderStrategy(exePath), new RegistryStrategy(exePath));
 	}
 
 	//Visisble for testing
-	WindowsAutoStart(StartupFolderStrategy folderStrategy, RegistryStrategy registryStrategy, boolean initFolderState, boolean initRegistryState) {
-		this.activatedUsingFolder = initFolderState;
-		this.activatedUsingRegistry = initRegistryState;
+	WindowsAutoStart(StartupFolderStrategy folderStrategy, RegistryStrategy registryStrategy) {
 		this.startupFolderStrategy = folderStrategy;
 		this.registryStrategy = registryStrategy;
 	}
@@ -46,10 +40,7 @@ public class WindowsAutoStart implements AutoStartProvider {
 	public synchronized boolean isEnabled() {
 		try {
 			return registryStrategy.isEnabled()
-					.thenAccept(result -> this.activatedUsingRegistry = result)
-					.thenCompose((Void v) -> startupFolderStrategy.isEnabled())
-					.thenAccept(result -> this.activatedUsingFolder = result)
-					.thenApply((Void v) -> activatedUsingFolder || activatedUsingRegistry)
+					.thenCombine(startupFolderStrategy.isEnabled(), (result1, result2) -> result1 || result2)
 					.get();
 		} catch (InterruptedException | ExecutionException e) {
 			return false;
@@ -60,7 +51,6 @@ public class WindowsAutoStart implements AutoStartProvider {
 	public synchronized void enable() throws ToggleAutoStartFailedException {
 		try {
 			registryStrategy.enable()
-					.thenAccept((Void v) -> this.activatedUsingRegistry = true)
 					.handle((result, exception) -> {
 						if (exception != null) {
 							LOG.debug("Falling back to autostart folder.");
@@ -69,37 +59,21 @@ public class WindowsAutoStart implements AutoStartProvider {
 							return CompletableFuture.completedFuture(result);
 						}
 					})
-					.thenCompose(future -> future)
-					.thenAccept((Void v) -> {
-						this.activatedUsingFolder = true;
-					})
+					.thenCompose(future -> future) // for unwrapping
 					.get();
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			throw new ToggleAutoStartFailedException("Execution of enabling auto start setting was interrupted.");
-		} catch (ExecutionException e) {
-			throw new ToggleAutoStartFailedException("Enabling auto start failed both using registry and auto start folder.");
+		} catch (InterruptedException | ExecutionException e) {
+			throw new ToggleAutoStartFailedException("Enabling auto start failed both using registry and auto start folder.", e);
 		}
 	}
 
 	@Override
 	public synchronized void disable() throws ToggleAutoStartFailedException {
-		if (activatedUsingRegistry) {
-			registryStrategy.disable().whenComplete((voit, ex) -> {
-				if (ex == null) {
-					this.activatedUsingRegistry = false;
-				}
-			});
-		}
-		if (activatedUsingFolder) {
-			startupFolderStrategy.disable().whenComplete((voit, ex) -> {
-				if (ex == null) {
-					this.activatedUsingFolder = false;
-				}
-			});
-		}
-		if (activatedUsingRegistry || activatedUsingFolder) {
-			throw new ToggleAutoStartFailedException("Disabling auto start failed using registry and/or auto start folder.");
+		try {
+			registryStrategy.disable()
+					.thenCombine(startupFolderStrategy.disable(), (Void v, Void w) -> true)
+					.get();
+		} catch (InterruptedException | ExecutionException e) {
+			throw new ToggleAutoStartFailedException("Disabling auto start failed using registry and/or auto start folder.", e);
 		}
 	}
 

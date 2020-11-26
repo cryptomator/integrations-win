@@ -12,6 +12,11 @@ import java.util.concurrent.TimeUnit;
 
 import static org.cryptomator.windows.autostart.AutoStartUtil.waitForProcessOrCancel;
 
+/**
+ * A strategy to check, en- and disable autostart on Windows using the startup folder
+ * <p>
+ * The above actions are done by checking/adding/removing in the directory {@value WINDOWS_START_MENU_ENTRY} a resource (.lnk file) for Cryptomator.
+ */
 class StartupFolderStrategy implements WindowsAutoStartStrategy {
 
 	private static final Logger LOG = LoggerFactory.getLogger(StartupFolderStrategy.class);

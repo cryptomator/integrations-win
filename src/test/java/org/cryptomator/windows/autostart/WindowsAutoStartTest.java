@@ -5,10 +5,16 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 public class WindowsAutoStartTest {
 
@@ -21,7 +27,7 @@ public class WindowsAutoStartTest {
 	public void init() {
 		this.registryStrategy = Mockito.mock(RegistryStrategy.class);
 		this.folderStrategy = Mockito.mock(StartupFolderStrategy.class);
-		this.autoStart = new WindowsAutoStart(folderStrategy, registryStrategy, false, false);
+		this.autoStart = new WindowsAutoStart(folderStrategy, registryStrategy);
 	}
 
 	@Nested
@@ -82,7 +88,7 @@ public class WindowsAutoStartTest {
 			Mockito.when(registryStrategy.enable()).thenReturn(CompletableFuture.failedFuture(new IOException("test")));
 			Mockito.when(folderStrategy.enable()).thenReturn(CompletableFuture.completedFuture(null));
 
-			autoStart.enable();
+			Assertions.assertTimeoutPreemptively(Duration.ofMillis(300), autoStart::enable);
 
 			Mockito.verify(registryStrategy).enable();
 			Mockito.verify(folderStrategy).enable();
@@ -93,7 +99,7 @@ public class WindowsAutoStartTest {
 			Mockito.when(registryStrategy.enable()).thenReturn(CompletableFuture.completedFuture(null));
 			Mockito.when(folderStrategy.enable()).thenReturn(CompletableFuture.completedFuture(null));
 
-			autoStart.enable();
+			Assertions.assertTimeoutPreemptively(Duration.ofMillis(300), autoStart::enable);
 
 			Mockito.verify(registryStrategy).enable();
 			Mockito.verify(folderStrategy, Mockito.never()).enable();
@@ -104,69 +110,64 @@ public class WindowsAutoStartTest {
 			Mockito.when(registryStrategy.enable()).thenReturn(CompletableFuture.failedFuture(new IOException("test1")));
 			Mockito.when(folderStrategy.enable()).thenReturn(CompletableFuture.failedFuture(new IOException("test2")));
 
-			Assertions.assertThrows(ToggleAutoStartFailedException.class, autoStart::enable);
+			Assertions.assertTimeoutPreemptively(Duration.ofMillis(300), () ->
+					Assertions.assertThrows(ToggleAutoStartFailedException.class, autoStart::enable)
+			);
 			Mockito.verify(folderStrategy).enable();
 			Mockito.verify(registryStrategy).enable();
 		}
 	}
 
 	@Nested
+	@TestInstance(TestInstance.Lifecycle.PER_CLASS) //see https://github.com/junit-team/junit5/issues/1229
 	public class DisableTests {
 
-		@Test
-		public void testDisableIfRegistryActive() throws ToggleAutoStartFailedException {
-			var primedAutoStart = new WindowsAutoStart(folderStrategy, registryStrategy, false, true);
-			Mockito.when(registryStrategy.disable()).thenReturn(CompletableFuture.completedFuture(null));
+		@ParameterizedTest
+		@MethodSource("provideAllStrategiesAreAppliedALWAYS")
+		public void testAllStrategiesAreAppliedALWAYS() {
+			Mockito.when(registryStrategy.disable()).thenReturn(CompletableFuture.failedFuture(new IOException("test")));
+			Mockito.when(folderStrategy.disable()).thenReturn(CompletableFuture.completedFuture(null));
 
-			primedAutoStart.disable();
+			Assertions.assertTimeoutPreemptively(Duration.ofMillis(300), () -> {
+				try {
+					autoStart.disable();
+				} catch (ToggleAutoStartFailedException e) {
+					// noop
+				}
+			});
 
+			Mockito.verify(folderStrategy).disable();
 			Mockito.verify(registryStrategy).disable();
 		}
 
 		@Test
-		public void testDoNothingIfRegistryNotActive() throws ToggleAutoStartFailedException {
-			var primedAutoStart = new WindowsAutoStart(folderStrategy, registryStrategy, false, false);
-			Mockito.when(registryStrategy.disable()).thenReturn(CompletableFuture.completedFuture(null));
-
-			primedAutoStart.disable();
-
-			Mockito.verify(folderStrategy, Mockito.never()).disable();
-		}
-
-		@Test
-		public void testDisableIfFolderActive() throws ToggleAutoStartFailedException {
-			var primedAutoStart = new WindowsAutoStart(folderStrategy, registryStrategy, true, false);
-			Mockito.when(folderStrategy.disable()).thenReturn(CompletableFuture.completedFuture(null));
-
-			primedAutoStart.disable();
-
-			Mockito.verify(folderStrategy).disable();
-		}
-
-		@Test
-		public void testDoNothingIfFolderNotActive() throws ToggleAutoStartFailedException {
-			var primedAutoStart = new WindowsAutoStart(folderStrategy, registryStrategy, false, false);
-			Mockito.when(folderStrategy.disable()).thenReturn(CompletableFuture.completedFuture(null));
-
-			primedAutoStart.disable();
-
-			Mockito.verify(folderStrategy, Mockito.never()).disable();
-		}
-
-		@Test
 		public void testThrowExceptionIfAnyStrategyFails() {
-			var primedAutoStart1 = new WindowsAutoStart(folderStrategy, registryStrategy, true, true);
 			Mockito.when(folderStrategy.disable()).thenReturn(CompletableFuture.completedFuture(null));
 			Mockito.when(registryStrategy.disable()).thenReturn(CompletableFuture.failedFuture(new IOException("test")));
 
-			Assertions.assertThrows(ToggleAutoStartFailedException.class, () -> primedAutoStart1.disable());
+			Assertions.assertTimeoutPreemptively(Duration.ofMillis(300), () ->
+					Assertions.assertThrows(ToggleAutoStartFailedException.class, autoStart::disable)
+			);
 
-			var primedAutoStart2 = new WindowsAutoStart(folderStrategy, registryStrategy, true, true);
 			Mockito.when(folderStrategy.disable()).thenReturn(CompletableFuture.failedFuture(new IOException("test")));
 			Mockito.when(registryStrategy.disable()).thenReturn(CompletableFuture.completedFuture(null));
 
-			Assertions.assertThrows(ToggleAutoStartFailedException.class, () -> primedAutoStart2.disable());
+			Assertions.assertTimeoutPreemptively(Duration.ofMillis(300), () ->
+					Assertions.assertThrows(ToggleAutoStartFailedException.class, autoStart::disable)
+			);
+
 		}
 
+		private Stream<Arguments> provideAllStrategiesAreAppliedALWAYS() {
+			var success = CompletableFuture.completedFuture(null);
+			var failure = CompletableFuture.failedFuture(new IOException("fail"));
+			return Stream.of(
+					Arguments.of(success, success),
+					Arguments.of(success, failure),
+					Arguments.of(failure, failure),
+					Arguments.of(failure, success)
+			);
+		}
 	}
+
 }
