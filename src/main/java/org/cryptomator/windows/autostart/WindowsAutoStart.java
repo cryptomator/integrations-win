@@ -17,23 +17,25 @@ import static org.cryptomator.windows.autostart.AutoStartUtil.waitForProcessOrCa
 /**
  * Checks, en- and disables autostart for Cryptomator on Windows using the startup folder.
  * <p>
- * The above actions are done by checking/adding/removing in the directory {@value WINDOWS_START_MENU_ENTRY} a resource (.lnk file) for Cryptomator.
+ * The above actions are done by checking/adding/removing in the directory {@value RELATIVE_STARTUP_FOLDER_ENTRY} a resource (.lnk file) for Cryptomator.
  */
 public class WindowsAutoStart implements AutoStartProvider {
 
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsAutoStart.class);
-	private static final String WINDOWS_START_MENU_ENTRY = "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Cryptomator.lnk";
+	private static final String RELATIVE_STARTUP_FOLDER_ENTRY = "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\Cryptomator.lnk";
 
+	private final Path absoluteStartupEntryPath;
 	private final Optional<String> exePath;
 
 	@SuppressWarnings("unused") // default constructor required by ServiceLoader
 	public WindowsAutoStart() {
 		this.exePath = ProcessHandle.current().info().command();
+		this.absoluteStartupEntryPath = Path.of(System.getProperty("user.home"), RELATIVE_STARTUP_FOLDER_ENTRY).toAbsolutePath();
 	}
 
 	@Override
 	public boolean isEnabled() {
-		Path autoStartEntry = Path.of(System.getProperty("user.home") + WINDOWS_START_MENU_ENTRY);
+		Path autoStartEntry = Path.of(System.getProperty("user.home"), RELATIVE_STARTUP_FOLDER_ENTRY);
 		return Files.exists(autoStartEntry);
 	}
 
@@ -44,14 +46,13 @@ public class WindowsAutoStart implements AutoStartProvider {
 		}
 
 		assert exePath.isPresent();
-		String autoStartFolderEntry = System.getProperty("user.home") + WINDOWS_START_MENU_ENTRY;
-		String createShortcutCommand = "$s=(New-Object -COM WScript.Shell).CreateShortcut('" + autoStartFolderEntry + "');$s.TargetPath='" + exePath.get() + "';$s.Save();";
+		String createShortcutCommand = "$s=(New-Object -COM WScript.Shell).CreateShortcut('" + absoluteStartupEntryPath.toString() + "');$s.TargetPath='" + exePath.get() + "';$s.Save();";
 		ProcessBuilder shortcutAdd = new ProcessBuilder("cmd", "/c", "Start powershell " + createShortcutCommand);
 		try {
 			Process proc = shortcutAdd.start();
 			boolean finishedInTime = waitForProcessOrCancel(proc, 5, TimeUnit.SECONDS);
 			if (finishedInTime && proc.exitValue() == 0) {
-				LOG.debug("Created file {} for auto start.", autoStartFolderEntry);
+				LOG.debug("Created file {} for auto start.", absoluteStartupEntryPath);
 				return;
 			} else {
 				LOG.debug("Adding entry to auto start folder failed.");
@@ -65,12 +66,12 @@ public class WindowsAutoStart implements AutoStartProvider {
 	@Override
 	public synchronized void disable() throws ToggleAutoStartFailedException {
 		try {
-			Files.delete(Path.of(WINDOWS_START_MENU_ENTRY));
-			LOG.debug("Successfully deleted {}.", WINDOWS_START_MENU_ENTRY);
+			Files.delete(absoluteStartupEntryPath);
+			LOG.debug("Successfully deleted {}.", absoluteStartupEntryPath);
 			return;
 		} catch (NoSuchFileException e) {
 			//also okay
-			LOG.debug("File {} not present. Nothing to do.", WINDOWS_START_MENU_ENTRY);
+			LOG.debug("File {} not present. Nothing to do.", absoluteStartupEntryPath);
 			return;
 		} catch (IOException e) {
 			LOG.debug("Failed to delete entry from auto start folder.", e);
