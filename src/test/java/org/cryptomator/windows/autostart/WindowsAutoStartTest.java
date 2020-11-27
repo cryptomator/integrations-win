@@ -124,9 +124,9 @@ public class WindowsAutoStartTest {
 
 		@ParameterizedTest
 		@MethodSource("provideAllStrategiesAreAppliedALWAYS")
-		public void testAllStrategiesAreAppliedALWAYS() {
-			Mockito.when(registryStrategy.disable()).thenReturn(CompletableFuture.failedFuture(new IOException("test")));
-			Mockito.when(folderStrategy.disable()).thenReturn(CompletableFuture.completedFuture(null));
+		public void testAllStrategiesAreAppliedALWAYS(CompletableFuture registryResult, CompletableFuture folderResult) {
+			Mockito.when(registryStrategy.disable()).thenReturn(registryResult);
+			Mockito.when(folderStrategy.disable()).thenReturn(folderResult);
 
 			Assertions.assertTimeoutPreemptively(Duration.ofMillis(300), () -> {
 				try {

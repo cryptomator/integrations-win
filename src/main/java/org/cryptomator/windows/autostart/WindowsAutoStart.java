@@ -70,7 +70,9 @@ public class WindowsAutoStart implements AutoStartProvider {
 	public synchronized void disable() throws ToggleAutoStartFailedException {
 		try {
 			registryStrategy.disable()
-					.thenCombine(startupFolderStrategy.disable(), (Void v, Void w) -> true)
+					.runAfterBoth(startupFolderStrategy.disable(), () -> {
+						return;
+					})
 					.get();
 		} catch (InterruptedException | ExecutionException e) {
 			throw new ToggleAutoStartFailedException("Disabling auto start failed using registry and/or auto start folder.", e);
