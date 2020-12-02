@@ -13,7 +13,7 @@ public class AutoStartProviderTest {
 	@DisplayName("WindowsAutoStart can be loaded")
 	public void testLoadWindowsProtectedKeychainAccess() {
 		var loadedProviders = ServiceLoader.load(AutoStartProvider.class);
-		var windowsAutoStartProivder = loadedProviders.stream()
+		var windowsAutoStartProvider = loadedProviders.stream()
 				.filter(provider -> provider.type().equals(WindowsAutoStart.class))
 				.map(ServiceLoader.Provider::get)
 				.findAny();
