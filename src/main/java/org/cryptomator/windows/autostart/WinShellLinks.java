@@ -3,6 +3,7 @@ package org.cryptomator.windows.autostart;
 import org.cryptomator.windows.common.NativeLibLoader;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
  * Interface to the native Windows shell link interface.
