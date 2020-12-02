@@ -17,6 +17,6 @@ public class AutoStartProviderTest {
 				.filter(provider -> provider.type().equals(WindowsAutoStart.class))
 				.map(ServiceLoader.Provider::get)
 				.findAny();
-		Assertions.assertTrue(windowsAutoStartProivder.isPresent());
+		Assertions.assertTrue(windowsAutoStartProvider.isPresent());
 	}
 }
