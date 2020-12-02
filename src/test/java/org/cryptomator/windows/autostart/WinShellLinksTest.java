@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class WinShortcutCreationTest {
+public class WinShellLinksTest {
 
 	private Path linkTarget;
 	private Path shortcut;
@@ -22,11 +22,11 @@ public class WinShortcutCreationTest {
 	}
 
 	@Test
-	public void testShellLinkCreation(@TempDir Path tempDir) {
-		WinShortcutCreation winShortcutCreation = new WinShortcutCreation();
+	public void testShellLinkCreation(@TempDir Path tempDir) throws IOException {
+		WinShellLinks winShellLinks = new WinShellLinks();
 		shortcut = linkTarget.getParent().resolve("short.lnk");
 
-		int returnCode = winShortcutCreation.createShortcut(linkTarget.toString(), shortcut.toString(), "asd");
+		int returnCode = winShellLinks.createShortcut(linkTarget.toString(), shortcut.toString(), "asd");
 
 		Assertions.assertEquals(0, returnCode);
 		Assertions.assertTrue(Files.exists(shortcut));

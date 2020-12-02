@@ -21,13 +21,13 @@ public class WindowsAutoStart implements AutoStartProvider {
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsAutoStart.class);
 	private static final String RELATIVE_STARTUP_FOLDER_ENTRY = "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\Cryptomator.lnk";
 
-	private final WinShortcutCreation winShortcutCreation;
+	private final WinShellLinks winShellLinks;
 	private final Path absoluteStartupEntryPath;
 	private final Optional<String> exePath;
 
 	@SuppressWarnings("unused") // default constructor required by ServiceLoader
 	public WindowsAutoStart() {
-		this.winShortcutCreation = new WinShortcutCreation();
+		this.winShellLinks = new WinShellLinks();
 		this.exePath = ProcessHandle.current().info().command();
 		this.absoluteStartupEntryPath = Path.of(System.getProperty("user.home"), RELATIVE_STARTUP_FOLDER_ENTRY).toAbsolutePath();
 	}
@@ -44,7 +44,7 @@ public class WindowsAutoStart implements AutoStartProvider {
 		}
 
 		assert exePath.isPresent();
-		int returnCode = winShortcutCreation.createShortcut(exePath.get(), absoluteStartupEntryPath.toString(), "Cryptomator");
+		int returnCode = winShellLinks.createShortcut(exePath.get(), absoluteStartupEntryPath.toString(), "Cryptomator");
 		if (returnCode == 0) {
 			return;
 		} else {

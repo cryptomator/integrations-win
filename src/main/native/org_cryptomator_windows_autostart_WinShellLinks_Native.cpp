@@ -10,59 +10,35 @@
 #include <objidl.h>
 #include <shlguid.h>
 #include <wchar.h>
-#include "org_cryptomator_windows_autostart_WinShortcutCreation_Native.h"
+#include "org_cryptomator_windows_autostart_WinShellLinks_Native.h"
 
-LPCWSTR get_nullterminate_and_release(JNIEnv * env,  jstring name);
 HRESULT CreateLink(LPCWSTR lpszPathObj, LPCWSTR lpszPathLink, LPCWSTR lpszDesc);
 
-JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShortcutCreation_00024Native_createShortcut
-  (JNIEnv * env, jobject thisObj, jstring target, jstring storage_path, jstring description) {
+JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_00024Native_createShortcut
+  (JNIEnv * env, jobject thisObj, jbyteArray target, jbyteArray storage_path, jbyteArray description) {
 
     //make the utf16 char arrays null terminated
-    LPCWSTR link_target = get_nullterminate_and_release(env,target);
-    LPCWSTR link_location = get_nullterminate_and_release(env,storage_path);
-    LPCWSTR link_description = get_nullterminate_and_release(env,description);
+    LPCWSTR link_target = (LPCWSTR) env->GetByteArrayElements(target, JNI_FALSE);
+    LPCWSTR link_location = (LPCWSTR) env->GetByteArrayElements(storage_path, JNI_FALSE);
+    LPCWSTR link_description = (LPCWSTR) env->GetByteArrayElements(description, JNI_FALSE);
 
     //initialize
-    int hResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-    if( hResult != S_OK && hResult != S_FALSE && hResult != RPC_E_CHANGED_MODE) {
+    int initResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    if( initResult != S_OK && initResult != S_FALSE && initResult != RPC_E_CHANGED_MODE) {
         //error of the type E_INVALIDARG, E_OUTOFMEMORY or E_UNEXPECTED
-        return hResult;
+        return initResult;
     }
     // compute
-    int result = CreateLink(link_target, link_location, link_description);
+    int executeResult = CreateLink(link_target, link_location, link_description);
     // uninitialize
     CoUninitialize();
 
     //clean up
-    delete [] link_target;
-    delete [] link_location;
-    delete [] link_description;
+    env->ReleaseByteArrayElements(target, (jbyte *) link_target, JNI_ABORT);
+    env->ReleaseByteArrayElements(storage_path, (jbyte *) link_location, JNI_ABORT);
+    env->ReleaseByteArrayElements(description, (jbyte *) link_description, JNI_ABORT);
 
-    return result;
-}
-
-LPCWSTR get_nullterminate_and_release(JNIEnv * env,  jstring name){
-    const jchar* _array = env->GetStringChars(name, JNI_FALSE);
-    const jsize _array_length = env->GetStringLength(name);
-
-    int length;
-    if ( _array[_array_length - 1] != '\0') {
-        length = _array_length + 1;
-    } else {
-        length = _array_length;
-    }
-
-    WCHAR * interim =  new WCHAR[length];
-    wcscpy(interim, (wchar_t *) _array);
-
-    if ( _array[_array_length - 1] != '\0') {
-        interim[length-1] = '\0';
-    }
-
-    env->ReleaseStringChars(name, _array);
-
-    return interim;
+    return executeResult;
 }
 
 // CreateLink - Uses the Shell's IShellLink and IPersistFile interfaces
