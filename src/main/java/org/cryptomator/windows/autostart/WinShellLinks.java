@@ -28,7 +28,8 @@ public class WinShellLinks {
 	}
 
 	private byte[] nullterminateAndConvert(String source) {
-		return (source + "\0").getBytes(StandardCharsets.UTF_16LE);
+		byte[] bytes = source.getBytes(StandardCharsets.UTF_16LE);
+		return Arrays.copyOf(bytes, bytes.length + 1); // add single byte with "null" padding
 	}
 
 	private static class Native {
