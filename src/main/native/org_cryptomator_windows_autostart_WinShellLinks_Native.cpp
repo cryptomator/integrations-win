@@ -17,7 +17,7 @@ HRESULT CreateLink(LPCWSTR lpszPathObj, LPCWSTR lpszPathLink, LPCWSTR lpszDesc);
 JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_00024Native_createShortcut
   (JNIEnv * env, jobject thisObj, jbyteArray target, jbyteArray storage_path, jbyteArray description) {
 
-    //make the utf16 char arrays null terminated
+    //get the arguments from environment (byte arrays with utf-16LE encodings)
     LPCWSTR link_target = (LPCWSTR) env->GetByteArrayElements(target, JNI_FALSE);
     LPCWSTR link_location = (LPCWSTR) env->GetByteArrayElements(storage_path, JNI_FALSE);
     LPCWSTR link_description = (LPCWSTR) env->GetByteArrayElements(description, JNI_FALSE);
@@ -25,11 +25,10 @@ JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_0002
     //initialize
     int initResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
     if( initResult != S_OK && initResult != S_FALSE && initResult != RPC_E_CHANGED_MODE) {
-        //error of the type E_INVALIDARG, E_OUTOFMEMORY or E_UNEXPECTED
-        return initResult;
+        return initResult; //error of the type E_INVALIDARG, E_OUTOFMEMORY or E_UNEXPECTED
     }
     // compute
-    int executeResult = CreateLink(link_target, link_location, link_description);
+    int execResult = CreateLink(link_target, link_location, link_description);
     // uninitialize
     CoUninitialize();
 
@@ -38,7 +37,7 @@ JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_0002
     env->ReleaseByteArrayElements(storage_path, (jbyte *) link_location, JNI_ABORT);
     env->ReleaseByteArrayElements(description, (jbyte *) link_description, JNI_ABORT);
 
-    return executeResult;
+    return execResult;
 }
 
 // CreateLink - Uses the Shell's IShellLink and IPersistFile interfaces
@@ -57,7 +56,7 @@ JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_0002
 //
 // Returns:
 // S_OK (0x000000000) - If everything works fine
-// ErrorCode          - else
+// HRESULT ErrorCode  - else
 //
 HRESULT CreateLink(LPCWSTR lpszPathObj, LPCWSTR lpszPathLink, LPCWSTR lpszDesc) {
     HRESULT hres;
@@ -80,9 +79,6 @@ HRESULT CreateLink(LPCWSTR lpszPathObj, LPCWSTR lpszPathLink, LPCWSTR lpszDesc) 
 
         if (SUCCEEDED(hres))
         {
-            // Add code here to check return value from MultiByteWideChar
-            // for success.
-
             // Save the link by calling IPersistFile::Save.
             hres = ppf->Save(lpszPathLink, TRUE);
             ppf->Release();
