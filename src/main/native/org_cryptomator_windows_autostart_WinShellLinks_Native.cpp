@@ -9,7 +9,6 @@
 #include <objbase.h>
 #include <objidl.h>
 #include <shlguid.h>
-#include <wchar.h>
 #include "org_cryptomator_windows_autostart_WinShellLinks_Native.h"
 
 HRESULT CreateLink(LPCWSTR lpszPathObj, LPCWSTR lpszPathLink, LPCWSTR lpszDesc);
