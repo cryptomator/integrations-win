@@ -40,6 +40,6 @@ public class WinShellLinks {
 			NativeLibLoader.loadLib();
 		}
 
-		public native int createShortcut(byte[] target, byte[] storagePath, byte[] description);
+		public synchronized native int createShortcut(byte[] target, byte[] storagePath, byte[] description);
 	}
 }
