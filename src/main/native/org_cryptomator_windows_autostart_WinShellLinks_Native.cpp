@@ -56,7 +56,7 @@ JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_0002
 //                properties.
 //
 // Returns:
-// S_OK (0x000000000) - If anything works fine
+// S_OK (0x000000000) - If everything works fine
 // ErrorCode          - else
 //
 HRESULT CreateLink(LPCWSTR lpszPathObj, LPCWSTR lpszPathLink, LPCWSTR lpszDesc) {
