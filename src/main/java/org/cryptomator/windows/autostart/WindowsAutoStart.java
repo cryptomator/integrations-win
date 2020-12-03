@@ -46,7 +46,7 @@ public class WindowsAutoStart implements AutoStartProvider {
 		assert exePath.isPresent();
 		int returnCode = winShellLinks.createShortcut(exePath.get(), absoluteStartupEntryPath.toString(), "Cryptomator");
 		if (returnCode == 0) {
-			return;
+			LOG.debug("Successfully created {}.", absoluteStartupEntryPath);
 		} else {
 			throw new ToggleAutoStartFailedException("Enabling autostart using the startup folder failed. Windows error code: " + returnCode);
 		}

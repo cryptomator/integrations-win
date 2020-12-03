@@ -18,9 +18,9 @@ JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_0002
   (JNIEnv * env, jobject thisObj, jbyteArray target, jbyteArray storage_path, jbyteArray description) {
 
     //get the arguments from environment (byte arrays with utf-16LE encodings)
-    LPCWSTR link_target = (LPCWSTR) env->GetByteArrayElements(target, JNI_FALSE);
-    LPCWSTR link_location = (LPCWSTR) env->GetByteArrayElements(storage_path, JNI_FALSE);
-    LPCWSTR link_description = (LPCWSTR) env->GetByteArrayElements(description, JNI_FALSE);
+    LPCWSTR link_target = (LPCWSTR) env->GetByteArrayElements(target, NULL);
+    LPCWSTR link_location = (LPCWSTR) env->GetByteArrayElements(storage_path, NULL);
+    LPCWSTR link_description = (LPCWSTR) env->GetByteArrayElements(description, NULL);
 
     //initialize
     int initResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
