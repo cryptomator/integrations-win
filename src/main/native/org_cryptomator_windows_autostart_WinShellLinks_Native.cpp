@@ -59,11 +59,11 @@ JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_0002
 //
 HRESULT CreateLink(LPCWSTR lpszPathObj, LPCWSTR lpszPathLink, LPCWSTR lpszDesc) {
     HRESULT hres;
-    IShellLinkW* psl;
+    IShellLink* psl;
 
     // Get a pointer to the IShellLink interface. It is assumed that CoInitialize
     // has already been called.
-    hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&psl);
+    hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&psl);
     if (SUCCEEDED(hres))
     {
         IPersistFile* ppf;
