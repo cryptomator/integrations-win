@@ -1,0 +1,26 @@
+package org.cryptomator.integrations.uiappearance;
+
+import org.cryptomator.windows.uiappearance.WinUiAppearanceProvider;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+public class WinUiAppearanceProviderTest {
+	private WinUiAppearanceProvider appearanceProvider;
+
+	@BeforeEach
+	public void setup() {
+		this.appearanceProvider = new WinUiAppearanceProvider();
+	}
+
+	@Test
+	public void testRegisterAndUnregisterObserver() throws UiAppearanceException {
+		UiAppearanceListener listener = theme -> {
+			System.out.println(theme.toString());};
+		appearanceProvider.addListener(listener);
+
+
+		//appearanceProvider.removeListener(listener);
+	}
+
+}
