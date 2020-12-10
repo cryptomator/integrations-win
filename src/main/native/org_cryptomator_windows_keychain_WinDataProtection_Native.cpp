@@ -12,7 +12,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinDataProtec
   saltBlob.cbData = (DWORD) env->GetArrayLength(salt);
 
   DATA_BLOB ciphertextBlob;
-  BOOL success = CryptProtectData(&cleartextBlob, NULL, &saltBlob, NULL, NULL, CRYPTPROTECT_LOCAL_MACHINE, &ciphertextBlob);
+  BOOL success = CryptProtectData(&cleartextBlob, NULL, &saltBlob, NULL, NULL, 0, &ciphertextBlob);
 
   env->ReleaseByteArrayElements(cleartext, (jbyte*) cleartextBlob.pbData, JNI_ABORT);
   env->ReleaseByteArrayElements(salt, (jbyte*) saltBlob.pbData, JNI_ABORT);
