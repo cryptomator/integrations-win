@@ -22,15 +22,16 @@ public class WinShellLinks {
 	 */
 	public int createShortcut(String target, String storagePath, String description) {
 		return Native.INSTANCE.createShortcut(
-				nullterminateAndConvert(target),
-				nullterminateAndConvert(storagePath),
-				nullterminateAndConvert(description)
+				getNullTerminatedUTF16Representation(target),
+				getNullTerminatedUTF16Representation(storagePath),
+				getNullTerminatedUTF16Representation(description)
 		);
 	}
 
-	private byte[] nullterminateAndConvert(String source) {
+	// visible for testing
+	byte[] getNullTerminatedUTF16Representation(String source) {
 		byte[] bytes = source.getBytes(StandardCharsets.UTF_16LE);
-		return Arrays.copyOf(bytes, bytes.length + 1); // add single byte with "null" padding
+		return Arrays.copyOf(bytes, bytes.length + 2); // add double-width null terminator 0x00 0x00
 	}
 
 	private static class Native {
