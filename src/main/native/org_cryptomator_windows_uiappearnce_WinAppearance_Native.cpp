@@ -126,26 +126,34 @@ void Observer::registerWndProc() {
     ShowWindow(hwnd, 1); /* 0 = SW_HIDE */ //TODO hide me
     UpdateWindow(hwnd);
     MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0) ) {
+    while (GetMessage(&msg, NULL, 0, 0) ) { // TODO: add additional "isObserving" flag
         TranslateMessage(&msg); /* for certain keyboard messages */
         DispatchMessage(&msg); /* send message to WndProc */
     }
 }
 
-JNIEXPORT jlong JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_registerObserverWithListener(JNIEnv *env, jobject thisObj, jobject listenerObj) {
+/*
+ * Class:     org_cryptomator_windows_uiappearance_WinAppearance_Native
+ * Method:    stopObserving
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_stopObserving
+  (JNIEnv *, jobject);
+
+JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_startObserving(JNIEnv *env, jobject thisObj, jobject listenerObj) {
     JavaVM *vm = nullptr;
     if ((*env).GetJavaVM(&vm) != JNI_OK) {
         return 0;
     }
-    //listener = (*env).NewGlobalRef(listenerObj);
-    //if (listener == NULL) {
-    //    return 0;
-    //}
     Observer observer(env, listenerObj);
     observer.registerWndProc();
-    //Program blocks / waits here. Nothing is returned to java. Java waits.
-    jlong observerPtr = reinterpret_cast<jlong>(&observer);
-    return observerPtr;
+    // Program blocks / waits here. Nothing is returned to java. Java waits.
+}
+
+JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_stopObserving(JNIEnv *env, jobject thisObj) {
+    // TODO: stop GetMessage-loop
+    // TODO: close window (and send a last message if required)
+    // TODO: cleanup window
 }
 
 JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_setToLight(JNIEnv *env, jobject thisObj) {

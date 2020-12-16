@@ -1,21 +1,20 @@
 package org.cryptomator.windows.uiappearance;
 
 import org.cryptomator.integrations.uiappearance.Theme;
-import org.cryptomator.integrations.uiappearance.UiAppearanceException;
 import org.cryptomator.integrations.uiappearance.UiAppearanceListener;
 import org.cryptomator.integrations.uiappearance.UiAppearanceProvider;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collection;
 
-public class WinUiAppearanceProvider implements UiAppearanceProvider {
+public class WinUiAppearanceProvider implements UiAppearanceProvider, WinAppearanceListener {
 
 	private final WinAppearance winAppearance;
-	private final Map<UiAppearanceListener, Long> registeredObservers;
+	private final Collection<UiAppearanceListener> registeredListeners;
 
 	public WinUiAppearanceProvider() {
 		this.winAppearance = new WinAppearance();
-		this.registeredObservers = new HashMap<>();
+		this.registeredListeners = new ArrayList<>();
 	}
 
 	@Override
@@ -35,22 +34,27 @@ public class WinUiAppearanceProvider implements UiAppearanceProvider {
 		}	}
 
 	@Override
-	public void addListener(UiAppearanceListener listener) throws UiAppearanceException {
-		var observer = winAppearance.registerObserverWithListener(() -> {
-			listener.systemAppearanceChanged(getSystemTheme());
-		});
-		if (observer == 0) {
-			throw new UiAppearanceException("Failed to register appearance observer.");
-		} else {
-			registeredObservers.put(listener, observer);
+	public synchronized void addListener(UiAppearanceListener listener) {
+		var wasEmpty = registeredListeners.isEmpty();
+		registeredListeners.add(listener);
+		if (wasEmpty) {
+			winAppearance.startObserving(this);
 		}
 	}
 
 	@Override
-	public void removeListener(UiAppearanceListener listener) throws UiAppearanceException {
-		var observer = registeredObservers.remove(listener);
-		if (observer != null) {
-			winAppearance.deregisterObserver(observer);
+	public synchronized void removeListener(UiAppearanceListener listener) {
+		registeredListeners.remove(listener);
+		if (registeredListeners.isEmpty()) {
+			winAppearance.stopObserving();
+		}
+	}
+
+	@Override
+	public void systemAppearanceChanged() {
+		var currentTheme = getSystemTheme();
+		for (var listener : registeredListeners) {
+			listener.systemAppearanceChanged(currentTheme);
 		}
 	}
 }
