@@ -48,7 +48,7 @@ public class WindowsAutoStart implements AutoStartProvider {
 		if (returnCode == 0) {
 			LOG.debug("Successfully created {}.", absoluteStartupEntryPath);
 		} else {
-			throw new ToggleAutoStartFailedException("Enabling autostart using the startup folder failed. Windows error code: " + returnCode);
+			throw new ToggleAutoStartFailedException("Enabling autostart using the startup folder failed. Windows error code: " + Integer.toHexString(returnCode));
 		}
 	}
 

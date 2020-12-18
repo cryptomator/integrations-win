@@ -15,6 +15,8 @@ HRESULT CreateLink(LPCWSTR lpszPathObj, LPCWSTR lpszPathLink, LPCWSTR lpszDesc);
 
 JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_00024Native_createShortcut
   (JNIEnv * env, jobject thisObj, jbyteArray target, jbyteArray storage_path, jbyteArray description) {
+    // result to be returned
+    HRESULT hres;
 
     //get the arguments from environment (byte arrays with utf-16LE encodings)
     LPCWSTR link_target = (LPCWSTR) env->GetByteArrayElements(target, NULL);
@@ -23,20 +25,21 @@ JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_0002
 
     //initialize
     int initResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-    if( initResult != S_OK && initResult != S_FALSE && initResult != RPC_E_CHANGED_MODE) {
-        return initResult; //error of the type E_INVALIDARG, E_OUTOFMEMORY or E_UNEXPECTED
+    if( initResult == S_OK || initResult == S_FALSE || initResult == RPC_E_CHANGED_MODE) {
+        // compute
+        hres = CreateLink(link_target, link_location, link_description);
+        // uninitialize
+        CoUninitialize();
+    } else {
+        hres = initResult; //error of the type E_INVALIDARG, E_OUTOFMEMORY or E_UNEXPECTED
     }
-    // compute
-    int execResult = CreateLink(link_target, link_location, link_description);
-    // uninitialize
-    CoUninitialize();
 
     //clean up
     env->ReleaseByteArrayElements(target, (jbyte *) link_target, JNI_ABORT);
     env->ReleaseByteArrayElements(storage_path, (jbyte *) link_location, JNI_ABORT);
     env->ReleaseByteArrayElements(description, (jbyte *) link_description, JNI_ABORT);
 
-    return execResult;
+    return hres;
 }
 
 // CreateLink - Uses the Shell's IShellLink and IPersistFile interfaces
