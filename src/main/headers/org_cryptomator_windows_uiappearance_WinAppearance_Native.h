@@ -33,11 +33,19 @@ JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_0
 
 /*
  * Class:     org_cryptomator_windows_uiappearance_WinAppearance_Native
- * Method:    startObserving
- * Signature: (Lorg/cryptomator/windows/uiappearance/WinAppearanceListener;)V
+ * Method:    prepareObserving
+ * Signature: (Lorg/cryptomator/windows/uiappearance/WinAppearanceListener;)I
  */
-JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_startObserving
+JNIEXPORT jint JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_prepareObserving
   (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     org_cryptomator_windows_uiappearance_WinAppearance_Native
+ * Method:    observe
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_observe
+  (JNIEnv *, jobject);
 
 /*
  * Class:     org_cryptomator_windows_uiappearance_WinAppearance_Native

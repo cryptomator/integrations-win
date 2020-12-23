@@ -12,34 +12,22 @@
 //JNIEnv *cur_env; /* pointer to native method interface */
 //jobject listener;
 
-JNIEXPORT jint JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_getCurrentTheme (JNIEnv *env, jobject thisObject){
-    DWORD data{};
-    DWORD dataSize = sizeof(data);
-    RegGetValueA(HKEY_CURRENT_USER, R"(Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)", "AppsUseLightTheme", RRF_RT_DWORD, NULL, &data, &dataSize);
-
-    if (data){
-        return 1;
-    }
-    else{
-        return 0;
-    }
-}
-
 class Observer{
 public:
-    Observer(JNIEnv *cur_env, jobject listener);
-
     JNIEnv *cur_env;
     jobject listener;
-    Observer();
+    HWND observer_hwnd;
+
+    //Observer()
+    void initialize(JNIEnv *cur_env, jobject listener);
     int calljvm();
-    void registerWndProc();
+    int registerWndProc(); //to should be int
 
     static LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
     LRESULT realWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };
 
-Observer::Observer(JNIEnv *cur_env, jobject listener){
+void Observer::initialize(JNIEnv *cur_env, jobject listener){
     this->cur_env = cur_env;
     this->listener = listener;
 }
@@ -84,7 +72,7 @@ int Observer::calljvm() { //notify
 }
 
 
-void Observer::registerWndProc() {
+int Observer::registerWndProc() {
     HINSTANCE h2 = GetModuleHandle(NULL);
     static char szAppName[] = "WindowsSettingsThemeListener"; //TODO get a proper name
     WNDCLASSEX wndclass;
@@ -104,55 +92,72 @@ void Observer::registerWndProc() {
     /* Register a new window class with Windows */
     if (!RegisterClassEx(&wndclass)) {
         MessageBox(NULL, TEXT("Registering class failed!"), TEXT("Error!"), MB_ICONEXCLAMATION | MB_OK);
-        return;
+        return EXIT_FAILURE;
     }
 
     /* Create a window based on our new class */
-    HWND hwnd;
-    hwnd = CreateWindow(szAppName, "WindowsSettingsThemeListener",
-                        WS_OVERLAPPEDWINDOW,
-                        CW_USEDEFAULT, CW_USEDEFAULT,
-                        CW_USEDEFAULT, CW_USEDEFAULT,
-                        NULL, NULL, h2, NULL);
+
+    this->observer_hwnd = CreateWindow(szAppName, "WindowsSettingsThemeListener",
+                                       WS_OVERLAPPEDWINDOW,
+                                       CW_USEDEFAULT, CW_USEDEFAULT,
+                                       CW_USEDEFAULT, CW_USEDEFAULT,
+                                       NULL, NULL, h2, NULL);
     /* CreateWindow failed? */
-    if( !hwnd ) {
+    if( !this->observer_hwnd ) {
         MessageBox(NULL, TEXT("Window creation failed!"), TEXT("Error!"), MB_ICONEXCLAMATION | MB_OK);
-        return;
+        return EXIT_FAILURE;
     }
     //To store the current object in the window (and recieve it later in the static WndProc)
-    SetWindowLongPtrA(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+    SetWindowLongPtrA(this->observer_hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
     /* Show and update our window */
-    ShowWindow(hwnd, 1); /* 0 = SW_HIDE */ //TODO hide me
-    UpdateWindow(hwnd);
+    ShowWindow(this->observer_hwnd, 1); /* 0 = SW_HIDE */ //TODO hide me
+    UpdateWindow(this->observer_hwnd);
+    return EXIT_SUCCESS;
+}
+
+WINBOOL isObserving;
+Observer observer;
+
+JNIEXPORT jint JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_getCurrentTheme (JNIEnv *env, jobject thisObject){
+    DWORD data{};
+    DWORD dataSize = sizeof(data);
+    RegGetValueA(HKEY_CURRENT_USER, R"(Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)", "AppsUseLightTheme", RRF_RT_DWORD, NULL, &data, &dataSize);
+
+    if (data){
+        return 1;
+    }
+    else{
+        return 0;
+    }
+}
+
+JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_observe(JNIEnv *env, jobject thisObj){
     MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0) ) { // TODO: add additional "isObserving" flag
+    while (GetMessage(&msg, NULL, 0, 0) && isObserving ) { // TOD/O: add additional "isObserving" flag
         TranslateMessage(&msg); /* for certain keyboard messages */
         DispatchMessage(&msg); /* send message to WndProc */
     }
 }
 
-/*
- * Class:     org_cryptomator_windows_uiappearance_WinAppearance_Native
- * Method:    stopObserving
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_stopObserving
-  (JNIEnv *, jobject);
-
-JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_startObserving(JNIEnv *env, jobject thisObj, jobject listenerObj) {
+JNIEXPORT jint JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_prepareObserving(JNIEnv *env, jobject thisObj, jobject listenerObj) {
     JavaVM *vm = nullptr;
     if ((*env).GetJavaVM(&vm) != JNI_OK) {
-        return 0;
+        return EXIT_FAILURE;
     }
-    Observer observer(env, listenerObj);
-    observer.registerWndProc();
-    // Program blocks / waits here. Nothing is returned to java. Java waits.
+
+    observer.initialize(env, listenerObj);
+    isObserving = TRUE;
+    return observer.registerWndProc();
 }
 
 JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_stopObserving(JNIEnv *env, jobject thisObj) {
     // TODO: stop GetMessage-loop
+    isObserving = FALSE;
     // TODO: close window (and send a last message if required)
+    CloseWindow(observer.observer_hwnd);
+    DestroyWindow(observer.observer_hwnd);
+    // store hwnd as fieldW
     // TODO: cleanup window
 }
 

@@ -59,8 +59,10 @@ class WinAppearance {
 
 		public native void setToDark();
 
+		public native int prepareObserving(WinAppearanceListener listener);
+
 		// will block, to be called in a new thread
-		public native void startObserving(WinAppearanceListener listener);
+		public native void observe();
 
 		public native void stopObserving();
 	}
