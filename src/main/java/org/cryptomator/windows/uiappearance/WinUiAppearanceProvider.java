@@ -1,9 +1,11 @@
 package org.cryptomator.windows.uiappearance;
 
 import org.cryptomator.integrations.uiappearance.Theme;
+import org.cryptomator.integrations.uiappearance.UiAppearanceException;
 import org.cryptomator.integrations.uiappearance.UiAppearanceListener;
 import org.cryptomator.integrations.uiappearance.UiAppearanceProvider;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -34,7 +36,7 @@ public class WinUiAppearanceProvider implements UiAppearanceProvider, WinAppeara
 		}	}
 
 	@Override
-	public synchronized void addListener(UiAppearanceListener listener) {
+	public synchronized void addListener(UiAppearanceListener listener) throws UiAppearanceException {
 		var wasEmpty = registeredListeners.isEmpty();
 		registeredListeners.add(listener);
 		if (wasEmpty) {
@@ -50,6 +52,7 @@ public class WinUiAppearanceProvider implements UiAppearanceProvider, WinAppeara
 		}
 	}
 
+	//called from native code, to notify all observes of latest change
 	@Override
 	public void systemAppearanceChanged() {
 		var currentTheme = getSystemTheme();

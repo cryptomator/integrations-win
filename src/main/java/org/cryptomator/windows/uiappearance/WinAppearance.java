@@ -1,6 +1,7 @@
 package org.cryptomator.windows.uiappearance;
 
 import org.cryptomator.integrations.uiappearance.Theme;
+import org.cryptomator.integrations.uiappearance.UiAppearanceException;
 import org.cryptomator.integrations.uiappearance.UiAppearanceListener;
 import org.cryptomator.windows.common.NativeLibLoader;
 
@@ -27,8 +28,12 @@ class WinAppearance {
 		}
 	}
 
-	void startObserving(WinAppearanceListener listener) {
-		new Thread(() -> Native.INSTANCE.startObserving(listener), "AppearanceObserver").run();
+	void startObserving(WinAppearanceListener listener) throws UiAppearanceException {
+		if (Native.INSTANCE.prepareObserving(listener) != 0){
+			throw new UiAppearanceException("failed to prepeare Observer"); //TODO act on return message and write proper Exception
+		};
+		Thread observering = new Thread(Native.INSTANCE::observe, "AppearanceObserver");
+		observering.run();
 	}
 
 	void stopObserving() {
@@ -37,8 +42,6 @@ class WinAppearance {
 
 	void setToLight() {
 		Native.INSTANCE.setToLight();
-		//SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, NULL, NULL,
-		//    SMTO_NORMAL, aShortTimeoutInMilliseconds, NULL);
 	}
 
 	void setToDark() {

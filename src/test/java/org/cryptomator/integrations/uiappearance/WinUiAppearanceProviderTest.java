@@ -18,9 +18,18 @@ public class WinUiAppearanceProviderTest {
 		UiAppearanceListener listener = theme -> {
 			System.out.println(theme.toString());};
 		appearanceProvider.addListener(listener);
-
+		try {
+			Thread.sleep(100000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 
 		//appearanceProvider.removeListener(listener);
+	}
+
+	@Test
+	public void testCallback(){
+		appearanceProvider.callToJava();
 	}
 
 }
