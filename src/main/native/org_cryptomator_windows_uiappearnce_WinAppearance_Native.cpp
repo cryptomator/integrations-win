@@ -9,21 +9,22 @@
 #include <winreg.h>
 #include "SKYAppearanceObserver.h"
 
-jobject j_listener;
-JavaVM *globalVM = nullptr;
+#include <iostream>
 
-//JNIEnv *cur_env; /* pointer to native method interface */
+using namespace std;
+
+//jobject j_listener;
+//JavaVM *globalVM = nullptr;
 //jobject listener;
 
 class Observer{
+    const jobject listener;
+    JavaVM *jvm;
 public:
-    JNIEnv *cur_env;
-    jobject listener;
-    //JavaVM *jvm;
+    jint jniVersion;
     HWND observer_hwnd;
 
-    //Observer()
-    void initialize(JNIEnv *cur_env, jobject listener);
+    Observer(jobject listener, JavaVM *vm):listener(listener), jvm(vm){};
     int calljvm();
     int registerWndProc();
 
@@ -31,17 +32,6 @@ public:
     LRESULT realWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };
 
-void Observer::initialize(JNIEnv *cur_env, jobject listener) {
-    this->cur_env = cur_env;
-    this->listener = listener;
-    //cur_env->GetJavaVM(&jvm);
-    //MessageBox(NULL, TEXT("In init attaching"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-    //(*globalVM).AttachCurrentThread((void **)&cur_env,NULL); //TODO globalVM
-    //MessageBox(NULL, TEXT("In init: attached"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-
-
-    //this->vm = pVm;
-}
 
 LRESULT CALLBACK Observer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     //get the current observer from the Window
@@ -72,7 +62,34 @@ LRESULT CALLBACK Observer::realWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
     return EXIT_SUCCESS;
 }
 int Observer::calljvm() { //notify
-    MessageBox(NULL, TEXT("In callJVM"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+    //MessageBox(NULL, sprintf("%s", jvm), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+    cout << "in CallJvm";
+    if (!jvm) {
+        //MessageBox(NULL, TEXT("JVM empty"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+    }
+    JNIEnv *env;
+    if (this->jvm->GetEnv((void **)&env, JNI_VERSION_10) != JNI_OK) {
+        MessageBox(NULL, TEXT("GetEnv not ok"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+        return 1;
+    }
+
+    //JNIEnv *env;
+    //int getEnvStat = jvm->GetEnv((void **)&env, JNI_VERSION_9);
+    MessageBox(NULL, TEXT("after GetEnv"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+/*
+    if (getEnvStat == JNI_EDETACHED) {
+        MessageBox(NULL, TEXT("GetEnv: not attached, sollte nich sein."), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+        if (jvm->AttachCurrentThread((void **) &env, NULL) != 0) {
+            MessageBox(NULL, TEXT("Failed to attach"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+        }
+    } else if (getEnvStat == JNI_OK) {
+        //
+    } else if (getEnvStat == JNI_EVERSION) {
+        MessageBox(NULL, TEXT("Failed to attach"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+    }
+    MessageBox(NULL, TEXT("Thread Attached"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+*/
+
     //globalVM->GetEnv()
     /*
     //JavaVM *vm = nullptr;
@@ -82,11 +99,8 @@ int Observer::calljvm() { //notify
     } else {   MessageBox(NULL, TEXT("JNI Is OK"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
     };
      */
-    if (!globalVM){
-        MessageBox(NULL, TEXT("VM is empty!!"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-    }
-    (*globalVM).AttachCurrentThread((void **)&cur_env,NULL);
-    MessageBox(NULL, TEXT("called AttachCurrentThread"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+    //(*globalVM).AttachCurrentThread((void **)&cur_env,NULL);
+    //MessageBox(NULL, TEXT("called AttachCurrentThread"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
 
     if (listener == NULL) {
         MessageBox(NULL, TEXT("listener == NULL"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
@@ -94,8 +108,8 @@ int Observer::calljvm() { //notify
     }
     MessageBox(NULL, TEXT("listener != NULL, FINE"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
 
-    jclass listenerClass = cur_env->GetObjectClass(listener);
-    jmethodID listenerMethodID = cur_env->GetMethodID(listenerClass, "systemAppearanceChanged", "()V");
+    jclass listenerClass = env->GetObjectClass(listener);
+    jmethodID listenerMethodID = env->GetMethodID(listenerClass, "systemAppearanceChanged", "()V");
 
     if (!listenerMethodID || !listenerClass){
         MessageBox(NULL, TEXT("method and or class null"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
@@ -104,16 +118,16 @@ int Observer::calljvm() { //notify
     MessageBox(NULL, TEXT("method and or class found"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
 
 
-    if(cur_env->ExceptionCheck()) {
-        cur_env->ExceptionDescribe();
-        cur_env->ExceptionClear();
+    if(env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
     }
     MessageBox(NULL, TEXT("calling..."), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
 
-    cur_env->CallVoidMethod(listener, listenerMethodID);
+    env->CallVoidMethod(listener, listenerMethodID);
     //MessageBox(NULL, TEXT("CallVoidMethod called"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
 
-    (*globalVM).DetachCurrentThread();
+    //(*globalVM).DetachCurrentThread();
     //MessageBox(NULL, TEXT("DetachCurrentThread called"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
 
 
@@ -185,16 +199,16 @@ JNIEXPORT jint JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_0
 
 JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_observe(JNIEnv *env, jobject thisObj){
     //JavaVM *vm = nullptr;
-    if ((*env).GetJavaVM(&globalVM) != JNI_OK) {
-        return;
-    }
-    globalVM->AttachCurrentThread((void **)&env,NULL);
+    //if ((*env).GetJavaVM(&globalVM) != JNI_OK) {
+    //    return;
+    //}
+    //globalVM->AttachCurrentThread((void **)&env,NULL);
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0) && isObserving ) { // TOD/O: add additional "isObserving" flag
         TranslateMessage(&msg); /* for certain keyboard messages */
         DispatchMessage(&msg); /* send message to WndProc */
     }
-    globalVM->DetachCurrentThread();
+    //globalVM->DetachCurrentThread();
 }
 
 JNIEXPORT jint JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_prepareObserving(JNIEnv *env, jobject thisObj, jobject listenerObj) {
@@ -202,10 +216,10 @@ JNIEXPORT jint JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_0
     if ((*env).GetJavaVM(&vm) != JNI_OK) {
         return EXIT_FAILURE;
     }
+
     //j_listener = listenerObj;
-    Observer observer;
+    Observer observer (listenerObj, vm);
     (*vm).AttachCurrentThread((void **)&env,NULL);
-    observer.initialize(env, listenerObj);
     isObserving = TRUE;
     vm->DetachCurrentThread();
     return observer.registerWndProc();

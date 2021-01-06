@@ -55,14 +55,6 @@ JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_0
 JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_stopObserving
   (JNIEnv *, jobject);
 
-/*
- * Class:     org_cryptomator_windows_uiappearance_WinAppearance_Native
- * Method:    callBackToJava
- * Signature: (Lorg/cryptomator/windows/uiappearance/WinAppearance;)V
- */
-JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_callBackToJava
-  (JNIEnv *, jobject, jobject);
-
 #ifdef __cplusplus
 }
 #endif

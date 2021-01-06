@@ -26,10 +26,4 @@ public class WinUiAppearanceProviderTest {
 
 		//appearanceProvider.removeListener(listener);
 	}
-
-	@Test
-	public void testCallback(){
-		appearanceProvider.callToJava();
-	}
-
 }
