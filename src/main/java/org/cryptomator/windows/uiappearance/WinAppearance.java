@@ -32,8 +32,9 @@ class WinAppearance {
 		if (Native.INSTANCE.prepareObserving(listener) != 0){
 			throw new UiAppearanceException("failed to prepeare Observer"); //TODO act on return message and write proper Exception
 		};
-		Thread observering = new Thread(Native.INSTANCE::observe, "AppearanceObserver");
-		observering.run();
+		Thread observerThread = new Thread(Native.INSTANCE::observe, "AppearanceObserver");
+		observerThread.setDaemon(true);
+		observerThread.start();
 	}
 
 	void stopObserving() {

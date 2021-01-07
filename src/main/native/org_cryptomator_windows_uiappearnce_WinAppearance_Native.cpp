@@ -7,52 +7,35 @@
 #include <jni.h>
 #include <windows.h>
 #include <winreg.h>
-#include "SKYAppearanceObserver.h"
-
 #include <iostream>
 
 using namespace std;
 
-//jobject j_listener;
-//JavaVM *globalVM = nullptr;
-//jobject listener;
-
-class Observer{
-    const jobject listener;
-    JavaVM *jvm;
+class Observer {
+private:
+    JavaVM *vm;
+    jobject listener;
 public:
-    jint jniVersion;
-    HWND observer_hwnd;
+    HWND window;
 
-    Observer(jobject listener, JavaVM *vm):listener(listener), jvm(vm){};
+    Observer(JavaVM *vm, jobject listener): vm(vm), listener(listener) {};
     int calljvm();
     int registerWndProc();
+    jobject getListener() { return listener; };
 
     static LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-    LRESULT realWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };
 
+static Observer *observer;
 
 LRESULT CALLBACK Observer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    //get the current observer from the Window
-    Observer* me = reinterpret_cast<Observer*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-
-    //this workaround is needed, as wndclass.lpfnWndProc needs to be a static class, but I need to use variables of an object to call calljvm()
-    if (me) {
-        return me->realWndProc(hwnd, msg, wParam, lParam);
-    }
-    return DefWindowProc(hwnd, msg, wParam, lParam);
-}
-
-LRESULT CALLBACK Observer::realWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     WCHAR *plParam = (LPWSTR) lParam;
     switch (msg) {
         case WM_SETTINGCHANGE:
             if (plParam) {
                 //Only call the notify methode if the correct setting changed
-                if (lstrcmp(reinterpret_cast<LPCSTR>(plParam), TEXT("ImmersiveColorSet")) == 0) {
-                    MessageBox(NULL, TEXT("theme changed"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-                    this->calljvm();
+                if (lstrcmp(reinterpret_cast<LPCSTR>(plParam), TEXT("ImmersiveColorSet")) == 0 && observer != NULL) {
+                    observer->calljvm();
                 }
                 break;
             }
@@ -61,21 +44,13 @@ LRESULT CALLBACK Observer::realWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
     }
     return EXIT_SUCCESS;
 }
+
 int Observer::calljvm() { //notify
-    //MessageBox(NULL, sprintf("%s", jvm), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-    cout << "in CallJvm";
-    if (!jvm) {
-        //MessageBox(NULL, TEXT("JVM empty"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-    }
     JNIEnv *env;
-    if (this->jvm->GetEnv((void **)&env, JNI_VERSION_10) != JNI_OK) {
-        MessageBox(NULL, TEXT("GetEnv not ok"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-        return 1;
+    if (vm->GetEnv((void **)&env, JNI_VERSION_10) != JNI_OK) {
+        return EXIT_FAILURE;
     }
 
-    //JNIEnv *env;
-    //int getEnvStat = jvm->GetEnv((void **)&env, JNI_VERSION_9);
-    MessageBox(NULL, TEXT("after GetEnv"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
 /*
     if (getEnvStat == JNI_EDETACHED) {
         MessageBox(NULL, TEXT("GetEnv: not attached, sollte nich sein."), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
@@ -102,27 +77,23 @@ int Observer::calljvm() { //notify
     //(*globalVM).AttachCurrentThread((void **)&cur_env,NULL);
     //MessageBox(NULL, TEXT("called AttachCurrentThread"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
 
-    if (listener == NULL) {
-        MessageBox(NULL, TEXT("listener == NULL"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-        return EXIT_FAILURE;
-    }
-    MessageBox(NULL, TEXT("listener != NULL, FINE"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-
     jclass listenerClass = env->GetObjectClass(listener);
-    jmethodID listenerMethodID = env->GetMethodID(listenerClass, "systemAppearanceChanged", "()V");
-
-    if (!listenerMethodID || !listenerClass){
-        MessageBox(NULL, TEXT("method and or class null"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+    if (listenerClass == NULL) {
+        MessageBox(NULL, TEXT("listenerClass == NULL"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
         return EXIT_FAILURE;
     }
-    MessageBox(NULL, TEXT("method and or class found"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
 
+    jmethodID listenerMethodID = env->GetMethodID(listenerClass, "systemAppearanceChanged", "()V");
+    if (listenerMethodID == NULL) {
+        MessageBox(NULL, TEXT("listenerMethodID == NULL"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+        return EXIT_FAILURE;
+    }
 
     if(env->ExceptionCheck()) {
         env->ExceptionDescribe();
         env->ExceptionClear();
     }
-    MessageBox(NULL, TEXT("calling..."), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+    //MessageBox(NULL, TEXT("calling..."), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
 
     env->CallVoidMethod(listener, listenerMethodID);
     //MessageBox(NULL, TEXT("CallVoidMethod called"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
@@ -130,10 +101,8 @@ int Observer::calljvm() { //notify
     //(*globalVM).DetachCurrentThread();
     //MessageBox(NULL, TEXT("DetachCurrentThread called"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
 
-
     return EXIT_SUCCESS;
 }
-
 
 int Observer::registerWndProc() {
     HINSTANCE h2 = GetModuleHandle(NULL);
@@ -154,34 +123,26 @@ int Observer::registerWndProc() {
 
     /* Register a new window class with Windows */
     if (!RegisterClassEx(&wndclass)) {
-        //MessageBox(NULL, TEXT("Registering class failed!"), TEXT("Error!"), MB_ICONEXCLAMATION | MB_OK);
         return EXIT_FAILURE;
     }
 
     /* Create a window based on our new class */
 
-    this->observer_hwnd = CreateWindow(szAppName, "WindowsSettingsThemeListener",
+    this->window = CreateWindow(szAppName, "WindowsSettingsThemeListener",
                                        WS_OVERLAPPEDWINDOW,
                                        CW_USEDEFAULT, CW_USEDEFAULT,
                                        CW_USEDEFAULT, CW_USEDEFAULT,
                                        NULL, NULL, h2, NULL);
     /* CreateWindow failed? */
-    if( !this->observer_hwnd ) {
-        //MessageBox(NULL, TEXT("Window creation failed!"), TEXT("Error!"), MB_ICONEXCLAMATION | MB_OK);
+    if( !this->window ) {
         return EXIT_FAILURE;
     }
-    //To store the current object in the window (and recieve it later in the static WndProc)
-    SetWindowLongPtrA(this->observer_hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
     /* Show and update our window */
-    ShowWindow(this->observer_hwnd, 1); /* 0 = SW_HIDE */ //TODO hide me
-    UpdateWindow(this->observer_hwnd);
+    ShowWindow(this->window, SW_HIDE);
+    UpdateWindow(this->window);
     return EXIT_SUCCESS;
 }
-
-WINBOOL isObserving;
-
-//Observer observer;
 
 
 JNIEXPORT jint JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_getCurrentTheme (JNIEnv *env, jobject thisObject){
@@ -204,7 +165,7 @@ JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_0
     //}
     //globalVM->AttachCurrentThread((void **)&env,NULL);
     MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0) && isObserving ) { // TOD/O: add additional "isObserving" flag
+    while (GetMessage(&msg, NULL, 0, 0) && observer != NULL) {
         TranslateMessage(&msg); /* for certain keyboard messages */
         DispatchMessage(&msg); /* send message to WndProc */
     }
@@ -213,24 +174,26 @@ JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_0
 
 JNIEXPORT jint JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_prepareObserving(JNIEnv *env, jobject thisObj, jobject listenerObj) {
     JavaVM *vm = nullptr;
-    if ((*env).GetJavaVM(&vm) != JNI_OK) {
+    if (env->GetJavaVM(&vm) != JNI_OK) {
         return EXIT_FAILURE;
     }
 
-    //j_listener = listenerObj;
-    Observer observer (listenerObj, vm);
-    (*vm).AttachCurrentThread((void **)&env,NULL);
-    isObserving = TRUE;
-    vm->DetachCurrentThread();
-    return observer.registerWndProc();
+    jobject listener = env->NewGlobalRef(listenerObj);
+    if (listener == NULL) {
+        return EXIT_FAILURE;
+    }
+
+    observer = new Observer(vm, listener);
+    return observer->registerWndProc();
 }
 
 JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_stopObserving(JNIEnv *env, jobject thisObj) {
-    // TODO: stop GetMessage-loop
-    isObserving = FALSE;
+    env->DeleteGlobalRef(observer->getListener());
+    delete observer;
+    observer = NULL;
     // TODO: close window (and send a last message if required)
-    //CloseWindow(observer.observer_hwnd);
-    //DestroyWindow(observer.observer_hwnd);
+    //CloseWindow(observer.window);
+    //DestroyWindow(observer.window);
     // store hwnd as fieldW:: done
     // TODO: cleanup window
 }

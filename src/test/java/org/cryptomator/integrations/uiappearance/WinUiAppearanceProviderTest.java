@@ -15,15 +15,13 @@ public class WinUiAppearanceProviderTest {
 
 	@Test
 	public void testRegisterAndUnregisterObserver() throws UiAppearanceException {
-		UiAppearanceListener listener = theme -> {
-			System.out.println(theme.toString());};
+		UiAppearanceListener listener = theme -> System.out.println(theme.toString());
 		appearanceProvider.addListener(listener);
 		try {
-			Thread.sleep(100000);
+			Thread.sleep(10000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-
-		//appearanceProvider.removeListener(listener);
+		appearanceProvider.removeListener(listener);
 	}
 }

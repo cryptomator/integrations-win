@@ -1,6 +1,6 @@
 package org.cryptomator.windows.uiappearance;
-@FunctionalInterface
 
+@FunctionalInterface
 interface WinAppearanceListener {
 	void systemAppearanceChanged();
 }
