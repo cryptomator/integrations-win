@@ -14,11 +14,16 @@ public class WinUiAppearanceProviderTest {
 	}
 
 	@Test
+	public void testGettingTheCurrentTheme(){
+		System.out.println(appearanceProvider.getSystemTheme().toString());
+	}
+
+	@Test
 	public void testRegisterAndUnregisterObserver() throws UiAppearanceException {
 		UiAppearanceListener listener = theme -> System.out.println(theme.toString());
 		appearanceProvider.addListener(listener);
 		try {
-			Thread.sleep(10000);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

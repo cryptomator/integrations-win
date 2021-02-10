@@ -17,24 +17,26 @@ private:
     jobject listener;
 public:
     HWND window;
-
     Observer(JavaVM *vm, jobject listener): vm(vm), listener(listener) {};
-    int calljvm();
-    int registerWndProc();
-    jobject getListener() { return listener; };
+    int calljvm() volatile;
+    int registerWndProc() volatile;
+    jobject getListener() volatile { return listener; };
 
     static LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };
 
-static Observer *observer;
+volatile static Observer *observer;
 
 LRESULT CALLBACK Observer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     WCHAR *plParam = (LPWSTR) lParam;
     switch (msg) {
         case WM_SETTINGCHANGE:
+            MessageBox(NULL, TEXT("WM_SETTINGCHANGE"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
+
             if (plParam) {
                 //Only call the notify methode if the correct setting changed
                 if (lstrcmp(reinterpret_cast<LPCSTR>(plParam), TEXT("ImmersiveColorSet")) == 0 && observer != NULL) {
+                    //MessageBox(NULL, TEXT("theme changed"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
                     observer->calljvm();
                 }
                 break;
@@ -45,66 +47,32 @@ LRESULT CALLBACK Observer::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
     return EXIT_SUCCESS;
 }
 
-int Observer::calljvm() { //notify
+int Observer::calljvm() volatile { //notify Java
     JNIEnv *env;
     if (vm->GetEnv((void **)&env, JNI_VERSION_10) != JNI_OK) {
         return EXIT_FAILURE;
     }
-
-/*
-    if (getEnvStat == JNI_EDETACHED) {
-        MessageBox(NULL, TEXT("GetEnv: not attached, sollte nich sein."), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-        if (jvm->AttachCurrentThread((void **) &env, NULL) != 0) {
-            MessageBox(NULL, TEXT("Failed to attach"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-        }
-    } else if (getEnvStat == JNI_OK) {
-        //
-    } else if (getEnvStat == JNI_EVERSION) {
-        MessageBox(NULL, TEXT("Failed to attach"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-    }
-    MessageBox(NULL, TEXT("Thread Attached"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-*/
-
-    //globalVM->GetEnv()
-    /*
-    //JavaVM *vm = nullptr;
-    if (cur_env->GetJavaVM(&vm) != JNI_OK){ //crashes
-       MessageBox(NULL, TEXT("JNI Is not OK"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-       return EXIT_FAILURE;
-    } else {   MessageBox(NULL, TEXT("JNI Is OK"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-    };
-     */
-    //(*globalVM).AttachCurrentThread((void **)&cur_env,NULL);
-    //MessageBox(NULL, TEXT("called AttachCurrentThread"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-
     jclass listenerClass = env->GetObjectClass(listener);
     if (listenerClass == NULL) {
         MessageBox(NULL, TEXT("listenerClass == NULL"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
         return EXIT_FAILURE;
     }
-
     jmethodID listenerMethodID = env->GetMethodID(listenerClass, "systemAppearanceChanged", "()V");
     if (listenerMethodID == NULL) {
         MessageBox(NULL, TEXT("listenerMethodID == NULL"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
         return EXIT_FAILURE;
     }
-
     if(env->ExceptionCheck()) {
         env->ExceptionDescribe();
         env->ExceptionClear();
     }
-    //MessageBox(NULL, TEXT("calling..."), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
 
     env->CallVoidMethod(listener, listenerMethodID);
-    //MessageBox(NULL, TEXT("CallVoidMethod called"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-
-    //(*globalVM).DetachCurrentThread();
-    //MessageBox(NULL, TEXT("DetachCurrentThread called"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
-
     return EXIT_SUCCESS;
 }
 
-int Observer::registerWndProc() {
+//Crate a hidden window to get windows messages and then call WndProc
+int Observer::registerWndProc() volatile {
     HINSTANCE h2 = GetModuleHandle(NULL);
     static char szAppName[] = "WindowsSettingsThemeListener"; //TODO get a proper name
     WNDCLASSEX wndclass;
@@ -159,17 +127,11 @@ JNIEXPORT jint JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_0
 }
 
 JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_observe(JNIEnv *env, jobject thisObj){
-    //JavaVM *vm = nullptr;
-    //if ((*env).GetJavaVM(&globalVM) != JNI_OK) {
-    //    return;
-    //}
-    //globalVM->AttachCurrentThread((void **)&env,NULL);
     MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0) && observer != NULL) {
+    while (GetMessage(&msg, NULL, 0, 0) && observer != NULL) { //GetMessage waits for the next Message and stores it in msg.
         TranslateMessage(&msg); /* for certain keyboard messages */
         DispatchMessage(&msg); /* send message to WndProc */
     }
-    //globalVM->DetachCurrentThread();
 }
 
 JNIEXPORT jint JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_prepareObserving(JNIEnv *env, jobject thisObj, jobject listenerObj) {
@@ -182,12 +144,12 @@ JNIEXPORT jint JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_0
     if (listener == NULL) {
         return EXIT_FAILURE;
     }
-
     observer = new Observer(vm, listener);
     return observer->registerWndProc();
 }
 
 JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_stopObserving(JNIEnv *env, jobject thisObj) {
+    MessageBox(NULL, TEXT("stopping Observing"), TEXT("OK!"), MB_ICONEXCLAMATION | MB_OK); //TODO remove
     env->DeleteGlobalRef(observer->getListener());
     delete observer;
     observer = NULL;

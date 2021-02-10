@@ -11,6 +11,7 @@ import java.util.Map;
 class WinAppearance {
 
 	private final Map<UiAppearanceListener, Long> registeredObservers;
+	private Thread observerThread;
 
 	public WinAppearance() {
 		this.registeredObservers = new HashMap<>();
@@ -32,12 +33,15 @@ class WinAppearance {
 		if (Native.INSTANCE.prepareObserving(listener) != 0){
 			throw new UiAppearanceException("failed to prepeare Observer"); //TODO act on return message and write proper Exception
 		};
-		Thread observerThread = new Thread(Native.INSTANCE::observe, "AppearanceObserver");
+		observerThread = new Thread(Native.INSTANCE::observe, "AppearanceObserver");
 		observerThread.setDaemon(true);
-		observerThread.start();
+		//observerThread.start(); //terminates, but no Java Call. Message Box ("theme Changed") appears only with a message Box in stopObserveing
+		observerThread.run(); //calls java Method, but stopObserving does not terminate the programm
 	}
 
 	void stopObserving() {
+		//observerThread.stop(); //is deprecated, unsafe and should not be used. (I don't think it would work)
+		System.out.println("stopping");
 		Native.INSTANCE.stopObserving();
 	}
 
