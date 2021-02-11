@@ -5,7 +5,6 @@ import org.cryptomator.integrations.uiappearance.UiAppearanceException;
 import org.cryptomator.integrations.uiappearance.UiAppearanceListener;
 import org.cryptomator.integrations.uiappearance.UiAppearanceProvider;
 
-import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collection;
 
