@@ -17,22 +17,6 @@ JNIEXPORT jint JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_0
 
 /*
  * Class:     org_cryptomator_windows_uiappearance_WinAppearance_Native
- * Method:    setToLight
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_setToLight
-  (JNIEnv *, jobject);
-
-/*
- * Class:     org_cryptomator_windows_uiappearance_WinAppearance_Native
- * Method:    setToDark
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_org_cryptomator_windows_uiappearance_WinAppearance_00024Native_setToDark
-  (JNIEnv *, jobject);
-
-/*
- * Class:     org_cryptomator_windows_uiappearance_WinAppearance_Native
  * Method:    waitForNextThemeChange
  * Signature: ()V
  */

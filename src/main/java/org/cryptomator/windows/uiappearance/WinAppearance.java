@@ -36,14 +36,6 @@ class WinAppearance {
 		return observer;
 	}
 
-	void setToLight() {
-		Native.INSTANCE.setToLight();
-	}
-
-	void setToDark() {
-		Native.INSTANCE.setToDark();
-	}
-
 	// initialization-on-demand pattern, as loading the .dll is an expensive operation
 	private static class Native {
 		static final WinAppearance.Native INSTANCE = new WinAppearance.Native();
@@ -53,10 +45,6 @@ class WinAppearance {
 		}
 
 		public native int getCurrentTheme();
-
-		public native void setToLight();
-
-		public native void setToDark();
 
 		// blocks until changed
 		public native void waitForNextThemeChange();

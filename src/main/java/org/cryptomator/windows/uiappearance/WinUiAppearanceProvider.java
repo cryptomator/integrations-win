@@ -27,14 +27,7 @@ public class WinUiAppearanceProvider implements UiAppearanceProvider, UiAppearan
 
 	@Override
 	public void adjustToTheme(Theme theme) {
-		switch (theme) {
-			case LIGHT:
-				winAppearance.setToLight();
-				break;
-			case DARK:
-				winAppearance.setToDark();
-				break;
-		}
+		// no-op
 	}
 
 	@Override
