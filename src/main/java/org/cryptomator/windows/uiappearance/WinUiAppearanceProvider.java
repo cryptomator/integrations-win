@@ -48,7 +48,7 @@ public class WinUiAppearanceProvider implements UiAppearanceProvider {
 		}
 	}
 
-	// called from native code, to notify all observes of latest change
+	// notification hub called from single observer
 	private void systemAppearanceChanged(Theme theme) {
 		for (var listener : registeredListeners) {
 			listener.systemAppearanceChanged(theme);
