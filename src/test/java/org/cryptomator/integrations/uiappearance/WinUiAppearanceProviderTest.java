@@ -23,10 +23,11 @@ public class WinUiAppearanceProviderTest {
 		UiAppearanceListener listener = theme -> System.out.println(theme.toString());
 		appearanceProvider.addListener(listener);
 		try {
-			Thread.sleep(5000);
+			Thread.sleep(15000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		appearanceProvider.removeListener(listener);
 	}
+
 }

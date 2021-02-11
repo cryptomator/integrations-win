@@ -9,10 +9,11 @@ import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class WinUiAppearanceProvider implements UiAppearanceProvider, WinAppearanceListener {
+public class WinUiAppearanceProvider implements UiAppearanceProvider, UiAppearanceListener {
 
 	private final WinAppearance winAppearance;
 	private final Collection<UiAppearanceListener> registeredListeners;
+	private volatile Thread appearanceObserver;
 
 	public WinUiAppearanceProvider() {
 		this.winAppearance = new WinAppearance();
@@ -33,14 +34,16 @@ public class WinUiAppearanceProvider implements UiAppearanceProvider, WinAppeara
 			case DARK:
 				winAppearance.setToDark();
 				break;
-		}	}
+		}
+	}
 
 	@Override
 	public synchronized void addListener(UiAppearanceListener listener) throws UiAppearanceException {
 		var wasEmpty = registeredListeners.isEmpty();
 		registeredListeners.add(listener);
 		if (wasEmpty) {
-			winAppearance.startObserving(this);
+			assert this.appearanceObserver == null;
+			this.appearanceObserver = winAppearance.startObserving(this);
 		}
 	}
 
@@ -48,16 +51,16 @@ public class WinUiAppearanceProvider implements UiAppearanceProvider, WinAppeara
 	public synchronized void removeListener(UiAppearanceListener listener) {
 		registeredListeners.remove(listener);
 		if (registeredListeners.isEmpty()) {
-			winAppearance.stopObserving();
+			this.appearanceObserver.interrupt();
+			this.appearanceObserver = null;
 		}
 	}
 
 	//called from native code, to notify all observes of latest change
 	@Override
-	public void systemAppearanceChanged() {
-		var currentTheme = getSystemTheme();
+	public void systemAppearanceChanged(Theme theme) {
 		for (var listener : registeredListeners) {
-			listener.systemAppearanceChanged(currentTheme);
+			listener.systemAppearanceChanged(theme);
 		}
 	}
 }

@@ -5,17 +5,7 @@ import org.cryptomator.integrations.uiappearance.UiAppearanceException;
 import org.cryptomator.integrations.uiappearance.UiAppearanceListener;
 import org.cryptomator.windows.common.NativeLibLoader;
 
-import java.util.HashMap;
-import java.util.Map;
-
 class WinAppearance {
-
-	private final Map<UiAppearanceListener, Long> registeredObservers;
-	private Thread observerThread;
-
-	public WinAppearance() {
-		this.registeredObservers = new HashMap<>();
-	}
 
 	public Theme getSystemTheme() {
 		int userTheme = Native.INSTANCE.getCurrentTheme();
@@ -29,20 +19,21 @@ class WinAppearance {
 		}
 	}
 
-	void startObserving(WinAppearanceListener listener) throws UiAppearanceException {
-		if (Native.INSTANCE.prepareObserving(listener) != 0){
-			throw new UiAppearanceException("failed to prepeare Observer"); //TODO act on return message and write proper Exception
-		};
-		observerThread = new Thread(Native.INSTANCE::observe, "AppearanceObserver");
-		observerThread.setDaemon(true);
-		//observerThread.start(); //terminates, but no Java Call. Message Box ("theme Changed") appears only with a message Box in stopObserveing
-		observerThread.run(); //calls java Method, but stopObserving does not terminate the programm
-	}
-
-	void stopObserving() {
-		//observerThread.stop(); //is deprecated, unsafe and should not be used. (I don't think it would work)
-		System.out.println("stopping");
-		Native.INSTANCE.stopObserving();
+	Thread startObserving(UiAppearanceListener listener) throws UiAppearanceException {
+		Thread observer = new Thread(() -> {
+			Theme theme = getSystemTheme();
+			while (!Thread.interrupted()) {
+				Native.INSTANCE.waitForNextThemeChange();
+				Theme newTheme = getSystemTheme();
+				if (newTheme != theme) {
+					listener.systemAppearanceChanged(newTheme);
+					theme = newTheme;
+				}
+			}
+		}, "AppearanceObserver");
+		observer.setDaemon(true);
+		observer.start();
+		return observer;
 	}
 
 	void setToLight() {
@@ -67,11 +58,7 @@ class WinAppearance {
 
 		public native void setToDark();
 
-		public native int prepareObserving(WinAppearanceListener listener);
-
-		// will block, to be called in a new thread
-		public native void observe();
-
-		public native void stopObserving();
+		// blocks until changed
+		public native void waitForNextThemeChange();
 	}
 }
