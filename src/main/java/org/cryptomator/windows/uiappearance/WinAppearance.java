@@ -4,36 +4,60 @@ import org.cryptomator.integrations.uiappearance.Theme;
 import org.cryptomator.integrations.uiappearance.UiAppearanceException;
 import org.cryptomator.integrations.uiappearance.UiAppearanceListener;
 import org.cryptomator.windows.common.NativeLibLoader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.function.Consumer;
 
 class WinAppearance {
 
+	private static final Logger LOG = LoggerFactory.getLogger(WinAppearance.class);
+	private static final Theme DEFAULT_THEME = Theme.LIGHT;
+
 	public Theme getSystemTheme() {
-		int userTheme = Native.INSTANCE.getCurrentTheme();
-		switch (userTheme) {
+		try {
+			return getSystemThemeInternal();
+		} catch (IllegalStateException e) {
+			LOG.warn("Failed to determine system theme", e);
+			return DEFAULT_THEME;
+		}
+	}
+
+	private Theme getSystemThemeInternal() throws IllegalStateException {
+		// TODO refactor using switch expressions, once we upgraded to JDK 14+
+		switch (Native.INSTANCE.getCurrentTheme()) {
 			case 0:
 				return Theme.DARK;
 			case 1:
 				return Theme.LIGHT;
 			default:
-				return Theme.LIGHT;
+				return DEFAULT_THEME;
 		}
 	}
 
-	Thread startObserving(UiAppearanceListener listener) throws UiAppearanceException {
+	public Thread startObserving(Consumer<Theme> listener) {
 		Thread observer = new Thread(() -> {
-			Theme theme = getSystemTheme();
-			while (!Thread.interrupted()) {
-				Native.INSTANCE.waitForNextThemeChange();
-				Theme newTheme = getSystemTheme();
-				if (newTheme != theme) {
-					listener.systemAppearanceChanged(newTheme);
-					theme = newTheme;
-				}
+			try {
+				notifyOnThemeChange(listener);
+			} catch (IllegalStateException e) {
+				LOG.warn("Failed to observe system theme", e);
 			}
 		}, "AppearanceObserver");
 		observer.setDaemon(true);
 		observer.start();
 		return observer;
+	}
+
+	private void notifyOnThemeChange(Consumer<Theme> listener) throws IllegalStateException {
+		Theme currentTheme = getSystemThemeInternal();
+		while (!Thread.interrupted()) {
+			Native.INSTANCE.waitForNextThemeChange();
+			Theme newTheme = getSystemThemeInternal();
+			if (newTheme != currentTheme) {
+				listener.accept(newTheme);
+				currentTheme = newTheme;
+			}
+		}
 	}
 
 	// initialization-on-demand pattern, as loading the .dll is an expensive operation
@@ -44,9 +68,9 @@ class WinAppearance {
 			NativeLibLoader.loadLib();
 		}
 
-		public native int getCurrentTheme();
+		public native int getCurrentTheme() throws IllegalStateException;
 
 		// blocks until changed
-		public native void waitForNextThemeChange();
+		public native void waitForNextThemeChange() throws IllegalStateException;
 	}
 }

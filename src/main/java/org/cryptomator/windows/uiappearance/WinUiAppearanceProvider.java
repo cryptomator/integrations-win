@@ -8,7 +8,7 @@ import org.cryptomator.integrations.uiappearance.UiAppearanceProvider;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class WinUiAppearanceProvider implements UiAppearanceProvider, UiAppearanceListener {
+public class WinUiAppearanceProvider implements UiAppearanceProvider {
 
 	private final WinAppearance winAppearance;
 	private final Collection<UiAppearanceListener> registeredListeners;
@@ -30,12 +30,12 @@ public class WinUiAppearanceProvider implements UiAppearanceProvider, UiAppearan
 	}
 
 	@Override
-	public synchronized void addListener(UiAppearanceListener listener) throws UiAppearanceException {
+	public synchronized void addListener(UiAppearanceListener listener) {
 		var wasEmpty = registeredListeners.isEmpty();
 		registeredListeners.add(listener);
 		if (wasEmpty) {
 			assert this.appearanceObserver == null;
-			this.appearanceObserver = winAppearance.startObserving(this);
+			this.appearanceObserver = winAppearance.startObserving(this::systemAppearanceChanged);
 		}
 	}
 
@@ -48,9 +48,8 @@ public class WinUiAppearanceProvider implements UiAppearanceProvider, UiAppearan
 		}
 	}
 
-	//called from native code, to notify all observes of latest change
-	@Override
-	public void systemAppearanceChanged(Theme theme) {
+	// called from native code, to notify all observes of latest change
+	private void systemAppearanceChanged(Theme theme) {
 		for (var listener : registeredListeners) {
 			listener.systemAppearanceChanged(theme);
 		}
