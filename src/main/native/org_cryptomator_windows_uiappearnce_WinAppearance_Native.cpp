@@ -7,17 +7,6 @@
 #include <jni.h>
 #include <windows.h>
 
-// System.out.println(...)
-void log(JNIEnv *env, const char *str) {
-    jclass syscls = env->FindClass("java/lang/System");
-    jfieldID fid = env->GetStaticFieldID(syscls, "out", "Ljava/io/PrintStream;");
-    jobject out = env->GetStaticObjectField(syscls, fid);
-    jclass pscls = env->FindClass("java/io/PrintStream");
-    jmethodID println = env->GetMethodID(pscls, "println", "(Ljava/lang/String;)V");
-    jstring jStr = env->NewStringUTF(str);
-    env->CallVoidMethod(out, println, jStr);
-}
-
 void throwIllegalStateException(JNIEnv *env, const char* message) {
     jclass exClass = env->FindClass("java/lang/IllegalStateException");
     if (exClass != NULL) {
