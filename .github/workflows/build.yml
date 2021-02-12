@@ -22,13 +22,7 @@ jobs:
         run: mvn versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
       - name: Build and Test
         id: buildAndTest
-        run: mvn -B clean install jacoco:report -Pdependency-check
-      - name: Upload code coverage report
-        id: codacyCoverageReporter
-        run: bash <(curl -Ls https://coverage.codacy.com/get.sh)
-        env:
-          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
-        continue-on-error: true
+        run: mvn -B clean install -Pdependency-check
       - uses: actions/upload-artifact@v2
         with:
           name: artifacts
