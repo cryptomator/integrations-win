@@ -159,7 +159,7 @@
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <executable>mingw32-make</executable>
+                            <executable>make</executable>
                             <workingDirectory>${project.basedir}</workingDirectory>
                             <environmentVariables>
                                 <JAVA_HOME>${java.home}</JAVA_HOME>

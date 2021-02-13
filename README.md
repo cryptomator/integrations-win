@@ -8,4 +8,5 @@ Since this project involves JNI, you'll Java as well as GCC build tools:
 
 * JDK 11
 * Maven
-* MinGW GCC compiler (`choco install mingw`)
+* MinGW GCC compiler (`choco install mingw --version=10.2.0`)
+* Make (`choco install make`)
