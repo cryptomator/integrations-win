@@ -20,7 +20,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: Enforce project version ${{ github.event.release.tag_name }}
-        run: mvn versions:set -B -DnewVersion=${{ github.event.release.tag_name }}
+        run: mvn versions:set -B -DnewVersion="${{ github.event.release.tag_name }}"
       - name: Deploy
         run: mvn deploy -B -DskipTests -Psign,deploy-github --no-transfer-progress
         env:
