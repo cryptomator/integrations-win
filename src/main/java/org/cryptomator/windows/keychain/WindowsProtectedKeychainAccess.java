@@ -138,6 +138,9 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 		return !keychainPaths.isEmpty();
 	}
 
+	@Override
+	public boolean isLocked() { return false; }
+
 	private byte[] generateSalt() {
 		byte[] result = new byte[2 * Long.BYTES];
 		UUID uuid = UUID.randomUUID();
