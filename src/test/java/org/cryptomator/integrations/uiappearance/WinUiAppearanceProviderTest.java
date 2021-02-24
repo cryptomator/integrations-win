@@ -44,4 +44,11 @@ public class WinUiAppearanceProviderTest {
 		appearanceProvider.removeListener(listener);
 	}
 
+	@Test
+	@DisplayName("add theme listener, wait 10s, remove theme listener")
+	public void testRemoveListenerIfNoneIsRegistered() {
+		UiAppearanceListener listener = theme -> System.out.println(theme.toString());
+		appearanceProvider.removeListener(listener);
+	}
+
 }
