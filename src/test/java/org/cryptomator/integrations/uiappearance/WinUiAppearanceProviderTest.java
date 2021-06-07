@@ -44,4 +44,11 @@ public class WinUiAppearanceProviderTest {
 		appearanceProvider.removeListener(listener);
 	}
 
+	@Test
+	@DisplayName("test removing a non-registered listener is a no-op")
+	public void testRemoveListenerIfNoneIsRegistered() {
+		UiAppearanceListener listener = theme -> System.out.println(theme.toString());
+		appearanceProvider.removeListener(listener);
+	}
+
 }
