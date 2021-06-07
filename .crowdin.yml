@@ -4,5 +4,3 @@ files:
     translation: /src/main/resources/WinIntegrationsBundle_%two_letters_code%.properties
     escape_quotes: 0
     escape_special_characters: 0
-    skip_untranslated_files: true
-    skip_untranslated_strings: true
