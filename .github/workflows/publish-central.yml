@@ -28,9 +28,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: Enforce project version ${{ github.event.inputs.tag }}
-        run: mvn versions:set -B -DnewVersion=${{ github.event.inputs.tag }}
+        run: mvn versions:set -B -DnewVersion="${{ github.event.inputs.tag }}"
       - name: Deploy
-        run: mvn deploy -B -DskipTests -Psign,deploy-central --no-transfer-progress
+        run: mvn deploy -B -DskipTests -Psign -Pdeploy-central --no-transfer-progress
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
