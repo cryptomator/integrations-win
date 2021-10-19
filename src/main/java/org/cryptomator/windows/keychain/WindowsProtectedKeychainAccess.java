@@ -8,6 +8,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 import org.cryptomator.integrations.keychain.KeychainAccessException;
 import org.cryptomator.integrations.keychain.KeychainAccessProvider;
+import org.cryptomator.windows.common.Localization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +83,11 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 		} else {
 			return path;
 		}
+	}
+
+	@Override
+	public String displayName() {
+		return Localization.get().getString("org.cryptomator.windows.keychain.displayName");
 	}
 
 	@Override

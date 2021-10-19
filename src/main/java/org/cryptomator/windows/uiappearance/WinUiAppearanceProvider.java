@@ -1,7 +1,6 @@
 package org.cryptomator.windows.uiappearance;
 
 import org.cryptomator.integrations.uiappearance.Theme;
-import org.cryptomator.integrations.uiappearance.UiAppearanceException;
 import org.cryptomator.integrations.uiappearance.UiAppearanceListener;
 import org.cryptomator.integrations.uiappearance.UiAppearanceProvider;
 
@@ -42,7 +41,7 @@ public class WinUiAppearanceProvider implements UiAppearanceProvider {
 	@Override
 	public synchronized void removeListener(UiAppearanceListener listener) {
 		registeredListeners.remove(listener);
-		if (registeredListeners.isEmpty()) {
+		if (appearanceObserver != null && registeredListeners.isEmpty()) {
 			this.appearanceObserver.interrupt();
 			this.appearanceObserver = null;
 		}
