@@ -6,6 +6,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
+import org.cryptomator.integrations.common.OperatingSystem;
+import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.keychain.KeychainAccessException;
 import org.cryptomator.integrations.keychain.KeychainAccessProvider;
 import org.cryptomator.windows.common.Localization;
@@ -37,6 +39,8 @@ import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+@Priority(1000)
+@OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsProtectedKeychainAccess.class);
@@ -91,7 +95,13 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	}
 
 	@Override
+	@Deprecated
 	public void storePassphrase(String key, CharSequence passphrase) throws KeychainAccessException {
+		storePassphrase(key, null, passphrase);
+	}
+
+	@Override
+	public void storePassphrase(String key, String displayName, CharSequence passphrase) throws KeychainAccessException {
 		loadKeychainEntriesIfNeeded();
 		ByteBuffer buf = UTF_8.encode(CharBuffer.wrap(passphrase));
 		byte[] cleartext = new byte[buf.remaining()];
@@ -132,7 +142,13 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	}
 
 	@Override
+	@Deprecated
 	public void changePassphrase(String key, CharSequence passphrase) throws KeychainAccessException {
+		changePassphrase(key, null, passphrase);
+	}
+
+	@Override
+	public void changePassphrase(String key, String displayName, CharSequence passphrase) throws KeychainAccessException {
 		loadKeychainEntriesIfNeeded();
 		if (keychainEntries.remove(key) != null) {
 			storePassphrase(key, passphrase);

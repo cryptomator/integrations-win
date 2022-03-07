@@ -1,5 +1,7 @@
 package org.cryptomator.windows.uiappearance;
 
+import org.cryptomator.integrations.common.OperatingSystem;
+import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.uiappearance.Theme;
 import org.cryptomator.integrations.uiappearance.UiAppearanceListener;
 import org.cryptomator.integrations.uiappearance.UiAppearanceProvider;
@@ -7,6 +9,8 @@ import org.cryptomator.integrations.uiappearance.UiAppearanceProvider;
 import java.util.ArrayList;
 import java.util.Collection;
 
+@Priority(1000)
+@OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WinUiAppearanceProvider implements UiAppearanceProvider {
 
 	private final WinAppearance winAppearance;
