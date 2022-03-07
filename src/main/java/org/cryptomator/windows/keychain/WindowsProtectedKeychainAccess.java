@@ -1,7 +1,5 @@
 package org.cryptomator.windows.keychain;
 
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
@@ -44,7 +42,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsProtectedKeychainAccess.class);
-	private static final char PATH_LIST_SEP = ':';
+	private static final String PATH_LIST_SEP = ":";
 	private static final Path USER_HOME_REL = Path.of("~");
 	private static final Path USER_HOME = Path.of(System.getProperty("user.home"));
 	private static final Gson GSON = new GsonBuilder() //
@@ -73,8 +71,8 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 		if (rawPaths == null) {
 			return List.of();
 		} else {
-			return Splitter.on(PATH_LIST_SEP).splitToStream(rawPaths)
-					.filter(Predicate.not(Strings::isNullOrEmpty))
+			return Arrays.stream(rawPaths.split(PATH_LIST_SEP))
+					.filter(Predicate.not(String::isEmpty))
 					.map(Path::of)
 					.map(WindowsProtectedKeychainAccess::resolveHomeDir)
 					.collect(Collectors.toList());
