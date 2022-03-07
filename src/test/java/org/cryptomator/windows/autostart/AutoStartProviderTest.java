@@ -1,5 +1,6 @@
-package org.cryptomator.integrations.autostart;
+package org.cryptomator.windows.autostart;
 
+import org.cryptomator.integrations.autostart.AutoStartProvider;
 import org.cryptomator.windows.autostart.WindowsAutoStart;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -12,11 +13,8 @@ public class AutoStartProviderTest {
 	@Test
 	@DisplayName("WindowsAutoStart can be loaded")
 	public void testLoadWindowsAutoStart() {
-		var loadedProviders = ServiceLoader.load(AutoStartProvider.class);
-		var windowsAutoStartProvider = loadedProviders.stream()
-				.filter(provider -> provider.type().equals(WindowsAutoStart.class))
-				.map(ServiceLoader.Provider::get)
-				.findAny();
+		var windowsAutoStartProvider = AutoStartProvider.get();
 		Assertions.assertTrue(windowsAutoStartProvider.isPresent());
+		Assertions.assertInstanceOf(WindowsAutoStart.class, windowsAutoStartProvider.get());
 	}
 }

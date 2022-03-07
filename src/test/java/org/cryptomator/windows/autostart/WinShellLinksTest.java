@@ -1,6 +1,5 @@
 package org.cryptomator.windows.autostart;
 
-import com.google.common.base.Splitter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +15,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 public class WinShellLinksTest {
 
@@ -29,7 +29,7 @@ public class WinShellLinksTest {
 	}
 
 	@Test
-	public void testShellLinkCreation(@TempDir Path tempDir) throws IOException {
+	public void testShellLinkCreation() {
 		WinShellLinks winShellLinks = new WinShellLinks();
 		shortcut = linkTarget.getParent().resolve("short.lnk");
 
@@ -80,7 +80,11 @@ public class WinShellLinksTest {
 		protected byte[] convert(Object source, Class<?> targetType) throws ArgumentConversionException {
 			assert source instanceof String;
 			assert byte[].class.isAssignableFrom(targetType);
-			var intStream = Splitter.on(' ').splitToStream((String) source).mapToInt(s -> Integer.valueOf(s, 16));
+			return convertString((String) source);
+		}
+
+		private byte[] convertString(String source) {
+			var intStream = Arrays.stream(source.split(" ")).mapToInt(s -> Integer.valueOf(s, 16));
 			ByteArrayOutputStream result = new ByteArrayOutputStream();
 			intStream.forEachOrdered(result::write);
 			return result.toByteArray();

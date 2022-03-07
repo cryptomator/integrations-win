@@ -1,5 +1,7 @@
-package org.cryptomator.integrations.uiappearance;
+package org.cryptomator.windows.uiappearance;
 
+import org.cryptomator.integrations.uiappearance.Theme;
+import org.cryptomator.integrations.uiappearance.UiAppearanceListener;
 import org.cryptomator.windows.uiappearance.WinUiAppearanceProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
