@@ -6,6 +6,11 @@ on:
         description: 'Tag'
         required: true
         default: '0.0.0'
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   publish:
     runs-on: windows-latest
@@ -26,7 +31,7 @@ jobs:
       - name: Enforce project version ${{ github.event.inputs.tag }}
         run: mvn versions:set -B -DnewVersion="${{ github.event.inputs.tag }}"
       - name: Deploy
-        run: mvn deploy -B -DskipTests -Psign -Pdeploy-central --no-transfer-progress
+        run: mvn deploy -B -DskipTests -Psign,deploy-central --no-transfer-progress
         env:
           MAVEN_OPTS: >
             --add-opens=java.base/java.util=ALL-UNNAMED
