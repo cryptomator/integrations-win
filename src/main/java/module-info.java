@@ -10,6 +10,8 @@ module org.cryptomator.integrations.win {
 	requires org.slf4j;
 	requires com.google.gson;
 
+	opens org.cryptomator.windows.keychain to com.google.gson;
+
 	provides AutoStartProvider with WindowsAutoStart;
 	provides KeychainAccessProvider with WindowsProtectedKeychainAccess;
 	provides UiAppearanceProvider with WinUiAppearanceProvider;

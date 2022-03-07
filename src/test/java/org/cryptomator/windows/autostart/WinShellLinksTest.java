@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 public class WinShellLinksTest {
 
@@ -74,7 +75,7 @@ public class WinShellLinksTest {
 		}
 	}
 
-	private static class ByteArrayConverter extends SimpleArgumentConverter {
+	public static class ByteArrayConverter extends SimpleArgumentConverter {
 
 		@Override
 		protected byte[] convert(Object source, Class<?> targetType) throws ArgumentConversionException {
@@ -84,7 +85,7 @@ public class WinShellLinksTest {
 		}
 
 		private byte[] convertString(String source) {
-			var intStream = Arrays.stream(source.split(" ")).mapToInt(s -> Integer.valueOf(s, 16));
+			var intStream = Arrays.stream(source.split(Pattern.quote(" "))).mapToInt(s -> Integer.valueOf(s, 16));
 			ByteArrayOutputStream result = new ByteArrayOutputStream();
 			intStream.forEachOrdered(result::write);
 			return result.toByteArray();
