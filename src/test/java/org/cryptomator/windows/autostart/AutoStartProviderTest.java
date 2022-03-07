@@ -1,12 +1,9 @@
 package org.cryptomator.windows.autostart;
 
 import org.cryptomator.integrations.autostart.AutoStartProvider;
-import org.cryptomator.windows.autostart.WindowsAutoStart;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.ServiceLoader;
 
 public class AutoStartProviderTest {
 

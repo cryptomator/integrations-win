@@ -1,7 +1,6 @@
 package org.cryptomator.windows.keychain;
 
 import org.cryptomator.integrations.keychain.KeychainAccessProvider;
-import org.cryptomator.windows.keychain.WindowsProtectedKeychainAccess;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
