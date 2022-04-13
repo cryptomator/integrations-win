@@ -93,12 +93,6 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	}
 
 	@Override
-	@Deprecated
-	public void storePassphrase(String key, CharSequence passphrase) throws KeychainAccessException {
-		storePassphrase(key, null, passphrase);
-	}
-
-	@Override
 	public void storePassphrase(String key, String displayName, CharSequence passphrase) throws KeychainAccessException {
 		loadKeychainEntriesIfNeeded();
 		ByteBuffer buf = UTF_8.encode(CharBuffer.wrap(passphrase));
@@ -140,12 +134,6 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	}
 
 	@Override
-	@Deprecated
-	public void changePassphrase(String key, CharSequence passphrase) throws KeychainAccessException {
-		changePassphrase(key, null, passphrase);
-	}
-
-	@Override
 	public void changePassphrase(String key, String displayName, CharSequence passphrase) throws KeychainAccessException {
 		loadKeychainEntriesIfNeeded();
 		if (keychainEntries.remove(key) != null) {
@@ -159,7 +147,9 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	}
 
 	@Override
-	public boolean isLocked() { return false; }
+	public boolean isLocked() {
+		return false;
+	}
 
 	private byte[] generateSalt() {
 		byte[] result = new byte[2 * Long.BYTES];
