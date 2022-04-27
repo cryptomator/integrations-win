@@ -2,6 +2,8 @@ package org.cryptomator.windows.autostart;
 
 import org.cryptomator.integrations.autostart.AutoStartProvider;
 import org.cryptomator.integrations.autostart.ToggleAutoStartFailedException;
+import org.cryptomator.integrations.common.OperatingSystem;
+import org.cryptomator.integrations.common.Priority;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +18,8 @@ import java.util.Optional;
  * <p>
  * The above actions are done by checking/adding/removing in the directory {@value RELATIVE_STARTUP_FOLDER_ENTRY} a resource (.lnk file) for Cryptomator.
  */
+@Priority(1000)
+@OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WindowsAutoStart implements AutoStartProvider {
 
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsAutoStart.class);
@@ -57,11 +61,9 @@ public class WindowsAutoStart implements AutoStartProvider {
 		try {
 			Files.delete(absoluteStartupEntryPath);
 			LOG.debug("Successfully deleted {}.", absoluteStartupEntryPath);
-			return;
 		} catch (NoSuchFileException e) {
 			//also okay
 			LOG.debug("File {} not present. Nothing to do.", absoluteStartupEntryPath);
-			return;
 		} catch (IOException e) {
 			LOG.debug("Failed to delete entry from auto start folder.", e);
 			throw new ToggleAutoStartFailedException("Disabling auto start failed using startup folder.", e);

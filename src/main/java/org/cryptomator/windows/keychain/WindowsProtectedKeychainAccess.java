@@ -1,11 +1,11 @@
 package org.cryptomator.windows.keychain;
 
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
+import org.cryptomator.integrations.common.OperatingSystem;
+import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.keychain.KeychainAccessException;
 import org.cryptomator.integrations.keychain.KeychainAccessProvider;
 import org.cryptomator.windows.common.Localization;
@@ -37,10 +37,12 @@ import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+@Priority(1000)
+@OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsProtectedKeychainAccess.class);
-	private static final char PATH_LIST_SEP = ':';
+	private static final String PATH_LIST_SEP = ":";
 	private static final Path USER_HOME_REL = Path.of("~");
 	private static final Path USER_HOME = Path.of(System.getProperty("user.home"));
 	private static final Gson GSON = new GsonBuilder() //
@@ -69,8 +71,8 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 		if (rawPaths == null) {
 			return List.of();
 		} else {
-			return Splitter.on(PATH_LIST_SEP).splitToStream(rawPaths)
-					.filter(Predicate.not(Strings::isNullOrEmpty))
+			return Arrays.stream(rawPaths.split(PATH_LIST_SEP))
+					.filter(Predicate.not(String::isEmpty))
 					.map(Path::of)
 					.map(WindowsProtectedKeychainAccess::resolveHomeDir)
 					.collect(Collectors.toList());
@@ -91,7 +93,7 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	}
 
 	@Override
-	public void storePassphrase(String key, CharSequence passphrase) throws KeychainAccessException {
+	public void storePassphrase(String key, String displayName, CharSequence passphrase) throws KeychainAccessException {
 		loadKeychainEntriesIfNeeded();
 		ByteBuffer buf = UTF_8.encode(CharBuffer.wrap(passphrase));
 		byte[] cleartext = new byte[buf.remaining()];
@@ -132,7 +134,7 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	}
 
 	@Override
-	public void changePassphrase(String key, CharSequence passphrase) throws KeychainAccessException {
+	public void changePassphrase(String key, String displayName, CharSequence passphrase) throws KeychainAccessException {
 		loadKeychainEntriesIfNeeded();
 		if (keychainEntries.remove(key) != null) {
 			storePassphrase(key, passphrase);
@@ -145,7 +147,9 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	}
 
 	@Override
-	public boolean isLocked() { return false; }
+	public boolean isLocked() {
+		return false;
+	}
 
 	private byte[] generateSalt() {
 		byte[] result = new byte[2 * Long.BYTES];
