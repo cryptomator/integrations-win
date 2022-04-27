@@ -9,6 +9,10 @@ on:
   schedule:
     - cron: '0 8 * * 0'
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   analyse:
     name: Analyse

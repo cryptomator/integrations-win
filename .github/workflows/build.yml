@@ -1,6 +1,11 @@
 name: Build
 on:
   [push]
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     name: Build and Test
