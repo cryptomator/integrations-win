@@ -18,7 +18,7 @@ import java.util.Optional;
  * Checks, en- and disables autostart for an application on Windows using the startup folder.
  * <p>
  * The above actions are done by checking/adding/removing in the directory {@value RELATIVE_STARTUP_FOLDER} a shell link (.lnk).
- * The filename of the shell link is given by the JVM property {@value LNK_NAME_PROPERTY}. If the property is not set at class initialization, the start command of the calling process is used.
+ * The filename of the shell link is given by the JVM property {@value LNK_NAME_PROPERTY}. If the property is not set before object creation, the start command of the calling process is used.
  */
 @Priority(1000)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
