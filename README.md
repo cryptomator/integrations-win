@@ -5,7 +5,7 @@ Windows-specific implementations of [integrations-api](https://github.com/crypto
 ## Config
 
 This project uses the following JVM properties:
-* `org.cryptomator.integrations_win.autostart.shellinkname` - Name of the shell link, which is placed in the Windows startup folder to start application on user login
+* `org.cryptomator.integrations_win.autostart.shellLinkName` - Name of the shell link, which is placed in the Windows startup folder to start application on user login
 
 ## Building
 
