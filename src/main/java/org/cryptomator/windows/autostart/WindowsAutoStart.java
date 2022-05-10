@@ -32,20 +32,20 @@ public class WindowsAutoStart implements AutoStartProvider {
 	private static final String LNK_NAME_PROPERTY = "org.cryptomator.integrations_win.autostart.shell_link_name";
 
 	private final WinShellLinks winShellLinks;
-	private final Supplier<Path> absoluteStartupEntryPath;
+	private final Supplier<Path> absStartupEntryPathSupplier;
 	private final Optional<String> exePath;
 
 	@SuppressWarnings("unused") // default constructor required by ServiceLoader
 	public WindowsAutoStart() {
 		this.winShellLinks = new WinShellLinks();
 		this.exePath = ProcessHandle.current().info().command();
-		this.absoluteStartupEntryPath = () -> Path.of(System.getProperty("user.home"), RELATIVE_STARTUP_FOLDER, this.getShellLinkName() + LNK_FILE_EXTENSION).toAbsolutePath();
+		this.absStartupEntryPathSupplier = () -> Path.of(System.getProperty("user.home"), RELATIVE_STARTUP_FOLDER, this.getShellLinkName() + LNK_FILE_EXTENSION).toAbsolutePath();
 	}
 
 	@Override
 	public boolean isEnabled() {
 		try {
-			return Files.exists(absoluteStartupEntryPath.get());
+			return Files.exists(absStartupEntryPathSupplier.get());
 		} catch (NoSuchElementException e) {
 			return false;
 		}
@@ -58,9 +58,9 @@ public class WindowsAutoStart implements AutoStartProvider {
 		}
 
 		assert exePath.isPresent();
-		int returnCode = winShellLinks.createShortcut(exePath.get(), absoluteStartupEntryPath.toString(), getShellLinkName());
+		int returnCode = winShellLinks.createShortcut(exePath.get(), absStartupEntryPathSupplier.get().toString(), getShellLinkName());
 		if (returnCode == 0) {
-			LOG.debug("Successfully created {}.", absoluteStartupEntryPath.get());
+			LOG.debug("Successfully created {}.", absStartupEntryPathSupplier.get());
 		} else {
 			throw new ToggleAutoStartFailedException("Enabling autostart using the startup folder failed. Windows error code: " + Integer.toHexString(returnCode));
 		}
@@ -69,13 +69,13 @@ public class WindowsAutoStart implements AutoStartProvider {
 	@Override
 	public synchronized void disable() throws ToggleAutoStartFailedException {
 		try {
-			Files.delete(absoluteStartupEntryPath.get());
-			LOG.debug("Successfully deleted {}.", absoluteStartupEntryPath.get());
+			Files.delete(absStartupEntryPathSupplier.get());
+			LOG.debug("Successfully deleted {}.", absStartupEntryPathSupplier.get());
 		} catch (NoSuchElementException e) {
 			throw new ToggleAutoStartFailedException("Disabling auto start failed using startup folder: Name of shell link is not defined.");
 		} catch (NoSuchFileException e) {
 			//also okay
-			LOG.debug("File {} not present. Nothing to do.", absoluteStartupEntryPath.get());
+			LOG.debug("File {} not present. Nothing to do.", absStartupEntryPathSupplier.get());
 		} catch (IOException e) {
 			LOG.debug("Failed to delete entry from auto start folder.", e);
 			throw new ToggleAutoStartFailedException("Disabling auto start failed using startup folder.", e);
