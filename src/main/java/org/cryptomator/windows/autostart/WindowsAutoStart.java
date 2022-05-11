@@ -11,46 +11,52 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 /**
- * Checks, en- and disables autostart for Cryptomator on Windows using the startup folder.
+ * Checks, en- and disables autostart for an application on Windows using the startup folder.
  * <p>
- * The above actions are done by checking/adding/removing in the directory {@value RELATIVE_STARTUP_FOLDER_ENTRY} a resource (.lnk file) for Cryptomator.
+ * The above actions are done by checking/adding/removing in the directory {@value RELATIVE_STARTUP_FOLDER} a shell link (.lnk).
+ * The filename of the shell link is given by the JVM property {@value LNK_NAME_PROPERTY}. If the property is not set before object creation, the start command of the calling process is used.
  */
 @Priority(1000)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WindowsAutoStart implements AutoStartProvider {
 
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsAutoStart.class);
-	private static final String RELATIVE_STARTUP_FOLDER_ENTRY = "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\Cryptomator.lnk";
+	private static final String RELATIVE_STARTUP_FOLDER = "AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\";
+	private static final String LNK_FILE_EXTENSION = ".lnk";
+	private static final String LNK_NAME_PROPERTY = "cryptomator.integrationsWin.autoStartShellLinkName";
 
 	private final WinShellLinks winShellLinks;
-	private final Path absoluteStartupEntryPath;
-	private final Optional<String> exePath;
+	private final Optional<String> shellLinkName;
+	private final Optional<Path> absStartupEntryPath;
+	private final Optional<Path> exePath;
 
 	@SuppressWarnings("unused") // default constructor required by ServiceLoader
 	public WindowsAutoStart() {
 		this.winShellLinks = new WinShellLinks();
-		this.exePath = ProcessHandle.current().info().command();
-		this.absoluteStartupEntryPath = Path.of(System.getProperty("user.home"), RELATIVE_STARTUP_FOLDER_ENTRY).toAbsolutePath();
+		this.exePath = ProcessHandle.current().info().command().map(Path::of);
+		this.shellLinkName = Optional.ofNullable(System.getProperty(LNK_NAME_PROPERTY)).or(() -> exePath.map(this::getExeBaseName));
+		this.absStartupEntryPath = shellLinkName.map(name -> Path.of(System.getProperty("user.home"), RELATIVE_STARTUP_FOLDER, name + LNK_FILE_EXTENSION).toAbsolutePath());
 	}
 
 	@Override
 	public boolean isEnabled() {
-		return Files.exists(absoluteStartupEntryPath);
+		return absStartupEntryPath.map(Files::exists).orElse(false);
 	}
 
 	@Override
 	public synchronized void enable() throws ToggleAutoStartFailedException {
 		if (exePath.isEmpty()) {
-			throw new ToggleAutoStartFailedException("Enabling autostart using the startup folder failed: Path to Cryptomator executable is not set");
+			throw new ToggleAutoStartFailedException("Enabling autostart using the startup folder failed: Path to executable is not set");
 		}
 
-		assert exePath.isPresent();
-		int returnCode = winShellLinks.createShortcut(exePath.get(), absoluteStartupEntryPath.toString(), "Cryptomator");
+		assert exePath.isPresent() && absStartupEntryPath.isPresent() && shellLinkName.isPresent();
+		int returnCode = winShellLinks.createShortcut(exePath.get().toString(), absStartupEntryPath.get().toString(), shellLinkName.get());
 		if (returnCode == 0) {
-			LOG.debug("Successfully created {}.", absoluteStartupEntryPath);
+			LOG.debug("Successfully created {}.", absStartupEntryPath.get());
 		} else {
 			throw new ToggleAutoStartFailedException("Enabling autostart using the startup folder failed. Windows error code: " + Integer.toHexString(returnCode));
 		}
@@ -59,14 +65,25 @@ public class WindowsAutoStart implements AutoStartProvider {
 	@Override
 	public synchronized void disable() throws ToggleAutoStartFailedException {
 		try {
-			Files.delete(absoluteStartupEntryPath);
-			LOG.debug("Successfully deleted {}.", absoluteStartupEntryPath);
+			Files.delete(absStartupEntryPath.get());
+			LOG.debug("Successfully deleted {}.", absStartupEntryPath.get());
+		} catch (NoSuchElementException e) { //thrown by Optional::get
+			throw new ToggleAutoStartFailedException("Disabling auto start failed using startup folder: Name of shell link is not defined.");
 		} catch (NoSuchFileException e) {
 			//also okay
-			LOG.debug("File {} not present. Nothing to do.", absoluteStartupEntryPath);
+			LOG.debug("File {} not present. Nothing to do.", absStartupEntryPath.get());
 		} catch (IOException e) {
 			LOG.debug("Failed to delete entry from auto start folder.", e);
 			throw new ToggleAutoStartFailedException("Disabling auto start failed using startup folder.", e);
+		}
+	}
+
+	private String getExeBaseName(Path exePath) {
+		var name = exePath.getFileName().toString();
+		if (name.lastIndexOf('.') != -1) {
+			return name.substring(0, name.lastIndexOf('.'));
+		} else {
+			return name;
 		}
 	}
 
