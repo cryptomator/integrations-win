@@ -27,7 +27,7 @@ public class WindowsAutoStart implements AutoStartProvider {
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsAutoStart.class);
 	private static final String RELATIVE_STARTUP_FOLDER = "AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\";
 	private static final String LNK_FILE_EXTENSION = ".lnk";
-	private static final String LNK_NAME_PROPERTY = "org.cryptomator.integrations_win.autostart.shell_link_name";
+	private static final String LNK_NAME_PROPERTY = "cryptomator.integrationsWin.autoStartShellLinkName";
 
 	private final WinShellLinks winShellLinks;
 	private final Optional<String> shellLinkName;
