@@ -32,13 +32,13 @@ public class WindowsAutoStart implements AutoStartProvider {
 	private final WinShellLinks winShellLinks;
 	private final Optional<String> shellLinkName;
 	private final Optional<Path> absStartupEntryPath;
-	private final Optional<String> exePath;
+	private final Optional<Path> exePath;
 
 	@SuppressWarnings("unused") // default constructor required by ServiceLoader
 	public WindowsAutoStart() {
 		this.winShellLinks = new WinShellLinks();
-		this.exePath = ProcessHandle.current().info().command();
-		this.shellLinkName = getShellLinkName(exePath);
+		this.exePath = ProcessHandle.current().info().command().map(Path::of);
+		this.shellLinkName = Optional.ofNullable(System.getProperty(LNK_NAME_PROPERTY)).or(() -> exePath.map(this::getExeBaseName));
 		this.absStartupEntryPath = shellLinkName.map(name -> Path.of(System.getProperty("user.home"), RELATIVE_STARTUP_FOLDER, name + LNK_FILE_EXTENSION).toAbsolutePath());
 	}
 
@@ -53,8 +53,8 @@ public class WindowsAutoStart implements AutoStartProvider {
 			throw new ToggleAutoStartFailedException("Enabling autostart using the startup folder failed: Path to executable is not set");
 		}
 
-		assert exePath.isPresent();
-		int returnCode = winShellLinks.createShortcut(exePath.get(), absStartupEntryPath.get().toString(), shellLinkName.get());
+		assert exePath.isPresent() && absStartupEntryPath.isPresent() && shellLinkName.isPresent();
+		int returnCode = winShellLinks.createShortcut(exePath.get().toString(), absStartupEntryPath.get().toString(), shellLinkName.get());
 		if (returnCode == 0) {
 			LOG.debug("Successfully created {}.", absStartupEntryPath.get());
 		} else {
@@ -67,7 +67,7 @@ public class WindowsAutoStart implements AutoStartProvider {
 		try {
 			Files.delete(absStartupEntryPath.get());
 			LOG.debug("Successfully deleted {}.", absStartupEntryPath.get());
-		} catch (NoSuchElementException e) {
+		} catch (NoSuchElementException e) { //thrown by Optional::get
 			throw new ToggleAutoStartFailedException("Disabling auto start failed using startup folder: Name of shell link is not defined.");
 		} catch (NoSuchFileException e) {
 			//also okay
@@ -78,12 +78,12 @@ public class WindowsAutoStart implements AutoStartProvider {
 		}
 	}
 
-	private Optional<String> getShellLinkName(Optional<String> possibleFallback) {
-		var name = System.getProperty(LNK_NAME_PROPERTY);
-		if (name != null) {
-			return Optional.of(name);
+	private String getExeBaseName(Path exePath) {
+		var name = exePath.getFileName().toString();
+		if (name.lastIndexOf('.') != -1) {
+			return name.substring(0, name.lastIndexOf('.'));
 		} else {
-			return possibleFallback.map(s -> s.substring(s.lastIndexOf('\\') + 1, s.lastIndexOf('.')));
+			return name;
 		}
 	}
 
