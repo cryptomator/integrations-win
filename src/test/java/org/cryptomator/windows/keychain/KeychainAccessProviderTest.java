@@ -9,19 +9,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
 public class KeychainAccessProviderTest {
 
 	@BeforeAll
 	public static void setup(@TempDir Path tmpDir) {
 		Path keychainPath = tmpDir.resolve("keychain.tmp");
-		System.setProperty("cryptomator.keychainPath", keychainPath.toString());
+		System.setProperty("cryptomator.integrationsWin.keychainPaths", keychainPath.toString());
 	}
 
 	@Test
 	@DisplayName("WindowsProtectedKeychainAccess can be loaded")
 	public void testLoadWindowsProtectedKeychainAccess() {
-		Assumptions.assumeFalse(System.getProperty("cryptomator.keychainPath", "").isBlank());
+		Assertions.assertTrue(Objects.nonNull(System.getProperty("cryptomator.integrationsWin.keychainPaths")));
 		
 		var windowsKeychainAccessProvider = KeychainAccessProvider.get().findAny();
 		Assertions.assertTrue(windowsKeychainAccessProvider.isPresent());
