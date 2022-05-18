@@ -40,8 +40,8 @@ public class KeychainAccessProviderTest {
 		WindowsProtectedKeychainAccess keychainAccess;
 
 		@BeforeEach
-		public void init() throws IOException {
-			keychainPath = Path.of(System.getProperty("cryptomator.integrationsWin.keychainPaths"));
+		public void init(@TempDir Path tmpDir) throws IOException {
+			keychainPath = tmpDir.resolve("keychain.tmp");
 			Files.write(keychainPath, new byte[] {});
 			keychainAccess = (WindowsProtectedKeychainAccess) KeychainAccessProvider.get().findAny().get();
 		}
