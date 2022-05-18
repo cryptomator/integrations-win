@@ -26,9 +26,8 @@ public class KeychainAccessProviderTest {
 	@Test
 	@DisplayName("WindowsProtectedKeychainAccess can be loaded")
 	public void testLoadWindowsProtectedKeychainAccess() {
-		Assertions.assertTrue(Objects.nonNull(System.getProperty("cryptomator.integrationsWin.keychainPaths")));
-
 		var windowsKeychainAccessProvider = KeychainAccessProvider.get().findAny();
+
 		Assertions.assertTrue(windowsKeychainAccessProvider.isPresent());
 		Assertions.assertInstanceOf(WindowsProtectedKeychainAccess.class, windowsKeychainAccessProvider.get());
 	}
@@ -40,22 +39,22 @@ public class KeychainAccessProviderTest {
 		WindowsProtectedKeychainAccess keychainAccess;
 
 		@BeforeEach
-		public void init(@TempDir Path tmpDir) throws IOException {
+		public void init(@TempDir Path tmpDir) {
 			keychainPath = tmpDir.resolve("keychain.tmp");
-			Files.write(keychainPath, new byte[] {});
 			keychainAccess = (WindowsProtectedKeychainAccess) KeychainAccessProvider.get().findAny().get();
 		}
 
 		@Test
 		public void testNonExistingFileReturnsEmpty() throws KeychainAccessException, IOException {
-			Files.delete(keychainPath);
 			var result = keychainAccess.loadKeychainEntries(keychainPath);
 
 			Assertions.assertTrue(result.isEmpty());
 		}
 
 		@Test
-		public void testEmptyFileReturnsEmpty() throws KeychainAccessException {
+		public void testEmptyFileReturnsEmpty() throws KeychainAccessException, IOException {
+			Files.write(keychainPath, new byte[] {});
+
 			var result = keychainAccess.loadKeychainEntries(keychainPath);
 
 			Assertions.assertTrue(result.isEmpty());
