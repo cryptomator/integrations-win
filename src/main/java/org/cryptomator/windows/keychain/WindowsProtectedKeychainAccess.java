@@ -177,13 +177,14 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 		}
 	}
 
-	private Optional<Map<String, KeychainEntry>> loadKeychainEntries(Path keychainPath) throws KeychainAccessException {
+	//visible for testing
+	Optional<Map<String, KeychainEntry>> loadKeychainEntries(Path keychainPath) throws KeychainAccessException {
 		LOG.debug("Attempting to load keychain from {}", keychainPath);
 		Type type = new TypeToken<Map<String, KeychainEntry>>() {
 		}.getType();
 		try (InputStream in = Files.newInputStream(keychainPath, StandardOpenOption.READ); //
 			 Reader reader = new InputStreamReader(in, UTF_8)) {
-			return Optional.of(GSON.fromJson(reader, type));
+			return Optional.ofNullable(GSON.fromJson(reader, type));
 		} catch (NoSuchFileException | JsonParseException e) {
 			return Optional.empty();
 		} catch (IOException e) {
