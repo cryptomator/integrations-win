@@ -37,10 +37,15 @@ import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+/**
+ * Windows implementation for the {@link KeychainAccessProvider} based on the <a href="https://en.wikipedia.org/wiki/Data_Protection_API">data protection API</a>.
+ * The storage locations to check for encrypted data can be set with the JVM property {@value KEYCHAIN_PATHS_PROPERTY} as a colon({@value PATH_LIST_SEP}) separated list of paths.
+ */
 @Priority(1000)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 
+	private static final String KEYCHAIN_PATHS_PROPERTY = "cryptomator.integrationsWin.keychainPaths";
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsProtectedKeychainAccess.class);
 	private static final String PATH_LIST_SEP = ":";
 	private static final Path USER_HOME_REL = Path.of("~");
@@ -67,16 +72,12 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	}
 
 	private static List<Path> readKeychainPathsFromEnv() {
-		String rawPaths = System.getProperty("cryptomator.keychainPath");
-		if (rawPaths == null) {
-			return List.of();
-		} else {
-			return Arrays.stream(rawPaths.split(PATH_LIST_SEP))
-					.filter(Predicate.not(String::isEmpty))
-					.map(Path::of)
-					.map(WindowsProtectedKeychainAccess::resolveHomeDir)
-					.collect(Collectors.toList());
-		}
+		return Optional.ofNullable(System.getProperty(KEYCHAIN_PATHS_PROPERTY))
+				.stream().flatMap(rawPaths -> Arrays.stream(rawPaths.split(PATH_LIST_SEP)))
+				.filter(Predicate.not(String::isEmpty))
+				.map(Path::of)
+				.map(WindowsProtectedKeychainAccess::resolveHomeDir)
+				.collect(Collectors.toList());
 	}
 
 	private static Path resolveHomeDir(Path path) {
@@ -176,13 +177,14 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 		}
 	}
 
-	private Optional<Map<String, KeychainEntry>> loadKeychainEntries(Path keychainPath) throws KeychainAccessException {
+	//visible for testing
+	Optional<Map<String, KeychainEntry>> loadKeychainEntries(Path keychainPath) throws KeychainAccessException {
 		LOG.debug("Attempting to load keychain from {}", keychainPath);
 		Type type = new TypeToken<Map<String, KeychainEntry>>() {
 		}.getType();
 		try (InputStream in = Files.newInputStream(keychainPath, StandardOpenOption.READ); //
 			 Reader reader = new InputStreamReader(in, UTF_8)) {
-			return Optional.of(GSON.fromJson(reader, type));
+			return Optional.ofNullable(GSON.fromJson(reader, type));
 		} catch (NoSuchFileException | JsonParseException e) {
 			return Optional.empty();
 		} catch (IOException e) {
