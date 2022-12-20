@@ -34,12 +34,14 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.jdk.version>17</project.jdk.version>
+		<project.jdk.version>19</project.jdk.version>
 
         <!-- runtime dependencies -->
-        <api.version>1.1.0</api.version>
+        <api.version>1.2.0-SNAPSHOT</api.version>
         <slf4j.version>1.7.36</slf4j.version>
         <gson.version>2.9.0</gson.version>
+		<commons-lang3.version>3.12.0</commons-lang3.version>
+		<winsparkle-java.version>1.1.0</winsparkle-java.version>
 
         <!-- test dependencies -->
 		<junit.jupiter.version>5.8.2</junit.jupiter.version>
@@ -94,6 +96,20 @@
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
+
+		<!-- Apache Commons -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>${commons-lang3.version}</version>
+		</dependency>
+
+		<!-- winsparkle-java -->
+		<dependency>
+			<groupId>org.purejava</groupId>
+			<artifactId>winsparkle-java</artifactId>
+			<version>${winsparkle-java.version}</version>
+		</dependency>
     </dependencies>
 
     <build>
@@ -122,8 +138,9 @@
                     <compilerArgs>
                         <arg>-h</arg>
                         <arg>${project.basedir}/src/main/headers</arg>
+						<arg>--enable-preview</arg>
                     </compilerArgs>
-                    <release>17</release>
+                    <release>19</release>
                 </configuration>
             </plugin>
             <plugin>
@@ -251,6 +268,7 @@
                         <tag><name>serialData</name></tag>
                         <tag><name>see</name></tag>
                     </tags>
+					<additionalOptions>--enable-preview</additionalOptions>
                 </configuration>
             </plugin>
         </plugins>
