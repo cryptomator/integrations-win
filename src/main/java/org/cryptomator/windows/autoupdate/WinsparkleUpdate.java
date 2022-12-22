@@ -56,7 +56,7 @@ public class WinsparkleUpdate implements AutoUpdateProvider {
 					}
 				}
 
-				fileName = "C:" + "\\dsa_pub.pem";
+				fileName = path + "\\dsa_pub.pem";
 				file = new File(fileName);
 				if (!file.isFile()) {
 					LOG.error("File not found or not readable: " + fileName);
