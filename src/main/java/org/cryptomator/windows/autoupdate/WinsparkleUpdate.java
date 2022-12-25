@@ -92,12 +92,12 @@ public class WinsparkleUpdate implements AutoUpdateProvider {
 	}
 
 	@Override
-	public boolean enableAutoUpdate() {
+	public boolean enableAutoUpdate() throws AutoUpdateException {
 		return false;
 	}
 
 	@Override
-	public boolean disableAutoUpdate() {
+	public boolean disableAutoUpdate() throws AutoUpdateException {
 		return false;
 	}
 }
