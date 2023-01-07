@@ -1,6 +1,7 @@
 package org.cryptomator.windows.autoupdate;
 
 import org.apache.commons.lang3.SystemUtils;
+import org.cryptomator.integrations.autoupdate.AutoUpdateException;
 import org.cryptomator.integrations.autoupdate.AutoUpdateProvider;
 import org.purejava.windows.MemoryAllocator;
 import org.purejava.windows.winsparkle_h;
@@ -22,6 +23,8 @@ public class WinsparkleUpdate implements AutoUpdateProvider {
 	private static final String WINSPARKLE_APPCAST_URL_STR = "https://winsparkle-java.s3.eu-central-1.amazonaws.com/appcast.xml";
 	private static MemorySegment WINSPARKLE_APPCAST_URL = null;
 	private static MemorySegment WINSPARKLE_DSA_KEYFILE_PUB = null;
+	private static final String WINSPARKLE_DSA_KEY_PUB = "dist\\win\\contrib\\dsa_pub.pem";
+	private static final Pattern PATTERN = Pattern.compile("\\w:\\\\.*?Cryptomator$");
 	private static final MemorySegment WINSPARKLE_COMPANY_NAME = MemoryAllocator.ALLOCATE_WCHAR_T_FOR("Skymatic GmbH");
 	private static final MemorySegment WINSPARKLE_APP_NAME = MemoryAllocator.ALLOCATE_WCHAR_T_FOR("Cryptomator");
 	private static final MemorySegment WINSPARKLE_VERSION = MemoryAllocator.ALLOCATE_WCHAR_T_FOR(System.getProperty("cryptomator.appVersion", "SNAPSHOT"));
@@ -37,7 +40,7 @@ public class WinsparkleUpdate implements AutoUpdateProvider {
 			}
 
 			// Check if we run in an IDE and use the dsa_pub.pem from the filesystem
-			var fileName = "dist\\win\\contrib\\dsa_pub.pem";
+			var fileName = WINSPARKLE_DSA_KEY_PUB;
 			var file = new File(fileName);
 			if (file.isFile()) {
 				WINSPARKLE_DSA_KEYFILE_PUB = MemoryAllocator.ALLOCATE_FOR(fileName);
@@ -45,11 +48,9 @@ public class WinsparkleUpdate implements AutoUpdateProvider {
 				var libraryPath = SystemUtils.JAVA_LIBRARY_PATH;
 				var paths = libraryPath.split(";");
 
-				Pattern pattern = Pattern.compile("\\w:\\\\.*?Cryptomator$");
-
 				String path = "";
 				for (String s : paths) {
-					Matcher m = pattern.matcher(s);
+					Matcher m = PATTERN.matcher(s);
 					if (m.find()) {
 						path = s;
 						break;
