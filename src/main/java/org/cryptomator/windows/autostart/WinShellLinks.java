@@ -1,9 +1,7 @@
 package org.cryptomator.windows.autostart;
 
 import org.cryptomator.windows.common.NativeLibLoader;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import org.cryptomator.windows.common.WinStrings;
 
 /**
  * Interface to the native Windows shell link interface.
@@ -22,16 +20,10 @@ public class WinShellLinks {
 	 */
 	public int createShortcut(String target, String storagePath, String description) {
 		return Native.INSTANCE.createShortcut(
-				getNullTerminatedUTF16Representation(target),
-				getNullTerminatedUTF16Representation(storagePath),
-				getNullTerminatedUTF16Representation(description)
+				WinStrings.getNullTerminatedUTF16Representation(target),
+				WinStrings.getNullTerminatedUTF16Representation(storagePath),
+				WinStrings.getNullTerminatedUTF16Representation(description)
 		);
-	}
-
-	// visible for testing
-	byte[] getNullTerminatedUTF16Representation(String source) {
-		byte[] bytes = source.getBytes(StandardCharsets.UTF_16LE);
-		return Arrays.copyOf(bytes, bytes.length + 2); // add double-width null terminator 0x00 0x00
 	}
 
 	private static class Native {
