@@ -1,28 +1,27 @@
-package org.cryptomator.windows.revealpaths;
+package org.cryptomator.windows.revealpath;
 
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
-import org.cryptomator.integrations.revealpaths.RevealFailedException;
-import org.cryptomator.integrations.revealpaths.RevealPathsService;
+import org.cryptomator.integrations.revealpath.RevealFailedException;
+import org.cryptomator.integrations.revealpath.RevealPathService;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.TimeUnit;
 
 @Priority(100)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
-public class ExplorerRevealPathsService implements RevealPathsService {
+public class ExplorerRevealPathService implements RevealPathService {
 
 	@Override
-	public void reveal(Path p) throws RevealFailedException, NoSuchFileException {
-		if(!Files.exists(p)) {
-			throw new NoSuchFileException("File cannot be found: "+p.toString());
-		}
-		ProcessBuilder pb = new ProcessBuilder()
-				.command("explorer", "/select,\"" + p.toString() + "\"");
+	public void reveal(Path p) throws RevealFailedException {
 		try {
+			var attrs = Files.readAttributes(p, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+			var args = (attrs.isDirectory() ? "" : "/select,") + "\"" + p.toString() + "\"";
+			ProcessBuilder pb = new ProcessBuilder().command("explorer", args);
 			var process = pb.start();
 			if (process.waitFor(5000, TimeUnit.MILLISECONDS)) {
 				int exitValue = process.exitValue();
@@ -36,11 +35,6 @@ public class ExplorerRevealPathsService implements RevealPathsService {
 			Thread.currentThread().interrupt();
 			throw new RevealFailedException(e);
 		}
-	}
-
-	@Override
-	public String displayName() {
-		return "Windows Explorer";
 	}
 
 	@Override
