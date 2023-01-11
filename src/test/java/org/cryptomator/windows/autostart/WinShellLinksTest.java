@@ -40,6 +40,18 @@ public class WinShellLinksTest {
 		Assertions.assertTrue(Files.exists(shortcut));
 	}
 
+	@ParameterizedTest
+	@CsvSource(value = { // convert utf16-le string to hex with https://dencode.com/en/string/hex, append null terminator
+			"foo, '66 00 6f 00 6f 00 00 00'",
+			"bar, '62 00 61 00 72 00 00 00'"
+	})
+	public void testGetNullTerminatedUTF16Representation(String input, @ConvertWith(ByteArrayConverter.class) byte[] expected) {
+		WinShellLinks winShellLinks = new WinShellLinks();
+
+		var result = winShellLinks.getNullTerminatedUTF16Representation(input);
+
+		Assertions.assertArrayEquals(expected, result);
+	}
 
 	@ParameterizedTest
 	@CsvSource(value = {
