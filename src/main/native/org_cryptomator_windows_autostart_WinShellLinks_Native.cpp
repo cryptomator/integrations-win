@@ -22,8 +22,9 @@ const GUID StartupFolderGUID = {
 
 JNIEXPORT jstring JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_00024Native_createAndGetStartupFolderPath
   (JNIEnv * env, jobject thisObj) {
-
     HRESULT hres;
+    jstring result = NULL;
+
     PWSTR startupfolder_path;
     hres = SHGetKnownFolderPath(StartupFolderGUID, KF_FLAG_CREATE | KF_FLAG_INIT, NULL, &startupfolder_path); //returns C:\Home, not C:\Home\ (NO trailing slash)
     if(FAILED(hres)) {
@@ -32,13 +33,11 @@ JNIEXPORT jstring JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_0
 
     size_t length_startupfolder_path;
     hres = StringCbLengthW(startupfolder_path, STRSAFE_MAX_CCH * sizeof(TCHAR), &length_startupfolder_path);
-    if(FAILED(hres)) {
-        CoTaskMemFree(startupfolder_path);
-        return NULL;
+    if(SUCCEEDED(hres)) {
+        result = env->NewString( (jchar *) startupfolder_path, length_startupfolder_path/sizeof(WCHAR) );
     }
-    jstring s = env->NewString( (jchar *) startupfolder_path, length_startupfolder_path/sizeof(WCHAR) );
     CoTaskMemFree(startupfolder_path);
-    return s;
+    return result;
 };
 
 

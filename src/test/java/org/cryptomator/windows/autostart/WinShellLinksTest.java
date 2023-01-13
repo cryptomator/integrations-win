@@ -23,6 +23,8 @@ public class WinShellLinksTest {
 	private Path linkTarget;
 	private Path shortcut;
 
+	private WinShellLinks inTest = new WinShellLinks();
+
 	@BeforeEach
 	public void setup(@TempDir Path tempDir) throws IOException {
 		this.linkTarget = tempDir.resolve("link.target");
@@ -31,16 +33,14 @@ public class WinShellLinksTest {
 
 	@Test
 	public void testGetStartupFolderPath() {
-		WinShellLinks winShellLinks = new WinShellLinks();
-		Assertions.assertDoesNotThrow(() -> winShellLinks.getPathToStartupFolder());
+		Assertions.assertDoesNotThrow(() -> inTest.getPathToStartupFolder());
 	}
 
 	@Test
 	public void testShellLinkCreation() {
-		WinShellLinks winShellLinks = new WinShellLinks();
 		shortcut = linkTarget.getParent().resolve("short.lnk");
 
-		int returnCode = winShellLinks.createShortcut(linkTarget.toString(), shortcut.toString(), "asd");
+		int returnCode = inTest.createShortcut(linkTarget.toString(), shortcut.toString(), "asd");
 
 		Assertions.assertEquals(0, returnCode);
 		Assertions.assertTrue(Files.exists(shortcut));
@@ -52,9 +52,7 @@ public class WinShellLinksTest {
 			"bar, '62 00 61 00 72 00 00 00'"
 	})
 	public void testGetNullTerminatedUTF16Representation(String input, @ConvertWith(ByteArrayConverter.class) byte[] expected) {
-		WinShellLinks winShellLinks = new WinShellLinks();
-
-		var result = winShellLinks.getNullTerminatedUTF16Representation(input);
+		var result = inTest.getNullTerminatedUTF16Representation(input);
 
 		Assertions.assertArrayEquals(expected, result);
 	}
