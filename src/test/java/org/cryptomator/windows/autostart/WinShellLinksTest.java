@@ -30,6 +30,12 @@ public class WinShellLinksTest {
 	}
 
 	@Test
+	public void testGetStartupFolderPath() {
+		WinShellLinks winShellLinks = new WinShellLinks();
+		Assertions.assertDoesNotThrow(() -> winShellLinks.getPathToStartupFolder());
+	}
+
+	@Test
 	public void testShellLinkCreation() {
 		WinShellLinks winShellLinks = new WinShellLinks();
 		shortcut = linkTarget.getParent().resolve("short.lnk");
