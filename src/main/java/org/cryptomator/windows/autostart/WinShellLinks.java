@@ -16,7 +16,7 @@ public class WinShellLinks {
 	 * Create a Windows shortcut file to the given target, at the specified location and with a description.
 	 *
 	 * @param target      path of the shortcut target
-	 * @param storagePath full path where the shortcut will be created (including filename & extension)
+	 * @param storagePath full path where the shortcut will be created (including filename &amp; file extension)
 	 * @param description string inserted in the description field of the shortcut.
 	 * @return {@code 0} if everything worked, otherwise an HRESULT error code
 	 */
