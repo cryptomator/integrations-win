@@ -15,8 +15,8 @@ public class WinShellLinks {
 	/**
 	 * Create a Windows shortcut file to the given target, at the specified location and with a description.
 	 *
-	 * @param target      path of the target the shortcut points to
-	 * @param storagePath path where the shortcut is created
+	 * @param target      path of the shortcut target
+	 * @param storagePath full path where the shortcut will be created (including filename & extension)
 	 * @param description string inserted in the description field of the shortcut.
 	 * @return {@code 0} if everything worked, otherwise an HRESULT error code
 	 */
@@ -31,7 +31,7 @@ public class WinShellLinks {
 	/**
 	 * Gets the file system path of the startup folder. Creates all directories in the path, if necessary.
 	 *
-	 * @return path to the startup folder with no trailing \ or {@code null}, if the folder is not defined or cannot be created
+	 * @return path to the startup folder with no trailing \ or {@code null}, if the folder is not defined and cannot be created
 	 */
 	public String getPathToStartupFolder() {
 		return Native.INSTANCE.createAndGetStartupFolderPath();
