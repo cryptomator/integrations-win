@@ -24,7 +24,18 @@ jobs:
         run: mvn versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
       - name: Build and Test
         id: buildAndTest
-        run: mvn -B clean install -Pdependency-check
+        run: mvn -B clean test -Pdependency-check
+      - name: Codesign DLL
+        uses: skymatic/code-sign-action@v2
+        with:
+          certificate: ${{ secrets.WIN_CODESIGN_P12_BASE64 }}
+          password: ${{ secrets.WIN_CODESIGN_P12_PW }}
+          certificatesha1: 5FC94CE149E5B511E621F53A060AC67CBD446B3A
+          timestampUrl: 'http://timestamp.digicert.com'
+          folder: ./target/classes
+      - name: Package and Install
+        id: packAndInstall
+        run: mvn -B install
       - uses: actions/upload-artifact@v3
         with:
           name: artifacts
