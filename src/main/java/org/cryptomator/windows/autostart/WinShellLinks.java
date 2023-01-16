@@ -31,7 +31,7 @@ public class WinShellLinks {
 	/**
 	 * Gets the file system path of the startup folder. Creates all directories in the path, if necessary.
 	 *
-	 * @return path to the startup folder with no trailing \ or {@code null}, if the folder is not defined and cannot be created
+	 * @return path to the startup folder with no trailing \, or {@code null} if the folder is not defined and cannot be created
 	 */
 	public String getPathToStartupFolder() {
 		return Native.INSTANCE.createAndGetStartupFolderPath();
