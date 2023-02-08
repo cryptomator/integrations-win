@@ -15,11 +15,14 @@ public class ExplorerRevealPathServiceTest {
 
 	@Test
 	public void testReveal(@TempDir Path tmpDir) throws IOException {
-		Path foo = tmpDir.resolve("foo.txt");
+		Path foo = tmpDir.resolve("foo=.txt");
+		Path bar = tmpDir.resolve("bar=");
 
 		Files.createFile(foo);
+		Files.createDirectory(bar);
 
 		Assertions.assertDoesNotThrow(() -> service.reveal(foo));
+		Assertions.assertDoesNotThrow(() -> service.reveal(bar));
 		Assertions.assertTrue(Files.exists(foo));
 	}
 

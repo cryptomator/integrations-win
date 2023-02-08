@@ -22,9 +22,9 @@ public class ExplorerRevealPathService implements RevealPathService {
 			var attrs = Files.readAttributes(p, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
 			ProcessBuilder pb = new ProcessBuilder();
 			if(attrs.isDirectory()) {
-				pb.command("explorer.exe",p.toString());
+				pb.command("explorer.exe", "\""+p+"\"");
 			} else {
-				pb.command("explorer.exe ","/select,",p.toString());
+				pb.command("explorer.exe ","/select,","\""+p+"\"");
 			}
 
 			var process = pb.start();
