@@ -20,8 +20,13 @@ public class ExplorerRevealPathService implements RevealPathService {
 	public void reveal(Path p) throws RevealFailedException {
 		try {
 			var attrs = Files.readAttributes(p, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-			var args = (attrs.isDirectory() ? "" : "/select,") + "\"" + p.toString() + "\"";
-			ProcessBuilder pb = new ProcessBuilder().command("explorer", args);
+			ProcessBuilder pb = new ProcessBuilder();
+			if(attrs.isDirectory()) {
+				pb.command("explorer.exe", "\""+p+"\"");
+			} else {
+				pb.command("explorer.exe ","/select,","\""+p+"\"");
+			}
+
 			var process = pb.start();
 			if (process.waitFor(5000, TimeUnit.MILLISECONDS)) {
 				int exitValue = process.exitValue();
