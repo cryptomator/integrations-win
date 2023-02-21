@@ -15,6 +15,14 @@ extern "C" {
 JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_00024Native_createShortcut
   (JNIEnv *, jobject, jbyteArray, jbyteArray, jbyteArray);
 
+/*
+ * Class:     org_cryptomator_windows_autostart_WinShellLinks_Native
+ * Method:    createAndGetStartupFolderPath
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_00024Native_createAndGetStartupFolderPath
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif

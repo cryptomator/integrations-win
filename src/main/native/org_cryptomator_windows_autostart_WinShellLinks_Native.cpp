@@ -5,6 +5,8 @@
 #include <jni.h>
 #include <windows.h>
 #include <winnls.h>
+#include <shlobj.h>
+#include <strsafe.h>
 #include <shobjidl.h>
 #include <objbase.h>
 #include <objidl.h>
@@ -12,6 +14,32 @@
 #include "org_cryptomator_windows_autostart_WinShellLinks_Native.h"
 
 HRESULT CreateLink(LPCWSTR lpszPathObj, LPCWSTR lpszPathLink, LPCWSTR lpszDesc);
+//GUID of the Startup Folder: {B97D20BB-F46A-4C97-BA10-5E3608430854}
+const GUID StartupFolderGUID = {
+    0xB97D20BBu,0xF46Au,0x4C97u, 0xBAu, 0x10u, 0x5Eu,0x36u, 0x08u, 0x43u, 0x08u, 0x54u
+};
+
+
+JNIEXPORT jstring JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_00024Native_createAndGetStartupFolderPath
+  (JNIEnv * env, jobject thisObj) {
+    HRESULT hres;
+    jstring result = NULL;
+
+    PWSTR startupfolder_path;
+    hres = SHGetKnownFolderPath(StartupFolderGUID, KF_FLAG_CREATE | KF_FLAG_INIT, NULL, &startupfolder_path); //returns C:\Home, not C:\Home\ (NO trailing slash)
+    if(FAILED(hres)) {
+        return NULL;
+    }
+
+    size_t length_startupfolder_path;
+    hres = StringCbLengthW(startupfolder_path, STRSAFE_MAX_CCH * sizeof(TCHAR), &length_startupfolder_path);
+    if(SUCCEEDED(hres)) {
+        result = env->NewString( (jchar *) startupfolder_path, length_startupfolder_path/sizeof(WCHAR) );
+    }
+    CoTaskMemFree(startupfolder_path);
+    return result;
+};
+
 
 JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_00024Native_createShortcut
   (JNIEnv * env, jobject thisObj, jbyteArray target, jbyteArray storage_path, jbyteArray description) {
@@ -41,6 +69,7 @@ JNIEXPORT jint JNICALL Java_org_cryptomator_windows_autostart_WinShellLinks_0002
 
     return hres;
 }
+
 
 // CreateLink - Uses the Shell's IShellLink and IPersistFile interfaces
 //              to create and store a shortcut to the specified object.
@@ -87,5 +116,5 @@ HRESULT CreateLink(LPCWSTR lpszPathObj, LPCWSTR lpszPathLink, LPCWSTR lpszDesc) 
         }
         psl->Release();
     }
-return hres;
+    return hres;
 }

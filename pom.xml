@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.cryptomator</groupId>
     <artifactId>integrations-win</artifactId>
-    <version>1.1.2</version>
+    <version>1.2.0</version>
 
     <name>Cryptomator Integrations for Windows</name>
     <description>Provides optional Windows services used by Cryptomator</description>
@@ -37,7 +37,7 @@
 		<project.jdk.version>17</project.jdk.version>
 
         <!-- runtime dependencies -->
-        <api.version>1.1.0</api.version>
+        <api.version>1.2.0-beta4</api.version>
         <slf4j.version>1.7.36</slf4j.version>
         <gson.version>2.9.0</gson.version>
 
@@ -147,29 +147,6 @@
 					</execution>
 				</executions>
 			</plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <phase>compile</phase>
-                        <configuration>
-                            <executable>make</executable>
-                            <workingDirectory>${project.basedir}</workingDirectory>
-                            <environmentVariables>
-                                <JAVA_HOME>${java.home}</JAVA_HOME>
-                            </environmentVariables>
-                            <arguments>
-                                <argument>install</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>3.2.0</version>
@@ -284,6 +261,42 @@
                 </plugins>
             </build>
         </profile>
+
+		<profile>
+			<id>compile-native</id>
+			<activation>
+				<property>
+					<name>!skipNativeCompile</name>
+					</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>3.0.0</version>
+						<executions>
+							<execution>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<phase>compile</phase>
+								<configuration>
+									<executable>make</executable>
+									<workingDirectory>${project.basedir}</workingDirectory>
+									<environmentVariables>
+										<JAVA_HOME>${java.home}</JAVA_HOME>
+									</environmentVariables>
+									<arguments>
+										<argument>install</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 
 		<profile>
 			<id>sign</id>
