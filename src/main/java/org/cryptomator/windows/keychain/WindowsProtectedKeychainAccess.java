@@ -71,8 +71,13 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	}
 
 	private static List<Path> readKeychainPathsFromEnv() {
-		return Optional.ofNullable(System.getProperty(KEYCHAIN_PATHS_PROPERTY))
-				.stream().flatMap(rawPaths -> Arrays.stream(rawPaths.split(System.getProperty("path.separator"))))
+		var keychainPaths = System.getProperty(KEYCHAIN_PATHS_PROPERTY, "");
+		return parsePaths(keychainPaths, System.getProperty("path.separator"));
+	}
+
+	// visible for testing
+	static List<Path> parsePaths(String listOfPaths, String pathSeparator) {
+		return Arrays.stream(listOfPaths.split(pathSeparator))
 				.filter(Predicate.not(String::isEmpty))
 				.map(Path::of)
 				.map(WindowsProtectedKeychainAccess::resolveHomeDir)
