@@ -47,7 +47,6 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 
 	private static final String KEYCHAIN_PATHS_PROPERTY = "cryptomator.integrationsWin.keychainPaths";
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsProtectedKeychainAccess.class);
-	private static final String PATH_LIST_SEP = ":";
 	private static final Path USER_HOME_REL = Path.of("~");
 	private static final Path USER_HOME = Path.of(System.getProperty("user.home"));
 	private static final Gson GSON = new GsonBuilder() //
