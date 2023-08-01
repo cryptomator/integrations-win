@@ -39,7 +39,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Windows implementation for the {@link KeychainAccessProvider} based on the <a href="https://en.wikipedia.org/wiki/Data_Protection_API">data protection API</a>.
- * The storage locations to check for encrypted data can be set with the JVM property {@value KEYCHAIN_PATHS_PROPERTY} as a colon({@value PATH_LIST_SEP}) separated list of paths.
+ * The storage locations to check for encrypted data can be set with the JVM property {@value KEYCHAIN_PATHS_PROPERTY} with the paths seperated with the character defined in the JVM property path.separator.
  */
 @Priority(1000)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
@@ -47,7 +47,6 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 
 	private static final String KEYCHAIN_PATHS_PROPERTY = "cryptomator.integrationsWin.keychainPaths";
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsProtectedKeychainAccess.class);
-	private static final String PATH_LIST_SEP = ":";
 	private static final Path USER_HOME_REL = Path.of("~");
 	private static final Path USER_HOME = Path.of(System.getProperty("user.home"));
 	private static final Gson GSON = new GsonBuilder() //
@@ -72,8 +71,13 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	}
 
 	private static List<Path> readKeychainPathsFromEnv() {
-		return Optional.ofNullable(System.getProperty(KEYCHAIN_PATHS_PROPERTY))
-				.stream().flatMap(rawPaths -> Arrays.stream(rawPaths.split(PATH_LIST_SEP)))
+		var keychainPaths = System.getProperty(KEYCHAIN_PATHS_PROPERTY, "");
+		return parsePaths(keychainPaths, System.getProperty("path.separator"));
+	}
+
+	// visible for testing
+	static List<Path> parsePaths(String listOfPaths, String pathSeparator) {
+		return Arrays.stream(listOfPaths.split(pathSeparator))
 				.filter(Predicate.not(String::isEmpty))
 				.map(Path::of)
 				.map(WindowsProtectedKeychainAccess::resolveHomeDir)

@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.cryptomator</groupId>
     <artifactId>integrations-win</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.2</version>
 
     <name>Cryptomator Integrations for Windows</name>
     <description>Provides optional Windows services used by Cryptomator</description>

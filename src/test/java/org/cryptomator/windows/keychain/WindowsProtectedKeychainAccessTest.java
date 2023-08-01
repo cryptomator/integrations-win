@@ -8,6 +8,8 @@ package org.cryptomator.windows.keychain;
 import org.cryptomator.integrations.keychain.KeychainAccessException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
@@ -44,6 +46,37 @@ public class WindowsProtectedKeychainAccessTest {
 		Assertions.assertNull(keychain.loadPassphrase("myPassword"));
 		Assertions.assertNotNull(keychain.loadPassphrase("myOtherPassword"));
 		Assertions.assertNull(keychain.loadPassphrase("nonExistingPassword"));
+	}
+
+	@Nested
+	public class ParsePaths {
+		@Test
+		@DisplayName("String is split with path separator")
+		public void testParsePaths() {
+			String paths = "C:\\foo\\bar;bar\\kuz";
+			var result = WindowsProtectedKeychainAccess.parsePaths(paths, ";");
+			Assertions.assertEquals(2, result.size());
+			Assertions.assertTrue(result.contains(Path.of("C:\\foo\\bar")));
+			Assertions.assertTrue(result.contains(Path.of("bar\\kuz")));
+		}
+
+		@Test
+		@DisplayName("Empty string returns empty list")
+		public void testParsePathsEmpty() {
+			var result = WindowsProtectedKeychainAccess.parsePaths("", ";");
+			Assertions.assertEquals(0, result.size());
+		}
+
+		@Test
+		@DisplayName("Strings starting with ~ are resolved to user home")
+		public void testParsePathsUserHome() {
+			var userHome = Path.of(System.getProperty("user.home"));
+			var result = WindowsProtectedKeychainAccess.parsePaths("this\\~\\not;~\\foo\\bar", ";");
+			Assertions.assertEquals(2, result.size());
+			Assertions.assertTrue(result.contains(Path.of("this\\~\\not")));
+			Assertions.assertTrue(result.contains(userHome.resolve("foo\\bar")));
+		}
+
 	}
 
 }
