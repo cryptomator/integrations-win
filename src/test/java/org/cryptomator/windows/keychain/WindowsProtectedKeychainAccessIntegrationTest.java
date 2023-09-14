@@ -13,9 +13,8 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 
-public class KeychainAccessProviderTest {
+public class WindowsProtectedKeychainAccessIntegrationTest {
 
 	@BeforeAll
 	public static void setup(@TempDir Path tmpDir) {
