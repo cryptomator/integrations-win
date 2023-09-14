@@ -10,9 +10,10 @@ import org.cryptomator.windows.uiappearance.WinUiAppearanceProvider;
 module org.cryptomator.integrations.win {
 	requires org.cryptomator.integrations.api;
 	requires org.slf4j;
-	requires com.google.gson;
+	requires com.fasterxml.jackson.annotation;
+	requires com.fasterxml.jackson.databind;
 
-	opens org.cryptomator.windows.keychain to com.google.gson;
+	opens org.cryptomator.windows.keychain to com.fasterxml.jackson.databind;
 
 	provides AutoStartProvider with WindowsAutoStart;
 	provides KeychainAccessProvider with WindowsProtectedKeychainAccess;

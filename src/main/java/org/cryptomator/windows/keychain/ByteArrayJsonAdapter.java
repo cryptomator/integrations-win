@@ -1,26 +1,40 @@
 package org.cryptomator.windows.keychain;
 
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
-import java.lang.reflect.Type;
+import java.io.IOException;
 import java.util.Base64;
 
-class ByteArrayJsonAdapter implements JsonSerializer<byte[]>, JsonDeserializer<byte[]> {
+class ByteArrayJsonAdapter {
+	static class Serializer extends StdSerializer<byte[]> {
 
-	@Override
-	public byte[] deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-		return Base64.getDecoder().decode(json.getAsString());
+		public Serializer() {
+			super((Class<byte[]>) null);
+		}
+
+		@Override
+		public void serialize(byte[] value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+			gen.writeString(Base64.getEncoder().encodeToString(value));
+		}
 	}
 
-	@Override
-	public JsonElement serialize(byte[] src, Type typeOfSrc, JsonSerializationContext context) {
-		return new JsonPrimitive(Base64.getEncoder().encodeToString(src));
+	static class Deserializer extends StdDeserializer<byte[]> {
+
+		public Deserializer() {
+			super(byte[].class);
+		}
+
+		@Override
+		public byte[] deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
+			String base64 = p.getValueAsString();
+			return Base64.getDecoder().decode(base64);
+		}
 	}
 
 }
