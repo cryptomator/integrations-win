@@ -182,13 +182,13 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 		try (InputStream in = Files.newInputStream(keychainPath, StandardOpenOption.READ); //
 			 Reader reader = new InputStreamReader(in, UTF_8)) {
 			return Optional.ofNullable(JSON_MAPPER.readValue(reader, type));
-		} catch (NoSuchFileException | JacksonException e) {
-			if (e instanceof JacksonException) {
-				LOG.warn("Unable to parse keychain file, overwriting existing one.");
-			}
+		} catch (NoSuchFileException e) {
 			return Optional.empty();
-		} catch (IOException ioe) {
-			throw new KeychainAccessException("Could not read keychain from path " + keychainPath, ioe);
+		} catch (JacksonException je) {
+			LOG.warn("Unable to parse keychain file, overwriting existing one.");
+			return Optional.empty();
+		} catch (IOException e) {
+			throw new KeychainAccessException("Could not read keychain from path " + keychainPath, e);
 		}
 	}
 
