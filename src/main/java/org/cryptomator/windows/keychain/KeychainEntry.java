@@ -1,12 +1,7 @@
 package org.cryptomator.windows.keychain;
 
-import com.google.gson.annotations.SerializedName;
 
-class KeychainEntry {
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-	@SerializedName("ciphertext")
-	byte[] ciphertext;
-	
-	@SerializedName("salt")
-	byte[] salt;
+record KeychainEntry(@JsonProperty("ciphertext") byte[] ciphertext, @JsonProperty("salt") byte[] salt) {
 }

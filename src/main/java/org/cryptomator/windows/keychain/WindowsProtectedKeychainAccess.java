@@ -1,9 +1,8 @@
 package org.cryptomator.windows.keychain;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.keychain.KeychainAccessException;
@@ -19,7 +18,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.file.Files;
@@ -49,11 +47,7 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsProtectedKeychainAccess.class);
 	private static final Path USER_HOME_REL = Path.of("~");
 	private static final Path USER_HOME = Path.of(System.getProperty("user.home"));
-	private static final Gson GSON = new GsonBuilder() //
-			.setPrettyPrinting() //
-			.registerTypeHierarchyAdapter(byte[].class, new ByteArrayJsonAdapter()) //
-			.disableHtmlEscaping() //
-			.create();
+	private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
 	private final List<Path> keychainPaths;
 	private final WinDataProtection dataProtection;
@@ -103,12 +97,11 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 		ByteBuffer buf = UTF_8.encode(CharBuffer.wrap(passphrase));
 		byte[] cleartext = new byte[buf.remaining()];
 		buf.get(cleartext);
-		KeychainEntry entry = new KeychainEntry();
-		entry.salt = generateSalt();
-		entry.ciphertext = dataProtection.protect(cleartext, entry.salt);
+		var salt = generateSalt();
+		var ciphertext = dataProtection.protect(cleartext, salt);
 		Arrays.fill(buf.array(), (byte) 0x00);
 		Arrays.fill(cleartext, (byte) 0x00);
-		keychainEntries.put(key, entry);
+		keychainEntries.put(key, new KeychainEntry(ciphertext, salt));
 		saveKeychainEntries();
 	}
 
@@ -119,7 +112,7 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 		if (entry == null) {
 			return null;
 		}
-		byte[] cleartext = dataProtection.unprotect(entry.ciphertext, entry.salt);
+		byte[] cleartext = dataProtection.unprotect(entry.ciphertext(), entry.salt());
 		if (cleartext == null) {
 			return null;
 		}
@@ -184,12 +177,15 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	//visible for testing
 	Optional<Map<String, KeychainEntry>> loadKeychainEntries(Path keychainPath) throws KeychainAccessException {
 		LOG.debug("Attempting to load keychain from {}", keychainPath);
-		Type type = new TypeToken<Map<String, KeychainEntry>>() {
-		}.getType();
+		TypeReference<Map<String, KeychainEntry>> type = new TypeReference<>() {
+		};
 		try (InputStream in = Files.newInputStream(keychainPath, StandardOpenOption.READ); //
 			 Reader reader = new InputStreamReader(in, UTF_8)) {
-			return Optional.ofNullable(GSON.fromJson(reader, type));
-		} catch (NoSuchFileException | JsonParseException e) {
+			return Optional.ofNullable(JSON_MAPPER.readValue(reader, type));
+		} catch (NoSuchFileException e) {
+			return Optional.empty();
+		} catch (JacksonException je) {
+			LOG.warn("Unable to parse keychain file, overwriting existing one.");
 			return Optional.empty();
 		} catch (IOException e) {
 			throw new KeychainAccessException("Could not read keychain from path " + keychainPath, e);
@@ -206,7 +202,7 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	private void saveKeychainEntries(Path keychainPath) throws KeychainAccessException {
 		try (OutputStream out = Files.newOutputStream(keychainPath, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING); //
 			 Writer writer = new OutputStreamWriter(out, UTF_8)) {
-			GSON.toJson(keychainEntries, writer);
+			JSON_MAPPER.writeValue(writer, keychainEntries);
 		} catch (IOException e) {
 			throw new KeychainAccessException("Could not read keychain from path " + keychainPath, e);
 		}
