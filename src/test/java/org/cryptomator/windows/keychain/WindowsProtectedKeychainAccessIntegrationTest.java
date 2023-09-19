@@ -11,11 +11,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 
-public class KeychainAccessProviderTest {
+public class WindowsProtectedKeychainAccessIntegrationTest {
 
 	@BeforeAll
 	public static void setup(@TempDir Path tmpDir) {
@@ -58,6 +58,15 @@ public class KeychainAccessProviderTest {
 			var result = keychainAccess.loadKeychainEntries(keychainPath);
 
 			Assertions.assertTrue(result.isEmpty());
+		}
+
+		@Test
+		public void testLegacyKeychainFiles() throws URISyntaxException, KeychainAccessException {
+			var keychainPath = Path.of(this.getClass().getResource("keychain.v1.2.2.json").toURI());
+			var result = keychainAccess.loadKeychainEntries(keychainPath);
+
+			Assertions.assertTrue(result.isPresent());
+			Assertions.assertEquals(3, result.get().size());
 		}
 	}
 
