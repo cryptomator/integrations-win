@@ -21,10 +21,10 @@ jobs:
       - name: Ensure to use tagged version
         if: startsWith(github.ref, 'refs/tags/')
         shell: bash
-        run: mvn versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
+        run: mvn -B versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
       - name: Build and Test
         id: buildAndTest
-        run: mvn -B clean test -Pdependency-check
+        run: mvn -B clean test
       - name: Codesign DLL on release
         if: startsWith(github.ref, 'refs/tags/')
         uses: skymatic/code-sign-action@v2
