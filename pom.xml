@@ -128,7 +128,7 @@
                         <arg>-h</arg>
                         <arg>${project.basedir}/src/main/headers</arg>
                     </compilerArgs>
-                    <release>17</release>
+                    <release>${project.jdk.version}</release>
                 </configuration>
             </plugin>
             <plugin>
