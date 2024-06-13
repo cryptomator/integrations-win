@@ -9,12 +9,10 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 
 import static java.lang.foreign.MemorySegment.NULL;
 import static org.cryptomator.windows.capi.common.Windows_h.ERROR_MORE_DATA;
 import static org.cryptomator.windows.capi.common.Windows_h.ERROR_SUCCESS;
-import static org.cryptomator.windows.capi.common.Windows_h.GetLastError;
 import static org.cryptomator.windows.capi.common.Windows_h.INVALID_HANDLE_VALUE;
 import static org.cryptomator.windows.capi.winreg.winreg_h.*;
 
@@ -52,7 +50,7 @@ public class WindowsRegistry {
 						lpSubkey,
 						0,
 						NULL,
-						isVolatile? REG_OPTION_VOLATILE() : REG_OPTION_NON_VOLATILE(),
+						isVolatile ? REG_OPTION_VOLATILE() : REG_OPTION_NON_VOLATILE(),
 						KEY_READ() | KEY_WRITE(),
 						NULL,
 						pointerToResultKey,
@@ -63,7 +61,7 @@ public class WindowsRegistry {
 				if (result != ERROR_SUCCESS()) {
 					throw new RuntimeException("Creating Key failed with error code " + result);
 				}
-				return new RegistryKey(pointerToResultKey.get(C_POINTER,0), key.getPath() + "\\" + subkey);
+				return new RegistryKey(pointerToResultKey.get(C_POINTER, 0), key.getPath() + "\\" + subkey);
 			}
 		}
 
@@ -83,7 +81,7 @@ public class WindowsRegistry {
 				if (result != ERROR_SUCCESS()) {
 					throw new RuntimeException("Opening key failed with error code " + result);
 				}
-				return new RegistryKey(pointerToResultKey.get(C_POINTER,0), key.getPath() + "\\" + subkey);
+				return new RegistryKey(pointerToResultKey.get(C_POINTER, 0), key.getPath() + "\\" + subkey);
 			}
 		}
 
@@ -106,7 +104,7 @@ public class WindowsRegistry {
 
 
 		public synchronized void commit() {
-			if(isClosed) {
+			if (isClosed) {
 				throw new IllegalStateException("Transaction already closed");
 			}
 			int result = ktmw32_ex_h.CommitTransaction(transactionHandle);
@@ -119,7 +117,7 @@ public class WindowsRegistry {
 		}
 
 		public synchronized void rollback() {
-			if(isClosed) {
+			if (isClosed) {
 				throw new IllegalStateException("Transaction already closed");
 			}
 			int result = ktmw32_ex_h.RollbackTransaction(transactionHandle);
@@ -134,7 +132,7 @@ public class WindowsRegistry {
 
 		@Override
 		public synchronized void close() throws RuntimeException {
-			if(!isCommited) {
+			if (!isCommited) {
 				try {
 					rollback();
 				} catch (RuntimeException e) {
@@ -224,7 +222,7 @@ public class WindowsRegistry {
 		}
 
 		public void deleteSubtree(String subkey) {
-			if(subkey == null || subkey.isBlank()) {
+			if (subkey == null || subkey.isBlank()) {
 				throw new IllegalArgumentException("Subkey must not be empty");
 			}
 			deleteValuesAndSubtree(subkey);
@@ -245,7 +243,7 @@ public class WindowsRegistry {
 			if (!isClosed) {
 				int result = winreg_h.RegCloseKey(handle);
 				if (result != ERROR_SUCCESS()) {
-					throw new RuntimeException("Closing key %s failed with error code %d.".formatted(path,result));
+					throw new RuntimeException("Closing key %s failed with error code %d.".formatted(path, result));
 				}
 				handle = NULL;
 				isClosed = true;
@@ -260,7 +258,6 @@ public class WindowsRegistry {
 			return path;
 		}
 	}
-
 
 
 }
