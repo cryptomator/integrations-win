@@ -197,7 +197,7 @@ public class winreg_h {
         }
     }
 
-    private static class RegSetValueExW {
+    private static class RegDeleteKeyTransactedW {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             winreg_h.C_LONG,
             winreg_h.C_POINTER,
@@ -205,10 +205,10 @@ public class winreg_h {
             winreg_h.C_LONG,
             winreg_h.C_LONG,
             winreg_h.C_POINTER,
-            winreg_h.C_LONG
+            winreg_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegSetValueExW");
+        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegDeleteKeyTransactedW");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -216,45 +216,295 @@ public class winreg_h {
     /**
      * Function descriptor for:
      * {@snippet lang=c :
-     * LSTATUS RegSetValueExW(HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData)
+     * LSTATUS RegDeleteKeyTransactedW(HKEY hKey, LPCWSTR lpSubKey, REGSAM samDesired, DWORD Reserved, HANDLE hTransaction, PVOID pExtendedParameter)
      * }
      */
-    public static FunctionDescriptor RegSetValueExW$descriptor() {
-        return RegSetValueExW.DESC;
+    public static FunctionDescriptor RegDeleteKeyTransactedW$descriptor() {
+        return RegDeleteKeyTransactedW.DESC;
     }
 
     /**
      * Downcall method handle for:
      * {@snippet lang=c :
-     * LSTATUS RegSetValueExW(HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData)
+     * LSTATUS RegDeleteKeyTransactedW(HKEY hKey, LPCWSTR lpSubKey, REGSAM samDesired, DWORD Reserved, HANDLE hTransaction, PVOID pExtendedParameter)
      * }
      */
-    public static MethodHandle RegSetValueExW$handle() {
-        return RegSetValueExW.HANDLE;
+    public static MethodHandle RegDeleteKeyTransactedW$handle() {
+        return RegDeleteKeyTransactedW.HANDLE;
     }
 
     /**
      * Address for:
      * {@snippet lang=c :
-     * LSTATUS RegSetValueExW(HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData)
+     * LSTATUS RegDeleteKeyTransactedW(HKEY hKey, LPCWSTR lpSubKey, REGSAM samDesired, DWORD Reserved, HANDLE hTransaction, PVOID pExtendedParameter)
      * }
      */
-    public static MemorySegment RegSetValueExW$address() {
-        return RegSetValueExW.ADDR;
+    public static MemorySegment RegDeleteKeyTransactedW$address() {
+        return RegDeleteKeyTransactedW.ADDR;
     }
 
     /**
      * {@snippet lang=c :
-     * LSTATUS RegSetValueExW(HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData)
+     * LSTATUS RegDeleteKeyTransactedW(HKEY hKey, LPCWSTR lpSubKey, REGSAM samDesired, DWORD Reserved, HANDLE hTransaction, PVOID pExtendedParameter)
      * }
      */
-    public static int RegSetValueExW(MemorySegment hKey, MemorySegment lpValueName, int Reserved, int dwType, MemorySegment lpData, int cbData) {
-        var mh$ = RegSetValueExW.HANDLE;
+    public static int RegDeleteKeyTransactedW(MemorySegment hKey, MemorySegment lpSubKey, int samDesired, int Reserved, MemorySegment hTransaction, MemorySegment pExtendedParameter) {
+        var mh$ = RegDeleteKeyTransactedW.HANDLE;
         try {
             if (TRACE_DOWNCALLS) {
-                traceDowncall("RegSetValueExW", hKey, lpValueName, Reserved, dwType, lpData, cbData);
+                traceDowncall("RegDeleteKeyTransactedW", hKey, lpSubKey, samDesired, Reserved, hTransaction, pExtendedParameter);
             }
-            return (int)mh$.invokeExact(hKey, lpValueName, Reserved, dwType, lpData, cbData);
+            return (int)mh$.invokeExact(hKey, lpSubKey, samDesired, Reserved, hTransaction, pExtendedParameter);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class RegOpenKeyTransactedW {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            winreg_h.C_LONG,
+            winreg_h.C_POINTER,
+            winreg_h.C_POINTER,
+            winreg_h.C_LONG,
+            winreg_h.C_LONG,
+            winreg_h.C_POINTER,
+            winreg_h.C_POINTER,
+            winreg_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegOpenKeyTransactedW");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * LSTATUS RegOpenKeyTransactedW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult, HANDLE hTransaction, PVOID pExtendedParemeter)
+     * }
+     */
+    public static FunctionDescriptor RegOpenKeyTransactedW$descriptor() {
+        return RegOpenKeyTransactedW.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * LSTATUS RegOpenKeyTransactedW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult, HANDLE hTransaction, PVOID pExtendedParemeter)
+     * }
+     */
+    public static MethodHandle RegOpenKeyTransactedW$handle() {
+        return RegOpenKeyTransactedW.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * LSTATUS RegOpenKeyTransactedW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult, HANDLE hTransaction, PVOID pExtendedParemeter)
+     * }
+     */
+    public static MemorySegment RegOpenKeyTransactedW$address() {
+        return RegOpenKeyTransactedW.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * LSTATUS RegOpenKeyTransactedW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult, HANDLE hTransaction, PVOID pExtendedParemeter)
+     * }
+     */
+    public static int RegOpenKeyTransactedW(MemorySegment hKey, MemorySegment lpSubKey, int ulOptions, int samDesired, MemorySegment phkResult, MemorySegment hTransaction, MemorySegment pExtendedParemeter) {
+        var mh$ = RegOpenKeyTransactedW.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("RegOpenKeyTransactedW", hKey, lpSubKey, ulOptions, samDesired, phkResult, hTransaction, pExtendedParemeter);
+            }
+            return (int)mh$.invokeExact(hKey, lpSubKey, ulOptions, samDesired, phkResult, hTransaction, pExtendedParemeter);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class RegSetKeyValueW {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            winreg_h.C_LONG,
+            winreg_h.C_POINTER,
+            winreg_h.C_POINTER,
+            winreg_h.C_POINTER,
+            winreg_h.C_LONG,
+            winreg_h.C_POINTER,
+            winreg_h.C_LONG
+        );
+
+        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegSetKeyValueW");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * LSTATUS RegSetKeyValueW(HKEY hKey, LPCWSTR lpSubKey, LPCWSTR lpValueName, DWORD dwType, LPCVOID lpData, DWORD cbData)
+     * }
+     */
+    public static FunctionDescriptor RegSetKeyValueW$descriptor() {
+        return RegSetKeyValueW.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * LSTATUS RegSetKeyValueW(HKEY hKey, LPCWSTR lpSubKey, LPCWSTR lpValueName, DWORD dwType, LPCVOID lpData, DWORD cbData)
+     * }
+     */
+    public static MethodHandle RegSetKeyValueW$handle() {
+        return RegSetKeyValueW.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * LSTATUS RegSetKeyValueW(HKEY hKey, LPCWSTR lpSubKey, LPCWSTR lpValueName, DWORD dwType, LPCVOID lpData, DWORD cbData)
+     * }
+     */
+    public static MemorySegment RegSetKeyValueW$address() {
+        return RegSetKeyValueW.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * LSTATUS RegSetKeyValueW(HKEY hKey, LPCWSTR lpSubKey, LPCWSTR lpValueName, DWORD dwType, LPCVOID lpData, DWORD cbData)
+     * }
+     */
+    public static int RegSetKeyValueW(MemorySegment hKey, MemorySegment lpSubKey, MemorySegment lpValueName, int dwType, MemorySegment lpData, int cbData) {
+        var mh$ = RegSetKeyValueW.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("RegSetKeyValueW", hKey, lpSubKey, lpValueName, dwType, lpData, cbData);
+            }
+            return (int)mh$.invokeExact(hKey, lpSubKey, lpValueName, dwType, lpData, cbData);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class RegDeleteTreeW {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            winreg_h.C_LONG,
+            winreg_h.C_POINTER,
+            winreg_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegDeleteTreeW");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * LSTATUS RegDeleteTreeW(HKEY hKey, LPCWSTR lpSubKey)
+     * }
+     */
+    public static FunctionDescriptor RegDeleteTreeW$descriptor() {
+        return RegDeleteTreeW.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * LSTATUS RegDeleteTreeW(HKEY hKey, LPCWSTR lpSubKey)
+     * }
+     */
+    public static MethodHandle RegDeleteTreeW$handle() {
+        return RegDeleteTreeW.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * LSTATUS RegDeleteTreeW(HKEY hKey, LPCWSTR lpSubKey)
+     * }
+     */
+    public static MemorySegment RegDeleteTreeW$address() {
+        return RegDeleteTreeW.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * LSTATUS RegDeleteTreeW(HKEY hKey, LPCWSTR lpSubKey)
+     * }
+     */
+    public static int RegDeleteTreeW(MemorySegment hKey, MemorySegment lpSubKey) {
+        var mh$ = RegDeleteTreeW.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("RegDeleteTreeW", hKey, lpSubKey);
+            }
+            return (int)mh$.invokeExact(hKey, lpSubKey);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static class RegGetValueW {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            winreg_h.C_LONG,
+            winreg_h.C_POINTER,
+            winreg_h.C_POINTER,
+            winreg_h.C_POINTER,
+            winreg_h.C_LONG,
+            winreg_h.C_POINTER,
+            winreg_h.C_POINTER,
+            winreg_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegGetValueW");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * LSTATUS RegGetValueW(HKEY hkey, LPCWSTR lpSubKey, LPCWSTR lpValue, DWORD dwFlags, LPDWORD pdwType, PVOID pvData, LPDWORD pcbData)
+     * }
+     */
+    public static FunctionDescriptor RegGetValueW$descriptor() {
+        return RegGetValueW.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * LSTATUS RegGetValueW(HKEY hkey, LPCWSTR lpSubKey, LPCWSTR lpValue, DWORD dwFlags, LPDWORD pdwType, PVOID pvData, LPDWORD pcbData)
+     * }
+     */
+    public static MethodHandle RegGetValueW$handle() {
+        return RegGetValueW.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * LSTATUS RegGetValueW(HKEY hkey, LPCWSTR lpSubKey, LPCWSTR lpValue, DWORD dwFlags, LPDWORD pdwType, PVOID pvData, LPDWORD pcbData)
+     * }
+     */
+    public static MemorySegment RegGetValueW$address() {
+        return RegGetValueW.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * LSTATUS RegGetValueW(HKEY hkey, LPCWSTR lpSubKey, LPCWSTR lpValue, DWORD dwFlags, LPDWORD pdwType, PVOID pvData, LPDWORD pcbData)
+     * }
+     */
+    public static int RegGetValueW(MemorySegment hkey, MemorySegment lpSubKey, MemorySegment lpValue, int dwFlags, MemorySegment pdwType, MemorySegment pvData, MemorySegment pcbData) {
+        var mh$ = RegGetValueW.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("RegGetValueW", hkey, lpSubKey, lpValue, dwFlags, pdwType, pvData, pcbData);
+            }
+            return (int)mh$.invokeExact(hkey, lpSubKey, lpValue, dwFlags, pdwType, pvData, pcbData);
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }

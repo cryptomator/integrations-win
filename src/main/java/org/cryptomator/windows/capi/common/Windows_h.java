@@ -199,5 +199,23 @@ public class Windows_h {
     public static MemorySegment INVALID_HANDLE_VALUE() {
         return INVALID_HANDLE_VALUE;
     }
+    private static final int ERROR_SUCCESS = (int)0L;
+    /**
+     * {@snippet lang=c :
+     * #define ERROR_SUCCESS 0
+     * }
+     */
+    public static int ERROR_SUCCESS() {
+        return ERROR_SUCCESS;
+    }
+    private static final int ERROR_MORE_DATA = (int)234L;
+    /**
+     * {@snippet lang=c :
+     * #define ERROR_MORE_DATA 234
+     * }
+     */
+    public static int ERROR_MORE_DATA() {
+        return ERROR_MORE_DATA;
+    }
 }
 
