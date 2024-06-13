@@ -188,30 +188,35 @@ public class WindowsRegistry {
 		public String getStringValue(String name) throws RuntimeException {
 			try (var arena = Arena.ofConfined()) {
 				var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
-				return getStringValue(lpValueName, 256L);
+				var data = getValue(lpValueName, RRF_RT_REG_SZ(), 256L);
+				return data.getString(0, StandardCharsets.UTF_16LE);
 			}
 		}
 
-		private String getStringValue(MemorySegment lpValueName, long bufferSize) throws RuntimeException {
+		private MemorySegment getValue(MemorySegment lpValueName, int dwFlags, long seed) throws RuntimeException {
+			long bufferSize = seed - 1;
 			try (var arena = Arena.ofConfined()) {
 				var lpDataSize = arena.allocateFrom(ValueLayout.JAVA_INT, (int) bufferSize);
 
 				try (var dataArena = Arena.ofConfined()) {
 					var lpData = dataArena.allocate(bufferSize);
 
-					int result = winreg_h.RegGetValueW(handle, NULL, lpValueName, RRF_RT_REG_SZ(), NULL, lpData, lpDataSize);
+					int result = winreg_h.RegGetValueW(handle, NULL, lpValueName, dwFlags, NULL, lpData, lpDataSize);
 					if (result == ERROR_MORE_DATA()) {
 						throw new BufferTooSmallException();
 					} else if (result != ERROR_SUCCESS()) {
 						throw new RuntimeException("Getting value %s for key %s failed with error code %d".formatted(lpValueName.getString(0, StandardCharsets.UTF_16LE), path, result));
 					}
-					return lpData.getString(0, StandardCharsets.UTF_16LE);
+
+					var returnBuffer = Arena.ofAuto().allocate(Integer.toUnsignedLong(lpDataSize.get(ValueLayout.JAVA_INT, 0)));
+					MemorySegment.copy(lpData, 0L, returnBuffer, 0L, returnBuffer.byteSize());
+					return returnBuffer;
 
 				} catch (BufferTooSmallException _) {
 					if (bufferSize <= MAX_DATA_SIZE) {
-						return getStringValue(lpValueName, (bufferSize << 1) - 1);
+						return getValue(lpValueName, dwFlags, seed << 1);
 					} else {
-						throw new RuntimeException("Getting value %s for key %s failed. Maximum buffer size reached".formatted(lpValueName.getString(0, StandardCharsets.UTF_16LE), path));
+						throw new RuntimeException("Getting value %s for key %s failed. Maximum buffer size of %d reached.".formatted(lpValueName.getString(0, StandardCharsets.UTF_16LE), path, bufferSize));
 					}
 				}
 			}
