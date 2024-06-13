@@ -188,24 +188,39 @@ public class WindowsRegistry {
 		}
 
 		public String getStringValue(String name) throws RuntimeException {
-			return getStringValue(name, 256);
-		}
-
-		private String getStringValue(String name, int bufferSize) throws RuntimeException {
 			try (var arena = Arena.ofConfined()) {
 				var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
-				var lpData = Arena.ofAuto().allocate(bufferSize);
-				var lpDataSize = arena.allocateFrom(ValueLayout.JAVA_INT, bufferSize);
-
-				//dwFlag is set to RRF_RT_REG_SZ
-				int result = winreg_h.RegGetValueW(handle, NULL, lpValueName, 0x00000002, NULL, lpData, lpDataSize);
-				if (result == ERROR_MORE_DATA()) {
-					getStringValue(name,lpDataSize.get(ValueLayout.JAVA_INT,0)); //TODO: we are allocating and allocating and allocating memorey due to the recursion!
-				} else if (result != ERROR_SUCCESS()) {
-					throw new RuntimeException("Getting value %s for key %s failed with error code %d".formatted(name, path, result));
-				}
-				return lpData.getString(0,StandardCharsets.UTF_16LE);
+				return getStringValue(lpValueName, 256L);
 			}
+		}
+
+		private String getStringValue(MemorySegment lpValueName, long bufferSize) throws RuntimeException {
+			try (var arena = Arena.ofConfined()) {
+				var lpDataSize = arena.allocateFrom(ValueLayout.JAVA_INT, (int) bufferSize);
+
+				try (var dataArena = Arena.ofConfined()) {
+					var lpData = dataArena.allocate(bufferSize);
+
+					int result = winreg_h.RegGetValueW(handle, NULL, lpValueName, RRF_RT_REG_SZ(), NULL, lpData, lpDataSize);
+					if (result == ERROR_MORE_DATA()) {
+						throw new BufferTooSmallException();
+					} else if (result != ERROR_SUCCESS()) {
+						throw new RuntimeException("Getting value %s for key %s failed with error code %d".formatted(lpValueName.getString(0, StandardCharsets.UTF_16LE), path, result));
+					}
+					return lpData.getString(0, StandardCharsets.UTF_16LE);
+
+				} catch (BufferTooSmallException _) {
+					if (bufferSize <= MAX_DATA_SIZE) {
+						return getStringValue(lpValueName, (bufferSize << 1) - 1);
+					} else {
+						throw new RuntimeException("Getting value %s for key %s failed. Maximum buffer size reached".formatted(lpValueName.getString(0, StandardCharsets.UTF_16LE), path));
+					}
+				}
+			}
+		}
+
+		private static class BufferTooSmallException extends RuntimeException {
+
 		}
 
 		public void deleteSubtree(String subkey) {
