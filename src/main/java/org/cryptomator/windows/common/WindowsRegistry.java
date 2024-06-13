@@ -226,6 +226,26 @@ public class WindowsRegistry {
 
 		}
 
+		public void setDwordValue(String name, int data) {
+			try (var arena = Arena.ofConfined()) {
+				var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
+				var lpValueData = arena.allocateFrom(ValueLayout.JAVA_INT, data);
+				int result = winreg_h.RegSetKeyValueW(handle, NULL, lpValueName, winreg_h.REG_DWORD(), lpValueData, (int) lpValueData.byteSize());
+				if (result != ERROR_SUCCESS()) {
+					throw new RuntimeException("Setting value %s for key %s failed with error code %d".formatted(name, path, result));
+				}
+			}
+		}
+
+		public int getDwordValue(String name) {
+			try (var arena = Arena.ofConfined()) {
+				var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
+				var data = getValue(lpValueName, RRF_RT_REG_DWORD(), 2);
+				return data.get(ValueLayout.JAVA_INT,0);
+			}
+		}
+
+
 		public void deleteSubtree(String subkey) {
 			if (subkey == null || subkey.isBlank()) {
 				throw new IllegalArgumentException("Subkey must not be empty");

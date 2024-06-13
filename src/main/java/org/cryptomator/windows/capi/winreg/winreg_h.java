@@ -70,6 +70,78 @@ public class winreg_h {
             .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, JAVA_BYTE));
     public static final ValueLayout.OfInt C_LONG = ValueLayout.JAVA_INT;
     public static final ValueLayout.OfDouble C_LONG_DOUBLE = ValueLayout.JAVA_DOUBLE;
+    private static final int RRF_RT_REG_SZ = (int)2L;
+    /**
+     * {@snippet lang=c :
+     * #define RRF_RT_REG_SZ 2
+     * }
+     */
+    public static int RRF_RT_REG_SZ() {
+        return RRF_RT_REG_SZ;
+    }
+    private static final int RRF_RT_REG_EXPAND_SZ = (int)4L;
+    /**
+     * {@snippet lang=c :
+     * #define RRF_RT_REG_EXPAND_SZ 4
+     * }
+     */
+    public static int RRF_RT_REG_EXPAND_SZ() {
+        return RRF_RT_REG_EXPAND_SZ;
+    }
+    private static final int RRF_RT_REG_BINARY = (int)8L;
+    /**
+     * {@snippet lang=c :
+     * #define RRF_RT_REG_BINARY 8
+     * }
+     */
+    public static int RRF_RT_REG_BINARY() {
+        return RRF_RT_REG_BINARY;
+    }
+    private static final int RRF_RT_REG_DWORD = (int)16L;
+    /**
+     * {@snippet lang=c :
+     * #define RRF_RT_REG_DWORD 16
+     * }
+     */
+    public static int RRF_RT_REG_DWORD() {
+        return RRF_RT_REG_DWORD;
+    }
+    private static final int RRF_RT_REG_MULTI_SZ = (int)32L;
+    /**
+     * {@snippet lang=c :
+     * #define RRF_RT_REG_MULTI_SZ 32
+     * }
+     */
+    public static int RRF_RT_REG_MULTI_SZ() {
+        return RRF_RT_REG_MULTI_SZ;
+    }
+    private static final int RRF_RT_REG_QWORD = (int)64L;
+    /**
+     * {@snippet lang=c :
+     * #define RRF_RT_REG_QWORD 64
+     * }
+     */
+    public static int RRF_RT_REG_QWORD() {
+        return RRF_RT_REG_QWORD;
+    }
+    private static final int RRF_RT_ANY = (int)65535L;
+    /**
+     * {@snippet lang=c :
+     * #define RRF_RT_ANY 65535
+     * }
+     */
+    public static int RRF_RT_ANY() {
+        return RRF_RT_ANY;
+    }
+    private static final int RRF_NOEXPAND = (int)268435456L;
+    /**
+     * {@snippet lang=c :
+     * #define RRF_NOEXPAND 268435456
+     * }
+     */
+    public static int RRF_NOEXPAND() {
+        return RRF_NOEXPAND;
+    }
 
     private static class RegCloseKey {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
