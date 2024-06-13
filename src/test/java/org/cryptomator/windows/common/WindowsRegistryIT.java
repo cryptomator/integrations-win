@@ -91,7 +91,6 @@ public class WindowsRegistryIT {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 			k.deleteValuesAndSubtree("");
-			t.rollback();
 		}
 
 		Assertions.assertDoesNotThrow(() -> {
@@ -127,7 +126,6 @@ public class WindowsRegistryIT {
 	public void testDeleteRollback() {
 		try (var t = WindowsRegistry.startTransaction()) {
 			t.deleteRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win");
-			t.rollback();
 		}
 
 		try (var t = WindowsRegistry.startTransaction();
