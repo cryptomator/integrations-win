@@ -80,7 +80,8 @@ public class WindowsRegistryIT {
 
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
-			k.getStringValue("itTest");
+			var data = k.getStringValue("itTest");
+			Assertions.assertEquals("In Progress", data);
 		}
 	}
 
