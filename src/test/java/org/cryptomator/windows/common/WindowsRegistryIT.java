@@ -57,13 +57,14 @@ public class WindowsRegistryIT {
 	public void testOpenSetValueRollback() {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
-			k.setStringValue("itTest", "In Progress");
+			k.setStringValue("itTest", "In Progress", false);
 		}
 
+		//TODO: be more specific in the assertion
 		Assertions.assertThrows(RuntimeException.class, () -> {
 			try (var t = WindowsRegistry.startTransaction();
 				 var k = t.openRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
-				k.getStringValue("itTest");
+				k.getStringValue("itTest", false);
 			}
 		});
 	}
@@ -74,13 +75,13 @@ public class WindowsRegistryIT {
 	public void testOpenSetValueCommit() {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
-			k.setStringValue("itTest", "In Progress");
+			k.setStringValue("itTest", "In Progress", false);
 			t.commit();
 		}
 
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
-			var data = k.getStringValue("itTest");
+			var data = k.getStringValue("itTest", false);
 			Assertions.assertEquals("In Progress", data);
 		}
 	}
@@ -97,7 +98,7 @@ public class WindowsRegistryIT {
 		Assertions.assertDoesNotThrow(() -> {
 			try (var t = WindowsRegistry.startTransaction();
 				 var k = t.openRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
-				k.getStringValue("itTest");
+				k.getStringValue("itTest", false);
 			}
 		});
 	}
@@ -117,7 +118,7 @@ public class WindowsRegistryIT {
 			 var k = t.openRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 
 			Assertions.assertThrows(RuntimeException.class, () -> t.openRegKey(k, "subkey"));
-			Assertions.assertThrows(RuntimeException.class, () -> k.getStringValue("itTest"));
+			Assertions.assertThrows(RuntimeException.class, () -> k.getStringValue("itTest", false));
 		}
 	}
 

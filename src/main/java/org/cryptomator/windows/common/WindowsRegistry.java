@@ -173,10 +173,10 @@ public class WindowsRegistry {
 
 		//-- GetValue functions --
 
-		public String getStringValue(String name) throws RuntimeException {
+		public String getStringValue(String name, boolean isExpandable) throws RuntimeException {
 			try (var arena = Arena.ofConfined()) {
 				var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
-				var data = getValue(lpValueName, RRF_RT_REG_SZ(), 256L);
+				var data = getValue(lpValueName, isExpandable? RRF_RT_REG_EXPAND_SZ() : RRF_RT_REG_SZ(), 256L);
 				return data.getString(0, StandardCharsets.UTF_16LE);
 			}
 		}
@@ -224,11 +224,11 @@ public class WindowsRegistry {
 
 		//-- SetValue functions --
 
-		public void setStringValue(String name, String data) throws RuntimeException {
+		public void setStringValue(String name, String data, boolean isExpandable) throws RuntimeException {
 			try (var arena = Arena.ofConfined()) {
 				var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
 				var lpValueData = arena.allocateFrom(data, StandardCharsets.UTF_16LE);
-				setValue(lpValueName, lpValueData, winreg_h.REG_SZ());
+				setValue(lpValueName, lpValueData, isExpandable? REG_EXPAND_SZ() : winreg_h.REG_SZ());
 			}
 		}
 
