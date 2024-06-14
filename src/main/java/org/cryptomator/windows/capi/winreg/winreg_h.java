@@ -396,6 +396,66 @@ public class winreg_h {
         }
     }
 
+    private static class RegDeleteKeyValueW {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            winreg_h.C_LONG,
+            winreg_h.C_POINTER,
+            winreg_h.C_POINTER,
+            winreg_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegDeleteKeyValueW");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * LSTATUS RegDeleteKeyValueW(HKEY hKey, LPCWSTR lpSubKey, LPCWSTR lpValueName)
+     * }
+     */
+    public static FunctionDescriptor RegDeleteKeyValueW$descriptor() {
+        return RegDeleteKeyValueW.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * LSTATUS RegDeleteKeyValueW(HKEY hKey, LPCWSTR lpSubKey, LPCWSTR lpValueName)
+     * }
+     */
+    public static MethodHandle RegDeleteKeyValueW$handle() {
+        return RegDeleteKeyValueW.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * LSTATUS RegDeleteKeyValueW(HKEY hKey, LPCWSTR lpSubKey, LPCWSTR lpValueName)
+     * }
+     */
+    public static MemorySegment RegDeleteKeyValueW$address() {
+        return RegDeleteKeyValueW.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * LSTATUS RegDeleteKeyValueW(HKEY hKey, LPCWSTR lpSubKey, LPCWSTR lpValueName)
+     * }
+     */
+    public static int RegDeleteKeyValueW(MemorySegment hKey, MemorySegment lpSubKey, MemorySegment lpValueName) {
+        var mh$ = RegDeleteKeyValueW.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("RegDeleteKeyValueW", hKey, lpSubKey, lpValueName);
+            }
+            return (int)mh$.invokeExact(hKey, lpSubKey, lpValueName);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
     private static class RegSetKeyValueW {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             winreg_h.C_LONG,

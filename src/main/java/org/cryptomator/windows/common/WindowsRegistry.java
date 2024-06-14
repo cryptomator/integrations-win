@@ -251,14 +251,30 @@ public class WindowsRegistry {
 			}
 		}
 
+		//-- delete operations
+
+		public void deleteValue(String valueName) {
+			try (var arena = Arena.ofConfined()) {
+				var lpValueName = arena.allocateFrom(valueName, StandardCharsets.UTF_16LE);
+				int result = winreg_h.RegDeleteKeyValueW(handle, NULL, lpValueName);
+				if (result != ERROR_SUCCESS()) {
+					throw new RuntimeException("Deleting Key failed with error code " + result);
+				}
+			}
+		}
+
 		public void deleteSubtree(String subkey) {
 			if (subkey == null || subkey.isBlank()) {
 				throw new IllegalArgumentException("Subkey must not be empty");
 			}
-			deleteValuesAndSubtree(subkey);
+			deleteValuesAndSubtrees(subkey);
 		}
 
-		public void deleteValuesAndSubtree(String subkey) {
+		public void deleteAllValuesAndSubtrees() {
+			deleteValuesAndSubtrees("");
+		}
+
+		private void deleteValuesAndSubtrees(String subkey) {
 			try (var arena = Arena.ofConfined()) {
 				var lpSubkey = arena.allocateFrom(subkey, StandardCharsets.UTF_16LE);
 				int result = winreg_h.RegDeleteTreeW(handle, lpSubkey);
