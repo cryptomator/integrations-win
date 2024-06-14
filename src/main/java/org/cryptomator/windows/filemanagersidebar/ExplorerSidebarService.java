@@ -1,5 +1,7 @@
 package org.cryptomator.windows.filemanagersidebar;
 
+import org.cryptomator.integrations.common.OperatingSystem;
+import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.filemanagersidebar.SidebarService;
 import org.cryptomator.windows.common.WindowsRegistry;
 
@@ -11,6 +13,8 @@ import java.util.UUID;
  * <p>
  * Based on a <a href="https://learn.microsoft.com/en-us/windows/win32/shell/integrate-cloud-storage">Microsoft docs example</a>.
  */
+@Priority(100)
+@OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class ExplorerSidebarService implements SidebarService {
 
 	@Override
