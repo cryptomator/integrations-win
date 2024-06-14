@@ -171,25 +171,21 @@ public class WindowsRegistry {
 			this.path = path;
 		}
 
-		public void setStringValue(String name, String data) throws RuntimeException {
-			try (var arena = Arena.ofConfined()) {
-				var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
-				var lpValueData = arena.allocateFrom(data, StandardCharsets.UTF_16LE);
-				if (lpValueData.byteSize() > MAX_DATA_SIZE) {
-					throw new IllegalArgumentException("Data encoded as UTF 16 LE must be smaller than " + MAX_DATA_SIZE + "bytes.");
-				}
-				int result = winreg_h.RegSetKeyValueW(handle, NULL, lpValueName, winreg_h.REG_SZ(), lpValueData, (int) lpValueData.byteSize());
-				if (result != ERROR_SUCCESS()) {
-					throw new RuntimeException("Setting value %s for key %s failed with error code %d".formatted(name, path, result));
-				}
-			}
-		}
+		//-- GetValue functions --
 
 		public String getStringValue(String name) throws RuntimeException {
 			try (var arena = Arena.ofConfined()) {
 				var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
 				var data = getValue(lpValueName, RRF_RT_REG_SZ(), 256L);
 				return data.getString(0, StandardCharsets.UTF_16LE);
+			}
+		}
+
+		public int getDwordValue(String name) {
+			try (var arena = Arena.ofConfined()) {
+				var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
+				var data = getValue(lpValueName, RRF_RT_REG_DWORD(), 5L);
+				return data.get(ValueLayout.JAVA_INT,0);
 			}
 		}
 
@@ -226,25 +222,34 @@ public class WindowsRegistry {
 
 		}
 
+		//-- SetValue functions --
+
+		public void setStringValue(String name, String data) throws RuntimeException {
+			try (var arena = Arena.ofConfined()) {
+				var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
+				var lpValueData = arena.allocateFrom(data, StandardCharsets.UTF_16LE);
+				setValue(lpValueName, lpValueData, winreg_h.REG_SZ());
+			}
+		}
+
 		public void setDwordValue(String name, int data) {
 			try (var arena = Arena.ofConfined()) {
 				var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
 				var lpValueData = arena.allocateFrom(ValueLayout.JAVA_INT, data);
-				int result = winreg_h.RegSetKeyValueW(handle, NULL, lpValueName, winreg_h.REG_DWORD(), lpValueData, (int) lpValueData.byteSize());
-				if (result != ERROR_SUCCESS()) {
-					throw new RuntimeException("Setting value %s for key %s failed with error code %d".formatted(name, path, result));
-				}
+				setValue(lpValueName, lpValueData, winreg_h.REG_DWORD());
 			}
 		}
 
-		public int getDwordValue(String name) {
-			try (var arena = Arena.ofConfined()) {
-				var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
-				var data = getValue(lpValueName, RRF_RT_REG_DWORD(), 2);
-				return data.get(ValueLayout.JAVA_INT,0);
+		private void setValue(MemorySegment lpValueName, MemorySegment data, int dwFlags) {
+			if (data.byteSize() > MAX_DATA_SIZE) {
+				throw new IllegalArgumentException("Data must be smaller than " + MAX_DATA_SIZE + "bytes.");
+			}
+
+			int result = winreg_h.RegSetKeyValueW(handle, NULL, lpValueName, dwFlags, data , (int) data.byteSize());
+			if (result != ERROR_SUCCESS()) {
+				throw new RuntimeException("Setting value %s for key %s failed with error code %d".formatted(lpValueName.getString(0, StandardCharsets.UTF_16LE), path, result));
 			}
 		}
-
 
 		public void deleteSubtree(String subkey) {
 			if (subkey == null || subkey.isBlank()) {
