@@ -15,12 +15,12 @@ public class ExplorerSidebarService implements SidebarService {
 
 	@Override
 	public SidebarEntry add(Path mountpoint) {
-		var entryName = "Vault " + mountpoint.getFileName().toString();
-		var clsid = UUID.randomUUID().toString();
+		var entryName = "Vault - " + mountpoint.getFileName().toString();
+		var clsid = "{" + UUID.randomUUID() + "}";
 		System.out.println(clsid);
 		//1. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /ve /t REG_SZ /d "MyCloudStorageApp" /f
 		try (var t = WindowsRegistry.startTransaction()) {
-			try (var baseKey = t.createRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\{%s}".formatted(clsid), true)) {
+			try (var baseKey = t.createRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\" + clsid, true)) {
 
 				baseKey.setStringValue("", entryName, false);
 
@@ -64,18 +64,42 @@ public class ExplorerSidebarService implements SidebarService {
 			}
 
 			//11. reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /ve /t REG_SZ /d MyCloudStorageApp /f
-			var nameSpaceSubKey = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\{%s}".formatted(clsid);
+			var nameSpaceSubKey = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\" + clsid;
 			try (var nameSpaceKey = t.createRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, nameSpaceSubKey, true)) {
 				nameSpaceKey.setStringValue("", entryName, false);
 			}
 
 			//12. reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel /v {0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /t REG_DWORD /d 0x1 /f
 			try (var newStartPanelKey = t.createRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel", true)) {
-				newStartPanelKey.setDwordValue("{%s}".formatted(clsid), 0x1);
+				newStartPanelKey.setDwordValue(clsid, 0x1);
 			}
 			t.commit();
 		}
-		return null;
+		return new ExplorerSidebarEntry(clsid);
+	}
+
+	record ExplorerSidebarEntry(String clsid) implements SidebarEntry {
+
+		@Override
+		public void remove() {
+			try (var t = WindowsRegistry.startTransaction()) {
+				//undo step 11.
+				var nameSpaceSubkey = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\" + clsid;
+				t.deleteRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, nameSpaceSubkey);
+
+				//undo step 12.
+				try (var nameSpaceKey = t.openRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel")) {
+					nameSpaceKey.deleteValue(clsid);
+				}
+
+				//undo everything else
+				try (var baseKey = t.createRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\{%s}".formatted(clsid), true)) {
+					baseKey.deleteAllValuesAndSubtrees();
+				}
+				t.deleteRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\{%s}".formatted(clsid));
+				t.commit();
+			}
+		}
 	}
 
 }
