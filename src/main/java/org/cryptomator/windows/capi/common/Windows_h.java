@@ -70,12 +70,6 @@ public class Windows_h {
             .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, JAVA_BYTE));
     public static final ValueLayout.OfInt C_LONG = ValueLayout.JAVA_INT;
     public static final ValueLayout.OfDouble C_LONG_DOUBLE = ValueLayout.JAVA_DOUBLE;
-    /**
-     * {@snippet lang=c :
-     * typedef void *HANDLE
-     * }
-     */
-    public static final AddressLayout HANDLE = Windows_h.C_POINTER;
 
     private static class CloseHandle {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(

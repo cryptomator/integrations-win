@@ -51,7 +51,7 @@
 		<jextract-maven.version>0.4.1</jextract-maven.version>
 
 		<!-- jextract props -->
-		<win.ucrtHeaderPath>C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt</win.ucrtHeaderPath>
+		<win.umHeaderPath>C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\um</win.umHeaderPath>
 		<jextract.executable>C:\Users\Arbeit\Programs\jextract-22\bin\jextract.bat</jextract.executable>
 	</properties>
 
@@ -410,8 +410,13 @@
 						<version>${jextract-maven.version}</version>
 						<configuration>
 							<executable>${jextract.executable}</executable>
-							<headerSearchPaths>${win.ucrtHeaderPath}</headerSearchPaths>
+							<headerSearchPaths>${win.umHeaderPath}</headerSearchPaths>
 							<outputDirectory>${project.build.sourceDirectory}</outputDirectory>
+							<cPreprocessorMacros>
+								<cPreprocessorMacro>_AMD64_</cPreprocessorMacro>
+								<cPreprocessorMacro>UNICODE</cPreprocessorMacro>
+								<cPreprocessorMacro>_WIN32_WINNT=0x0A00</cPreprocessorMacro>
+							</cPreprocessorMacros>
 						</configuration>
 						<executions>
 							<execution>
@@ -421,16 +426,11 @@
 								</goals>
 								<configuration>
 									<targetPackage>org.cryptomator.windows.capi.winreg</targetPackage>
-									<headerFile>${win.ucrtHeaderPath}/../um/winreg.h</headerFile>
-									<headerClassName>winreg_h</headerClassName>
+									<headerFile>${win.umHeaderPath}/winreg.h</headerFile>
+									<headerClassName>Winreg_h</headerClassName>
 									<libraries>
 										<library>Advapi32</library>
 									</libraries>
-									<cPreprocessorMacros>
-										<cPreprocessorMacro>_AMD64_</cPreprocessorMacro>
-										<cPreprocessorMacro>UNICODE</cPreprocessorMacro>
-										<cPreprocessorMacro>_WIN32_WINNT=0x0A00</cPreprocessorMacro>
-									</cPreprocessorMacros>
 									<includeFunctions>
 										<includeFunction>RegCreateKeyTransactedW</includeFunction>
 										<includeFunction>RegOpenKeyTransactedW</includeFunction>
@@ -464,6 +464,52 @@
 										<includeConstant>RRF_RT_REG_EXPAND_SZ</includeConstant>
 										<includeConstant>RRF_RT_REG_MULTI_SZ</includeConstant>
 										<includeConstant>RRF_NOEXPAND</includeConstant>
+									</includeConstants>
+								</configuration>
+							</execution>
+							<execution>
+								<id>jextract-ktmw32</id>
+								<goals>
+									<goal>sources</goal>
+								</goals>
+								<configuration>
+									<targetPackage>org.cryptomator.windows.capi.ktmw32</targetPackage>
+									<headerFile>${project.basedir}/src/main/resources/ktmw32_helper.h</headerFile>
+									<headerClassName>Ktmw32_h</headerClassName>
+									<libraries>
+										<library>KtmW32</library>
+									</libraries>
+									<includeFunctions>
+										<includeFunction>CreateTransaction</includeFunction>
+										<includeFunction>CommitTransaction</includeFunction>
+										<includeFunction>RollbackTransaction</includeFunction>
+									</includeFunctions>
+									<includeConstants>
+										<includeConstant>INVALID_HANDLE_VALUE</includeConstant>
+									</includeConstants>
+								</configuration>
+							</execution>
+							<execution>
+								<id>jextract-common</id>
+								<goals>
+									<goal>sources</goal>
+								</goals>
+								<configuration>
+									<targetPackage>org.cryptomator.windows.capi.common</targetPackage>
+									<headerFile>${win.umHeaderPath}/Windows.h</headerFile>
+									<headerClassName>Windows_h</headerClassName>
+									<libraries>
+										<library>Kernel32</library>
+									</libraries>
+									<includeFunctions>
+										<includeFunction>GetLastError</includeFunction>
+										<includeFunction>CloseHandle</includeFunction>
+									</includeFunctions>
+									<includeConstants>
+										<includeConstant>ERROR_SUCCESS</includeConstant>
+										<includeConstant>INVALID_HANDLE_VALUE</includeConstant>
+										<includeConstant>ERROR_SUCCESS</includeConstant>
+										<includeConstant>ERROR_MORE_DATA</includeConstant>
 									</includeConstants>
 								</configuration>
 							</execution>

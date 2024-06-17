@@ -12,9 +12,9 @@ import java.util.stream.*;
 import static java.lang.foreign.ValueLayout.*;
 import static java.lang.foreign.MemoryLayout.PathElement.*;
 
-public class winreg_h {
+public class Winreg_h {
 
-    winreg_h() {
+    Winreg_h() {
         // Should not be called directly
     }
 
@@ -145,11 +145,11 @@ public class winreg_h {
 
     private static class RegCloseKey {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegCloseKey");
+        public static final MemorySegment ADDR = Winreg_h.findOrThrow("RegCloseKey");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -203,21 +203,21 @@ public class winreg_h {
 
     private static class RegCreateKeyTransactedW {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER,
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER,
-            winreg_h.C_LONG,
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_LONG,
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegCreateKeyTransactedW");
+        public static final MemorySegment ADDR = Winreg_h.findOrThrow("RegCreateKeyTransactedW");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -271,16 +271,16 @@ public class winreg_h {
 
     private static class RegDeleteKeyTransactedW {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER,
-            winreg_h.C_LONG,
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_LONG,
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegDeleteKeyTransactedW");
+        public static final MemorySegment ADDR = Winreg_h.findOrThrow("RegDeleteKeyTransactedW");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -334,17 +334,17 @@ public class winreg_h {
 
     private static class RegOpenKeyTransactedW {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER,
-            winreg_h.C_LONG,
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_LONG,
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegOpenKeyTransactedW");
+        public static final MemorySegment ADDR = Winreg_h.findOrThrow("RegOpenKeyTransactedW");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -398,13 +398,13 @@ public class winreg_h {
 
     private static class RegDeleteKeyValueW {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegDeleteKeyValueW");
+        public static final MemorySegment ADDR = Winreg_h.findOrThrow("RegDeleteKeyValueW");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -458,16 +458,16 @@ public class winreg_h {
 
     private static class RegSetKeyValueW {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER,
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER,
-            winreg_h.C_LONG
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_LONG
         );
 
-        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegSetKeyValueW");
+        public static final MemorySegment ADDR = Winreg_h.findOrThrow("RegSetKeyValueW");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -521,12 +521,12 @@ public class winreg_h {
 
     private static class RegDeleteTreeW {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegDeleteTreeW");
+        public static final MemorySegment ADDR = Winreg_h.findOrThrow("RegDeleteTreeW");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -580,17 +580,17 @@ public class winreg_h {
 
     private static class RegGetValueW {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER,
-            winreg_h.C_LONG,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER,
-            winreg_h.C_POINTER
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_LONG,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER,
+            Winreg_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = winreg_h.findOrThrow("RegGetValueW");
+        public static final MemorySegment ADDR = Winreg_h.findOrThrow("RegGetValueW");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }

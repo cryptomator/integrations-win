@@ -12,9 +12,9 @@ import java.util.stream.*;
 import static java.lang.foreign.ValueLayout.*;
 import static java.lang.foreign.MemoryLayout.PathElement.*;
 
-public class ktmw32_ex_h {
+public class Ktmw32_h {
 
-    ktmw32_ex_h() {
+    Ktmw32_h() {
         // Should not be called directly
     }
 
@@ -73,17 +73,17 @@ public class ktmw32_ex_h {
 
     private static class CreateTransaction {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-            ktmw32_ex_h.C_POINTER,
-            ktmw32_ex_h.C_POINTER,
-            ktmw32_ex_h.C_POINTER,
-            ktmw32_ex_h.C_LONG,
-            ktmw32_ex_h.C_LONG,
-            ktmw32_ex_h.C_LONG,
-            ktmw32_ex_h.C_LONG,
-            ktmw32_ex_h.C_POINTER
+            Ktmw32_h.C_POINTER,
+            Ktmw32_h.C_POINTER,
+            Ktmw32_h.C_POINTER,
+            Ktmw32_h.C_LONG,
+            Ktmw32_h.C_LONG,
+            Ktmw32_h.C_LONG,
+            Ktmw32_h.C_LONG,
+            Ktmw32_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = ktmw32_ex_h.findOrThrow("CreateTransaction");
+        public static final MemorySegment ADDR = Ktmw32_h.findOrThrow("CreateTransaction");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -137,11 +137,11 @@ public class ktmw32_ex_h {
 
     private static class CommitTransaction {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-            ktmw32_ex_h.C_INT,
-            ktmw32_ex_h.C_POINTER
+            Ktmw32_h.C_INT,
+            Ktmw32_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = ktmw32_ex_h.findOrThrow("CommitTransaction");
+        public static final MemorySegment ADDR = Ktmw32_h.findOrThrow("CommitTransaction");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -195,11 +195,11 @@ public class ktmw32_ex_h {
 
     private static class RollbackTransaction {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-            ktmw32_ex_h.C_INT,
-            ktmw32_ex_h.C_POINTER
+            Ktmw32_h.C_INT,
+            Ktmw32_h.C_POINTER
         );
 
-        public static final MemorySegment ADDR = ktmw32_ex_h.findOrThrow("RollbackTransaction");
+        public static final MemorySegment ADDR = Ktmw32_h.findOrThrow("RollbackTransaction");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -249,6 +249,15 @@ public class ktmw32_ex_h {
         } catch (Throwable ex$) {
            throw new AssertionError("should not reach here", ex$);
         }
+    }
+    private static final MemorySegment INVALID_HANDLE_VALUE = MemorySegment.ofAddress(-1L);
+    /**
+     * {@snippet lang=c :
+     * #define INVALID_HANDLE_VALUE (void*) -1
+     * }
+     */
+    public static MemorySegment INVALID_HANDLE_VALUE() {
+        return INVALID_HANDLE_VALUE;
     }
 }
 
