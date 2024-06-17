@@ -1,74 +1,74 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>org.cryptomator</groupId>
-    <artifactId>integrations-win</artifactId>
-    <version>1.3.0-sidebar</version>
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.cryptomator</groupId>
+	<artifactId>integrations-win</artifactId>
+	<version>1.3.0-sidebar</version>
 
-    <name>Cryptomator Integrations for Windows</name>
-    <description>Provides optional Windows services used by Cryptomator</description>
-    <url>https://github.com/cryptomator/integrations-win</url>
-    <scm>
-        <connection>scm:git:git@github.com:cryptomator/integrations-win.git</connection>
-        <developerConnection>scm:git:git@github.com:cryptomator/integrations-win.git</developerConnection>
-        <url>git@github.com:cryptomator/integrations-win.git</url>
-    </scm>
-    <developers>
-        <developer>
-            <name>Sebastian Stenzel</name>
-            <email>sebastian.stenzel@skymatic.de</email>
-            <timezone>+1</timezone>
-            <organization>Skymatic GmbH</organization>
-            <organizationUrl>http://skymatic.de</organizationUrl>
-        </developer>
-        <developer>
-            <name>Armin Schrenk</name>
-            <email>armin.schrenk@skymatic.de</email>
-            <timezone>+1</timezone>
-            <organization>Skymatic GmbH</organization>
-            <organizationUrl>http://skymatic.de</organizationUrl>
-        </developer>
-    </developers>
+	<name>Cryptomator Integrations for Windows</name>
+	<description>Provides optional Windows services used by Cryptomator</description>
+	<url>https://github.com/cryptomator/integrations-win</url>
+	<scm>
+		<connection>scm:git:git@github.com:cryptomator/integrations-win.git</connection>
+		<developerConnection>scm:git:git@github.com:cryptomator/integrations-win.git</developerConnection>
+		<url>git@github.com:cryptomator/integrations-win.git</url>
+	</scm>
+	<developers>
+		<developer>
+			<name>Sebastian Stenzel</name>
+			<email>sebastian.stenzel@skymatic.de</email>
+			<timezone>+1</timezone>
+			<organization>Skymatic GmbH</organization>
+			<organizationUrl>http://skymatic.de</organizationUrl>
+		</developer>
+		<developer>
+			<name>Armin Schrenk</name>
+			<email>armin.schrenk@skymatic.de</email>
+			<timezone>+1</timezone>
+			<organization>Skymatic GmbH</organization>
+			<organizationUrl>http://skymatic.de</organizationUrl>
+		</developer>
+	</developers>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.jdk.version>22</project.jdk.version>
 
-        <!-- runtime dependencies -->
-        <api.version>1.4.0-sidebar</api.version>
-        <slf4j.version>2.0.13</slf4j.version>
+		<!-- runtime dependencies -->
+		<api.version>1.4.0-sidebar</api.version>
+		<slf4j.version>2.0.13</slf4j.version>
 		<jackson.version>2.17.1</jackson.version>
 
-        <!-- test dependencies -->
+		<!-- test dependencies -->
 		<junit.jupiter.version>5.10.2</junit.jupiter.version>
 		<mockito.version>5.12.0</mockito.version>
 
 		<!-- build plugin dependencies -->
 		<dependency-check.version>9.2.0</dependency-check.version>
 		<nexus-staging.version>1.7.0</nexus-staging.version>
-    </properties>
+	</properties>
 
-    <licenses>
-        <license>
-            <name>GNU Affero General Public License (AGPL) version 3.0</name>
-            <url>https://www.gnu.org/licenses/agpl.txt</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
+	<licenses>
+		<license>
+			<name>GNU Affero General Public License (AGPL) version 3.0</name>
+			<url>https://www.gnu.org/licenses/agpl.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.cryptomator</groupId>
-            <artifactId>integrations-api</artifactId>
-            <version>${api.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
-        </dependency>
+	<dependencies>
+		<dependency>
+			<groupId>org.cryptomator</groupId>
+			<artifactId>integrations-api</artifactId>
+			<version>${api.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
@@ -80,58 +80,58 @@
 			<version>${jackson.version}</version>
 		</dependency>
 
-        <!-- JUnit / Mockito / Hamcrest -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>${slf4j.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${junit.jupiter.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <version>${mockito.version}</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+		<!-- JUnit / Mockito / Hamcrest -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>${slf4j.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>${junit.jupiter.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>${mockito.version}</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-clean-plugin</artifactId>
-                <version>3.3.2</version>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>${project.basedir}/src/main/headers</directory>
-                            <followSymlinks>false</followSymlinks>
-                            <includes>
-                                <include>*.h</include>
-                            </includes>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
-                <configuration>
-                    <compilerArgs>
-                        <arg>-h</arg>
-                        <arg>${project.basedir}/src/main/headers</arg>
-                    </compilerArgs>
-                    <release>${project.jdk.version}</release>
-                </configuration>
-            </plugin>
-            <plugin>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>3.3.2</version>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>${project.basedir}/src/main/headers</directory>
+							<followSymlinks>false</followSymlinks>
+							<includes>
+								<include>*.h</include>
+							</includes>
+						</fileset>
+					</filesets>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.13.0</version>
+				<configuration>
+					<compilerArgs>
+						<arg>-h</arg>
+						<arg>${project.basedir}/src/main/headers</arg>
+					</compilerArgs>
+					<release>${project.jdk.version}</release>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
 				<version>3.5.0</version>
@@ -152,129 +152,143 @@
 					</execution>
 				</executions>
 			</plugin>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
-                <executions>
-                    <execution>
-                        <id>copy-dlls</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.basedir}/src/main/resources</directory>
-                                    <filtering>false</filtering>
-                                    <includes>
-                                        <include>*.dll</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
-            </plugin>
-            <plugin>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.7.0</version>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <quiet>true</quiet>
-                    <release>${project.jdk.version}</release>
-                    <tags>
-                        <!-- workaround for "unknown tag: implNote", see https://blog.codefx.org/java/new-javadoc-tags/#Maven  -->
-                        <tag>
-                            <name>apiNote</name>
-                            <placement>a</placement>
-                            <head>API Note:</head>
-                        </tag>
-                        <tag>
-                            <name>implSpec</name>
-                            <placement>a</placement>
-                            <head>Implementation Requirements:</head>
-                        </tag>
-                        <tag>
-                            <name>implNote</name>
-                            <placement>a</placement>
-                            <head>Implementation Note:</head>
-                        </tag>
-                        <tag><name>param</name></tag>
-                        <tag><name>return</name></tag>
-                        <tag><name>throws</name></tag>
-                        <tag><name>since</name></tag>
-                        <tag><name>version</name></tag>
-                        <tag><name>serialData</name></tag>
-                        <tag><name>see</name></tag>
-                    </tags>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.3.1</version>
+				<executions>
+					<execution>
+						<id>copy-dlls</id>
+						<phase>process-classes</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.outputDirectory}</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${project.basedir}/src/main/resources</directory>
+									<filtering>false</filtering>
+									<includes>
+										<include>*.dll</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.2.5</version>
+			</plugin>
+			<plugin>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.3.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.7.0</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<quiet>true</quiet>
+					<release>${project.jdk.version}</release>
+					<tags>
+						<!-- workaround for "unknown tag: implNote", see https://blog.codefx.org/java/new-javadoc-tags/#Maven  -->
+						<tag>
+							<name>apiNote</name>
+							<placement>a</placement>
+							<head>API Note:</head>
+						</tag>
+						<tag>
+							<name>implSpec</name>
+							<placement>a</placement>
+							<head>Implementation Requirements:</head>
+						</tag>
+						<tag>
+							<name>implNote</name>
+							<placement>a</placement>
+							<head>Implementation Note:</head>
+						</tag>
+						<tag>
+							<name>param</name>
+						</tag>
+						<tag>
+							<name>return</name>
+						</tag>
+						<tag>
+							<name>throws</name>
+						</tag>
+						<tag>
+							<name>since</name>
+						</tag>
+						<tag>
+							<name>version</name>
+						</tag>
+						<tag>
+							<name>serialData</name>
+						</tag>
+						<tag>
+							<name>see</name>
+						</tag>
+					</tags>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
-    <profiles>
-        <profile>
-            <id>dependency-check</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.owasp</groupId>
-                        <artifactId>dependency-check-maven</artifactId>
-                        <version>${dependency-check.version}</version>
-                        <configuration>
-                            <nvdValidForHours>24</nvdValidForHours>
-                            <failBuildOnCVSS>0</failBuildOnCVSS>
-                            <skipTestScope>true</skipTestScope>
-                            <detail>true</detail>
-                            <suppressionFile>suppression.xml</suppressionFile>
-                            <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
-                            <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>check</goal>
-                                </goals>
-                                <phase>validate</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
+	<profiles>
+		<profile>
+			<id>dependency-check</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.owasp</groupId>
+						<artifactId>dependency-check-maven</artifactId>
+						<version>${dependency-check.version}</version>
+						<configuration>
+							<nvdValidForHours>24</nvdValidForHours>
+							<failBuildOnCVSS>0</failBuildOnCVSS>
+							<skipTestScope>true</skipTestScope>
+							<detail>true</detail>
+							<suppressionFile>suppression.xml</suppressionFile>
+							<assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+							<nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+						</configuration>
+						<executions>
+							<execution>
+								<goals>
+									<goal>check</goal>
+								</goals>
+								<phase>validate</phase>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 
 		<profile>
 			<id>compile-native</id>
 			<activation>
 				<property>
 					<name>!skipNativeCompile</name>
-					</property>
+				</property>
 			</activation>
 			<build>
 				<plugins>
