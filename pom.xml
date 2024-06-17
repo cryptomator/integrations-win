@@ -48,6 +48,11 @@
 		<!-- build plugin dependencies -->
 		<dependency-check.version>9.2.0</dependency-check.version>
 		<nexus-staging.version>1.7.0</nexus-staging.version>
+		<jextract-maven.version>0.4.1</jextract-maven.version>
+
+		<!-- jextract props -->
+		<win.ucrtHeaderPath>C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\ucrt</win.ucrtHeaderPath>
+		<jextract.executable>C:\Users\Arbeit\Programs\jextract-22\bin\jextract.bat</jextract.executable>
 	</properties>
 
 	<licenses>
@@ -387,6 +392,82 @@
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-deploy-plugin</artifactId>
 						<version>3.1.2</version>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>jextract</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>io.github.coffeelibs</groupId>
+						<artifactId>jextract-maven-plugin</artifactId>
+						<version>${jextract-maven.version}</version>
+						<configuration>
+							<executable>${jextract.executable}</executable>
+							<headerSearchPaths>${win.ucrtHeaderPath}</headerSearchPaths>
+							<outputDirectory>${project.build.sourceDirectory}</outputDirectory>
+						</configuration>
+						<executions>
+							<execution>
+								<id>jextract-winreg</id>
+								<goals>
+									<goal>sources</goal>
+								</goals>
+								<configuration>
+									<targetPackage>org.cryptomator.windows.capi.winreg</targetPackage>
+									<headerFile>${win.ucrtHeaderPath}/../um/winreg.h</headerFile>
+									<headerClassName>winreg_h</headerClassName>
+									<libraries>
+										<library>Advapi32</library>
+									</libraries>
+									<cPreprocessorMacros>
+										<cPreprocessorMacro>_AMD64_</cPreprocessorMacro>
+										<cPreprocessorMacro>UNICODE</cPreprocessorMacro>
+										<cPreprocessorMacro>_WIN32_WINNT=0x0A00</cPreprocessorMacro>
+									</cPreprocessorMacros>
+									<includeFunctions>
+										<includeFunction>RegCreateKeyTransactedW</includeFunction>
+										<includeFunction>RegOpenKeyTransactedW</includeFunction>
+										<includeFunction>RegDeleteKeyTransactedW</includeFunction>
+										<includeFunction>RegCloseKey</includeFunction>
+										<includeFunction>RegGetValueW</includeFunction>
+										<includeFunction>RegSetKeyValueW</includeFunction>
+										<includeFunction>RegDeleteKeyValueW</includeFunction>
+										<includeFunction>RegDeleteTreeW</includeFunction>
+									</includeFunctions>
+									<includeConstants>
+										<includeConstant>HKEY_CLASSES_ROOT</includeConstant>
+										<includeConstant>HKEY_LOCAL_MACHINE</includeConstant>
+										<includeConstant>HKEY_USERS</includeConstant>
+										<includeConstant>HKEY_CURRENT_USER</includeConstant>
+										<includeConstant>REG_OPTION_VOLATILE</includeConstant>
+										<includeConstant>REG_OPTION_NON_VOLATILE</includeConstant>
+										<includeConstant>KEY_READ</includeConstant>
+										<includeConstant>KEY_WRITE</includeConstant>
+										<includeConstant>REG_BINARY</includeConstant>
+										<includeConstant>REG_DWORD</includeConstant>
+										<includeConstant>REG_QWORD</includeConstant>
+										<includeConstant>REG_SZ</includeConstant>
+										<includeConstant>REG_EXPAND_SZ</includeConstant>
+										<includeConstant>REG_MULTI_SZ</includeConstant>
+										<includeConstant>RRF_RT_ANY</includeConstant>
+										<includeConstant>RRF_RT_REG_BINARY</includeConstant>
+										<includeConstant>RRF_RT_REG_DWORD</includeConstant>
+										<includeConstant>RRF_RT_REG_QWORD</includeConstant>
+										<includeConstant>RRF_RT_REG_SZ</includeConstant>
+										<includeConstant>RRF_RT_REG_EXPAND_SZ</includeConstant>
+										<includeConstant>RRF_RT_REG_MULTI_SZ</includeConstant>
+										<includeConstant>RRF_NOEXPAND</includeConstant>
+									</includeConstants>
+								</configuration>
+							</execution>
+						</executions>
 					</plugin>
 				</plugins>
 			</build>

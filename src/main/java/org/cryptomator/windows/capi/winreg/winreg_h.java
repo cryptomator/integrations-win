@@ -677,15 +677,6 @@ public class winreg_h {
     public static int REG_OPTION_VOLATILE() {
         return REG_OPTION_VOLATILE;
     }
-    private static final int REG_NONE = (int)0L;
-    /**
-     * {@snippet lang=c :
-     * #define REG_NONE 0
-     * }
-     */
-    public static int REG_NONE() {
-        return REG_NONE;
-    }
     private static final int REG_SZ = (int)1L;
     /**
      * {@snippet lang=c :
