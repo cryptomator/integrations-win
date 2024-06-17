@@ -17,7 +17,7 @@ public class ExplorerSidebarServiceIT {
 
 	@Test
 	@DisplayName("Integrates a temp dir for 20s into the file explorer sidebar")
-	public void testAddCLSIDTree() throws IOException, InterruptedException {
+	public void testExplorerSidebarIntegration() throws IOException, InterruptedException {
 		var p = base.resolve("integration-win-testVault");
 		Files.createDirectory(p);
 		Files.createFile(p.resolve("firstLevel.file"));
