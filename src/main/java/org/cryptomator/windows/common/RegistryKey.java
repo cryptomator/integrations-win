@@ -22,7 +22,7 @@ public class RegistryKey implements AutoCloseable {
 	public static final RegistryKey HKEY_CLASSES_ROOT = new RegistryKey(Winreg_h.HKEY_CLASSES_ROOT(), "HKEY_CLASSES_ROOT");
 	public static final RegistryKey HKEY_USERS = new RegistryKey(Winreg_h.HKEY_USERS(), "HKEY_USERS");
 
-	protected final String path;
+	private final String path;
 	private MemorySegment handle;
 	private volatile boolean isClosed = false;
 
@@ -33,7 +33,7 @@ public class RegistryKey implements AutoCloseable {
 
 	//-- GetValue functions --
 
-	public String getStringValue(String name, boolean isExpandable) throws RuntimeException {
+	public String getStringValue(String name, boolean isExpandable) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
 			var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
 			var data = getValue(lpValueName, isExpandable ? RRF_RT_REG_EXPAND_SZ() : RRF_RT_REG_SZ(), 256L);
@@ -41,7 +41,7 @@ public class RegistryKey implements AutoCloseable {
 		}
 	}
 
-	public int getDwordValue(String name) {
+	public int getDwordValue(String name) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
 			var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
 			var data = getValue(lpValueName, RRF_RT_REG_DWORD(), 5L);
@@ -49,7 +49,7 @@ public class RegistryKey implements AutoCloseable {
 		}
 	}
 
-	private MemorySegment getValue(MemorySegment lpValueName, int dwFlags, long seed) throws RuntimeException {
+	private MemorySegment getValue(MemorySegment lpValueName, int dwFlags, long seed) throws RegistryValueException {
 		long bufferSize = seed - 1;
 		try (var arena = Arena.ofConfined()) {
 			var lpDataSize = arena.allocateFrom(ValueLayout.JAVA_INT, (int) bufferSize);
@@ -61,7 +61,7 @@ public class RegistryKey implements AutoCloseable {
 				if (result == ERROR_MORE_DATA()) {
 					throw new BufferTooSmallException();
 				} else if (result != ERROR_SUCCESS()) {
-					throw new RuntimeException("Getting value %s for key %s failed with error code %d".formatted(lpValueName.getString(0, StandardCharsets.UTF_16LE), path, result));
+					throw new RegistryValueException("winreg_h:RegGetValue", path, lpValueName.getString(0, StandardCharsets.UTF_16LE), result);
 				}
 
 				var returnBuffer = Arena.ofAuto().allocate(Integer.toUnsignedLong(lpDataSize.get(ValueLayout.JAVA_INT, 0)));
@@ -83,7 +83,7 @@ public class RegistryKey implements AutoCloseable {
 
 	//-- SetValue functions --
 
-	public void setStringValue(String name, String data, boolean isExpandable) throws RuntimeException {
+	public void setStringValue(String name, String data, boolean isExpandable) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
 			var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
 			var lpValueData = arena.allocateFrom(data, StandardCharsets.UTF_16LE);
@@ -91,7 +91,7 @@ public class RegistryKey implements AutoCloseable {
 		}
 	}
 
-	public void setDwordValue(String name, int data) {
+	public void setDwordValue(String name, int data) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
 			var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
 			var lpValueData = arena.allocateFrom(ValueLayout.JAVA_INT, data);
@@ -99,46 +99,46 @@ public class RegistryKey implements AutoCloseable {
 		}
 	}
 
-	private void setValue(MemorySegment lpValueName, MemorySegment data, int dwFlags) {
+	private void setValue(MemorySegment lpValueName, MemorySegment data, int dwFlags) throws RegistryValueException {
 		if (data.byteSize() > WindowsRegistry.MAX_DATA_SIZE) {
 			throw new IllegalArgumentException("Data must be smaller than " + WindowsRegistry.MAX_DATA_SIZE + "bytes.");
 		}
 
 		int result = Winreg_h.RegSetKeyValueW(handle, NULL, lpValueName, dwFlags, data, (int) data.byteSize());
 		if (result != ERROR_SUCCESS()) {
-			throw new RuntimeException("Setting value %s for key %s failed with error code %d".formatted(lpValueName.getString(0, StandardCharsets.UTF_16LE), path, result));
+			throw new RegistryValueException("winreg_h:RegSetKeyValueW", path, lpValueName.getString(0, StandardCharsets.UTF_16LE), result);
 		}
 	}
 
 	//-- delete operations
 
-	public void deleteValue(String valueName) {
+	public void deleteValue(String valueName) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
 			var lpValueName = arena.allocateFrom(valueName, StandardCharsets.UTF_16LE);
 			int result = Winreg_h.RegDeleteKeyValueW(handle, NULL, lpValueName);
 			if (result != ERROR_SUCCESS()) {
-				throw new RuntimeException("Deleting Key failed with error code " + result);
+				throw new RegistryValueException("winreg_h:RegSetKeyValueW", path, lpValueName.getString(0, StandardCharsets.UTF_16LE), result);
 			}
 		}
 	}
 
-	public void deleteSubtree(String subkey) {
+	public void deleteSubtree(String subkey) throws RegistryKeyException {
 		if (subkey == null || subkey.isBlank()) {
 			throw new IllegalArgumentException("Subkey must not be empty");
 		}
 		deleteValuesAndSubtrees(subkey);
 	}
 
-	public void deleteAllValuesAndSubtrees() {
+	public void deleteAllValuesAndSubtrees() throws RegistryKeyException {
 		deleteValuesAndSubtrees("");
 	}
 
-	private void deleteValuesAndSubtrees(String subkey) {
+	private void deleteValuesAndSubtrees(String subkey) throws RegistryKeyException {
 		try (var arena = Arena.ofConfined()) {
 			var lpSubkey = arena.allocateFrom(subkey, StandardCharsets.UTF_16LE);
 			int result = Winreg_h.RegDeleteTreeW(handle, lpSubkey);
 			if (result != ERROR_SUCCESS()) {
-				throw new RuntimeException("Deleting Key failed with error code " + result);
+				throw new RegistryKeyException("winreg.h:RegDeleteTreeW", path + "\\" + lpSubkey, result);
 			}
 		}
 	}
@@ -148,7 +148,7 @@ public class RegistryKey implements AutoCloseable {
 		if (!isClosed) {
 			int result = Winreg_h.RegCloseKey(handle);
 			if (result != ERROR_SUCCESS()) {
-				throw new RuntimeException("Closing key %s failed with error code %d.".formatted(path, result));
+				throw new RuntimeException(new RegistryKeyException("winreg.h:RegCloseKey", path, result));
 			}
 			handle = NULL;
 			isClosed = true;

@@ -16,7 +16,7 @@ public class WindowsRegistryIT {
 	@DisplayName("Open not exisitig key fails")
 	@Order(1)
 	public void testOpenNotExisting() {
-		var winException = Assertions.assertThrows(WindowsException.class, () -> {
+		var winException = Assertions.assertThrows(RegistryKeyException.class, () -> {
 			try (var t = WindowsRegistry.startTransaction()) {
 				var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "i\\do\\not\\exist");
 			}
@@ -28,7 +28,7 @@ public class WindowsRegistryIT {
 	@DisplayName("Deleting not exisitig key fails")
 	@Order(1)
 	public void testDeleteNotExisting() {
-		var winException = Assertions.assertThrows(WindowsException.class, () -> {
+		var winException = Assertions.assertThrows(RegistryKeyException.class, () -> {
 			try (var t = WindowsRegistry.startTransaction()) {
 				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "i\\do\\not\\exist");
 			}
@@ -53,7 +53,7 @@ public class WindowsRegistryIT {
 			 var k = t.createRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win", true)) {
 		}
 
-		var winException = Assertions.assertThrows(WindowsException.class, () -> {
+		var winException = Assertions.assertThrows(RegistryKeyException.class, () -> {
 			try (var t = WindowsRegistry.startTransaction();
 				 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 			}
@@ -84,12 +84,12 @@ public class WindowsRegistryIT {
 			k.setStringValue("exampleStringValue", "In Progress", false);
 		}
 
-		//TODO: be more specific in the assertion
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
-			Assertions.assertThrows(RuntimeException.class, () -> {
+			var regException = Assertions.assertThrows(RegistryValueException.class, () -> {
 				k.getStringValue("exampleStringValue", false);
 			});
+			Assertions.assertEquals(ERROR_FILE_NOT_FOUND(), regException.getSystemErrorCode());
 		}
 	}
 
@@ -142,9 +142,10 @@ public class WindowsRegistryIT {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 			//TODO: check for system error code
-			Assertions.assertThrows(RuntimeException.class, () -> {
+			var regException = Assertions.assertThrows(RegistryValueException.class, () -> {
 				k.getDwordValue("exampleDwordValue");
 			});
+			Assertions.assertEquals(ERROR_FILE_NOT_FOUND(), regException.getSystemErrorCode());
 		}
 	}
 
@@ -179,9 +180,10 @@ public class WindowsRegistryIT {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 
-			//TODO: check for system error code
-			Assertions.assertThrows(WindowsException.class, () -> t.openRegKey(k, "subkey"));
-			Assertions.assertThrows(RuntimeException.class, () -> k.getStringValue("exampleStringValue", false));
+			var regKeyException = Assertions.assertThrows(RegistryKeyException.class, () -> t.openRegKey(k, "subkey"));
+			var regValueException = Assertions.assertThrows(RegistryValueException.class, () -> k.getStringValue("exampleStringValue", false));
+			Assertions.assertEquals(ERROR_FILE_NOT_FOUND(), regKeyException.getSystemErrorCode());
+			Assertions.assertEquals(ERROR_FILE_NOT_FOUND(), regValueException.getSystemErrorCode());
 		}
 	}
 
@@ -207,11 +209,11 @@ public class WindowsRegistryIT {
 			t.commit();
 		}
 
-		//TODO: check for system error code
-		Assertions.assertThrows(WindowsException.class, () -> {
+		var regException = Assertions.assertThrows(WindowsException.class, () -> {
 			try (var t = WindowsRegistry.startTransaction();
 				 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 			}
 		});
+		Assertions.assertEquals(ERROR_FILE_NOT_FOUND(), regException.getSystemErrorCode());
 	}
 }

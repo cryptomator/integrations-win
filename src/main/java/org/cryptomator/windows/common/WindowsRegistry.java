@@ -39,7 +39,7 @@ public class WindowsRegistry {
 			this.transactionHandle = handle;
 		}
 
-		public RegistryKey createRegKey(RegistryKey key, String subkey, boolean isVolatile) throws WindowsException {
+		public RegistryKey createRegKey(RegistryKey key, String subkey, boolean isVolatile) throws RegistryKeyException {
 			var pointerToResultKey = Arena.ofAuto().allocate(AddressLayout.ADDRESS);
 			try (var arena = Arena.ofConfined()) {
 				var lpSubkey = arena.allocateFrom(subkey, StandardCharsets.UTF_16LE);
@@ -57,13 +57,13 @@ public class WindowsRegistry {
 						NULL
 				);
 				if (result != ERROR_SUCCESS()) {
-					throw new WindowsException("winreg.h:RegCreateKeyTransactedW", result);
+					throw new RegistryKeyException("winreg.h:RegCreateKeyTransactedW", key.getPath() + "\\" + subkey, result);
 				}
 				return new RegistryKey(pointerToResultKey.get(C_POINTER, 0), key.getPath() + "\\" + subkey);
 			}
 		}
 
-		public RegistryKey openRegKey(RegistryKey key, String subkey) throws WindowsException {
+		public RegistryKey openRegKey(RegistryKey key, String subkey) throws RegistryKeyException {
 			var pointerToResultKey = Arena.ofAuto().allocate(AddressLayout.ADDRESS);
 			try (var arena = Arena.ofConfined()) {
 				var lpSubkey = arena.allocateFrom(subkey, StandardCharsets.UTF_16LE);
@@ -77,7 +77,7 @@ public class WindowsRegistry {
 						NULL
 				);
 				if (result != ERROR_SUCCESS()) {
-					throw new WindowsException("winreg.h:RegOpenKeyTransactedW", result);
+					throw new RegistryKeyException("winreg.h:RegOpenKeyTransactedW", key.getPath() + "\\" + subkey, result);
 				}
 				return new RegistryKey(pointerToResultKey.get(C_POINTER, 0), key.getPath() + "\\" + subkey);
 			}
@@ -87,7 +87,7 @@ public class WindowsRegistry {
 			deleteRegKey(key, subkey, false);
 		}
 
-		public void deleteRegKey(RegistryKey key, String subkey, boolean ignoreNotExisting) throws WindowsException {
+		public void deleteRegKey(RegistryKey key, String subkey, boolean ignoreNotExisting) throws RegistryKeyException {
 			try (var arena = Arena.ofConfined()) {
 				var lpSubkey = arena.allocateFrom(subkey, StandardCharsets.UTF_16LE);
 				int result = Winreg_h.RegDeleteKeyTransactedW(
@@ -98,9 +98,9 @@ public class WindowsRegistry {
 						transactionHandle,
 						NULL
 				);
-				if( result != ERROR_SUCCESS() //
+				if (result != ERROR_SUCCESS() //
 						&& !(result == ERROR_FILE_NOT_FOUND() && ignoreNotExisting)) {
-					throw new WindowsException("winreg.h:RegDeleteKeyTransactedW", result);
+					throw new RegistryKeyException("winreg.h:RegDeleteKeyTransactedW", key.getPath() + "\\" + subkey, result);
 				}
 			}
 		}
