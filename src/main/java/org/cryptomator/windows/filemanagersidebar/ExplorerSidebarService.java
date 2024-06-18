@@ -4,6 +4,8 @@ import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.filemanagersidebar.SidebarService;
 import org.cryptomator.windows.common.WindowsRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.UUID;
@@ -17,11 +19,13 @@ import java.util.UUID;
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class ExplorerSidebarService implements SidebarService {
 
+	private static final Logger LOG = LoggerFactory.getLogger(ExplorerSidebarService.class);
+
 	@Override
 	public SidebarEntry add(Path mountpoint) {
 		var entryName = "Vault - " + mountpoint.getFileName().toString();
 		var clsid = "{" + UUID.randomUUID() + "}";
-		System.out.println(clsid);
+		LOG.debug("Creating sidebar entry with CLSID {}", clsid);
 		//1. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /ve /t REG_SZ /d "MyCloudStorageApp" /f
 		try (var t = WindowsRegistry.startTransaction()) {
 			try (var baseKey = t.createRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\" + clsid, true)) {
@@ -65,17 +69,20 @@ public class ExplorerSidebarService implements SidebarService {
 					//10. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3}\ShellFolder /v Attributes /t REG_DWORD /d 0xF080004D /f
 					shellFolderKey.setDwordValue("Attributes", 0xF080004D);
 				}
+				LOG.trace("Created RegKey {} and subkeys, including Values", baseKey);
 			}
 
 			//11. reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /ve /t REG_SZ /d MyCloudStorageApp /f
 			var nameSpaceSubKey = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\" + clsid;
 			try (var nameSpaceKey = t.createRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, nameSpaceSubKey, true)) {
 				nameSpaceKey.setStringValue("", entryName, false);
+				LOG.trace("Created RegKey {} and setting default value", nameSpaceKey);
 			}
 
 			//12. reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel /v {0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /t REG_DWORD /d 0x1 /f
 			try (var newStartPanelKey = t.createRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel", true)) {
 				newStartPanelKey.setDwordValue(clsid, 0x1);
+				LOG.trace("Set value {} for RegKey {}", clsid, newStartPanelKey);
 			}
 			t.commit();
 		}
@@ -86,18 +93,22 @@ public class ExplorerSidebarService implements SidebarService {
 
 		@Override
 		public void remove() {
+			LOG.debug("Removing sidebar entry with CLSID {}", clsid);
 			try (var t = WindowsRegistry.startTransaction()) {
 				//undo step 11.
 				var nameSpaceSubkey = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\" + clsid;
 				t.deleteRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, nameSpaceSubkey);
+				LOG.trace("Removing RegKey {}", nameSpaceSubkey);
 
 				//undo step 12.
 				try (var nameSpaceKey = t.openRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel")) {
+					LOG.trace("Removing Value {} of RegKey {}", clsid, nameSpaceKey);
 					nameSpaceKey.deleteValue(clsid);
 				}
 
 				//undo everything else
 				try (var baseKey = t.createRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\{%s}".formatted(clsid), true)) {
+					LOG.trace("Wiping everything under RegKey {} and key itself.", baseKey);
 					baseKey.deleteAllValuesAndSubtrees();
 				}
 				t.deleteRegKey(WindowsRegistry.RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\{%s}".formatted(clsid));
