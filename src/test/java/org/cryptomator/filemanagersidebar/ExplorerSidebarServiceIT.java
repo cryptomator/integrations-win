@@ -23,7 +23,7 @@ public class ExplorerSidebarServiceIT {
 		Files.createFile(p.resolve("firstLevel.file"));
 		var sub = Files.createDirectory(p.resolve("subdir"));
 		Files.createFile(sub.resolve("secondLevel.file"));
-		var entry = new ExplorerSidebarService().add(p);
+		var entry = new ExplorerSidebarService().add("integration-win-tempDir",p);
 
 		Thread.sleep(Duration.ofSeconds(20));
 

@@ -23,8 +23,14 @@ public class ExplorerSidebarService implements SidebarService {
 	private static final Logger LOG = LoggerFactory.getLogger(ExplorerSidebarService.class);
 
 	@Override
-	public SidebarEntry add(Path mountpoint) {
-		var entryName = "Vault - " + mountpoint.getFileName().toString();
+	public SidebarEntry add(String displayName, Path mountpoint) {
+		if (displayName == null) {
+			throw new IllegalArgumentException("Parameter 'displayname' must not be null.");
+		}
+		if (mountpoint == null) {
+			throw new IllegalArgumentException("Parameter 'mountpoint' must not be null.");
+		}
+		var entryName = "Vault - " + displayName;
 		var clsid = "{" + UUID.randomUUID() + "}";
 		LOG.debug("Creating sidebar entry with CLSID {}", clsid);
 		//1. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /ve /t REG_SZ /d "MyCloudStorageApp" /f
@@ -89,10 +95,21 @@ public class ExplorerSidebarService implements SidebarService {
 		return new ExplorerSidebarEntry(clsid);
 	}
 
-	record ExplorerSidebarEntry(String clsid) implements SidebarEntry {
+	static class ExplorerSidebarEntry implements SidebarEntry {
+
+		private final String clsid;
+		private volatile boolean isClosed = false;
+
+		private ExplorerSidebarEntry(String clsid) {
+			this.clsid = clsid;
+		}
 
 		@Override
-		public void remove() {
+		public synchronized void remove() {
+			if (isClosed) {
+				return;
+			}
+
 			LOG.debug("Removing sidebar entry with CLSID {}", clsid);
 			try (var t = WindowsRegistry.startTransaction()) {
 				//undo step 11.
@@ -114,6 +131,7 @@ public class ExplorerSidebarService implements SidebarService {
 				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\{%s}".formatted(clsid));
 				t.commit();
 			}
+			isClosed = true;
 		}
 	}
 
