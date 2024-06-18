@@ -119,7 +119,7 @@ public class ExplorerSidebarService implements SidebarService {
 				//undo step 11.
 				var nameSpaceSubkey = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\" + clsid;
 				LOG.trace("Removing RegKey {}", nameSpaceSubkey);
-				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, nameSpaceSubkey);
+				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, nameSpaceSubkey, true);
 
 				//undo step 12.
 				try (var nameSpaceKey = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel")) {
@@ -132,7 +132,7 @@ public class ExplorerSidebarService implements SidebarService {
 					LOG.trace("Wiping everything under RegKey {} and key itself.", baseKey);
 					baseKey.deleteAllValuesAndSubtrees();
 				}
-				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\{%s}".formatted(clsid));
+				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\{%s}".formatted(clsid), true);
 				t.commit();
 				isClosed = true;
 			} catch (WindowsException e) {
