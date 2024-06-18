@@ -18,13 +18,12 @@ public class WindowsRegistry {
 
 	public static final long MAX_DATA_SIZE = (1L << 32) - 1L; //unsinged integer
 
-	public static RegistryTransaction startTransaction() {
+	public static RegistryTransaction startTransaction() throws WindowsException {
 		var transactionHandle = Ktmw32_h.CreateTransaction(NULL, NULL, 0, 0, 0, 0, NULL);
 		if (transactionHandle.address() == INVALID_HANDLE_VALUE().address()) {
 			//GetLastError()
 			int error = Windows_h.GetLastError();
-			//TODO: get error message directly? https://learn.microsoft.com/en-us/windows/win32/Debug/retrieving-the-last-error-code
-			throw new RuntimeException("Native code returned win32 error code " + error);
+			throw new WindowsException("ktmw32.h:CreateTransaction", error);
 		}
 		return new RegistryTransaction(transactionHandle);
 	}
@@ -39,7 +38,7 @@ public class WindowsRegistry {
 			this.transactionHandle = handle;
 		}
 
-		public RegistryKey createRegKey(RegistryKey key, String subkey, boolean isVolatile) {
+		public RegistryKey createRegKey(RegistryKey key, String subkey, boolean isVolatile) throws WindowsException {
 			var pointerToResultKey = Arena.ofAuto().allocate(AddressLayout.ADDRESS);
 			try (var arena = Arena.ofConfined()) {
 				var lpSubkey = arena.allocateFrom(subkey, StandardCharsets.UTF_16LE);
@@ -57,13 +56,13 @@ public class WindowsRegistry {
 						NULL
 				);
 				if (result != ERROR_SUCCESS()) {
-					throw new RuntimeException("Creating Key failed with error code " + result);
+					throw new WindowsException("winreg.h:RegCreateKeyTransactedW", result);
 				}
 				return new RegistryKey(pointerToResultKey.get(C_POINTER, 0), key.getPath() + "\\" + subkey);
 			}
 		}
 
-		public RegistryKey openRegKey(RegistryKey key, String subkey) {
+		public RegistryKey openRegKey(RegistryKey key, String subkey) throws WindowsException {
 			var pointerToResultKey = Arena.ofAuto().allocate(AddressLayout.ADDRESS);
 			try (var arena = Arena.ofConfined()) {
 				var lpSubkey = arena.allocateFrom(subkey, StandardCharsets.UTF_16LE);
@@ -77,13 +76,13 @@ public class WindowsRegistry {
 						NULL
 				);
 				if (result != ERROR_SUCCESS()) {
-					throw new RuntimeException("Opening key failed with error code " + result);
+					throw new WindowsException("winreg.h:RegOpenKeyTransactedW", result);
 				}
 				return new RegistryKey(pointerToResultKey.get(C_POINTER, 0), key.getPath() + "\\" + subkey);
 			}
 		}
 
-		public void deleteRegKey(RegistryKey key, String subkey) {
+		public void deleteRegKey(RegistryKey key, String subkey) throws WindowsException {
 			try (var arena = Arena.ofConfined()) {
 				var lpSubkey = arena.allocateFrom(subkey, StandardCharsets.UTF_16LE);
 				int result = Winreg_h.RegDeleteKeyTransactedW(
@@ -101,27 +100,27 @@ public class WindowsRegistry {
 		}
 
 
-		public synchronized void commit() {
+		public synchronized void commit() throws WindowsException {
 			if (isClosed) {
 				throw new IllegalStateException("Transaction already closed");
 			}
 			int result = Ktmw32_h.CommitTransaction(transactionHandle);
 			if (result == 0) {
 				int error = Windows_h.GetLastError();
-				throw new RuntimeException("Native code returned win32 error code " + error);
+				throw new WindowsException("ktmw32.h:CommitTransaction", error);
 			}
 			isCommited = true;
 			closeInternal();
 		}
 
-		public synchronized void rollback() {
+		public synchronized void rollback() throws WindowsException {
 			if (isClosed) {
 				throw new IllegalStateException("Transaction already closed");
 			}
 			int result = Ktmw32_h.RollbackTransaction(transactionHandle);
 			if (result == 0) {
 				int error = Windows_h.GetLastError();
-				throw new RuntimeException("Native code returned win32 error code " + error);
+				throw new WindowsException("ktmw32.h:CommitTransaction", error);
 			}
 			closeInternal();
 		}
@@ -129,23 +128,23 @@ public class WindowsRegistry {
 		;
 
 		@Override
-		public synchronized void close() throws RuntimeException {
+		public synchronized void close() throws WindowsException {
 			if (!isCommited) {
 				try {
 					rollback();
-				} catch (RuntimeException e) {
-					System.err.printf("Failed to rollback uncommited transaction on close. Exception message: %s%n", e.getMessage());
+				} catch (WindowsException e) {
+					System.err.printf("Failed to rollback uncommited transaction on close: %s%n", e.getMessage());
 				}
 			}
 			closeInternal();
 		}
 
-		private synchronized void closeInternal() {
+		private synchronized void closeInternal() throws WindowsException {
 			if (!isClosed) {
 				int result = Windows_h.CloseHandle(transactionHandle);
 				if (result == 0) {
 					int error = Windows_h.GetLastError();
-					throw new RuntimeException("Native code returned win32 error code " + error);
+					throw new WindowsException("Windows.h:CloseHandle", error);
 				}
 				transactionHandle = null;
 				isClosed = true;

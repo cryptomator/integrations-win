@@ -91,6 +91,8 @@ public class ExplorerSidebarService implements SidebarService {
 				LOG.trace("Set value {} for RegKey {}", clsid, newStartPanelKey);
 			}
 			t.commit();
+		} catch (WindowsException e) {
+			throw new RuntimeException("Adding entry to Explorer via Windows registry failed.",e);
 		}
 		return new ExplorerSidebarEntry(clsid);
 	}
@@ -130,8 +132,10 @@ public class ExplorerSidebarService implements SidebarService {
 				}
 				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\{%s}".formatted(clsid));
 				t.commit();
+				isClosed = true;
+			} catch (WindowsException e) {
+				LOG.error("Removing explorer sidebar entry with CLSID {} failed",clsid,e);
 			}
-			isClosed = true;
 		}
 	}
 

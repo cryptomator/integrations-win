@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static org.cryptomator.windows.capi.common.Windows_h.ERROR_FILE_NOT_FOUND;
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class WindowsRegistryIT {
 
@@ -14,33 +16,46 @@ public class WindowsRegistryIT {
 	@DisplayName("Open not exisitig key fails")
 	@Order(1)
 	public void testOpenNotExisting() {
-		Assertions.assertThrows(RuntimeException.class, () -> {
-			try (var t = WindowsRegistry.startTransaction();
-				 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "i\\do\\not\\exist")) {
-
+		var winException = Assertions.assertThrows(WindowsException.class, () -> {
+			try (var t = WindowsRegistry.startTransaction()) {
+				var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "i\\do\\not\\exist");
 			}
 		});
+		Assertions.assertEquals(ERROR_FILE_NOT_FOUND(), winException.getSystemErrorCode());
+	}
+
+	@Test
+	@DisplayName("Deleting not exisitig key fails")
+	@Order(1)
+	public void testDeleteNotExisting() {
+		var winException = Assertions.assertThrows(WindowsException.class, () -> {
+			try (var t = WindowsRegistry.startTransaction()) {
+				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "i\\do\\not\\exist");
+			}
+		});
+		Assertions.assertEquals(ERROR_FILE_NOT_FOUND(), winException.getSystemErrorCode());
 	}
 
 	@Test
 	@DisplayName("Create and no commit leads to rollback")
 	@Order(1)
-	public void testCreateNotExistingRollback() {
+	public void testCreateNotExistingRollback() throws WindowsException {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.createRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win", true)) {
 		}
 
-		Assertions.assertThrows(RuntimeException.class, () -> {
+		var winException = Assertions.assertThrows(WindowsException.class, () -> {
 			try (var t = WindowsRegistry.startTransaction();
 				 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 			}
 		});
+		Assertions.assertEquals(ERROR_FILE_NOT_FOUND(), winException.getSystemErrorCode());
 	}
 
 	@Test
 	@DisplayName("Creating, commit, open succeeds")
 	@Order(2)
-	public void testCreateNotExistingCommit() {
+	public void testCreateNotExistingCommit() throws WindowsException {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.createRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win", true)) {
 			t.commit();
@@ -54,25 +69,25 @@ public class WindowsRegistryIT {
 	@Test
 	@DisplayName("Open, setValue, rollback")
 	@Order(3)
-	public void testOpenSetValueRollback() {
+	public void testOpenSetValueRollback() throws WindowsException {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 			k.setStringValue("exampleStringValue", "In Progress", false);
 		}
 
 		//TODO: be more specific in the assertion
-		Assertions.assertThrows(RuntimeException.class, () -> {
-			try (var t = WindowsRegistry.startTransaction();
-				 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
+		try (var t = WindowsRegistry.startTransaction();
+			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
+			Assertions.assertThrows(RuntimeException.class, () -> {
 				k.getStringValue("exampleStringValue", false);
-			}
-		});
+			});
+		}
 	}
 
 	@Test
 	@DisplayName("Open, setValue, commit")
 	@Order(4)
-	public void testOpenSetValueCommit() {
+	public void testOpenSetValueCommit() throws WindowsException {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 			k.setStringValue("exampleStringValue", "In Progress", false);
@@ -92,7 +107,7 @@ public class WindowsRegistryIT {
 	@Test
 	@DisplayName("Open, deleteValue, rollback")
 	@Order(5)
-	public void testOpenDeleteValueRollback() {
+	public void testOpenDeleteValueRollback() throws WindowsException {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 			k.deleteValue("exampleDwordValue");
@@ -108,7 +123,7 @@ public class WindowsRegistryIT {
 	@Test
 	@DisplayName("Open, deleteValue, commit")
 	@Order(6)
-	public void testOpenDeleteValueCommit() {
+	public void testOpenDeleteValueCommit() throws WindowsException {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 			k.deleteValue("exampleDwordValue");
@@ -117,6 +132,7 @@ public class WindowsRegistryIT {
 
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
+			//TODO: check for system error code
 			Assertions.assertThrows(RuntimeException.class, () -> {
 				k.getDwordValue("exampleDwordValue");
 			});
@@ -126,7 +142,7 @@ public class WindowsRegistryIT {
 	@Test
 	@DisplayName("Open, deleteValuesAndSubtrees, rollback")
 	@Order(7)
-	public void testOpenDeleteTreeRollback() {
+	public void testOpenDeleteTreeRollback() throws WindowsException {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 			k.deleteAllValuesAndSubtrees();
@@ -143,7 +159,7 @@ public class WindowsRegistryIT {
 	@Test
 	@DisplayName("Open, deleteValuesAndSubtrees, commit")
 	@Order(8)
-	public void testOpenDeleteTreeCommit() {
+	public void testOpenDeleteTreeCommit() throws WindowsException {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win");
 			 var subk = t.createRegKey(k, "subkey", true)) {
@@ -154,7 +170,8 @@ public class WindowsRegistryIT {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 
-			Assertions.assertThrows(RuntimeException.class, () -> t.openRegKey(k, "subkey"));
+			//TODO: check for system error code
+			Assertions.assertThrows(WindowsException.class, () -> t.openRegKey(k, "subkey"));
 			Assertions.assertThrows(RuntimeException.class, () -> k.getStringValue("exampleStringValue", false));
 		}
 	}
@@ -162,7 +179,7 @@ public class WindowsRegistryIT {
 	@Test
 	@DisplayName("Delete, rollback")
 	@Order(9)
-	public void testDeleteRollback() {
+	public void testDeleteRollback() throws WindowsException {
 		try (var t = WindowsRegistry.startTransaction()) {
 			t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win");
 		}
@@ -175,13 +192,14 @@ public class WindowsRegistryIT {
 	@Test
 	@DisplayName("Delete, commit")
 	@Order(10)
-	public void testDeleteCommit() {
+	public void testDeleteCommit() throws WindowsException {
 		try (var t = WindowsRegistry.startTransaction()) {
 			t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win");
 			t.commit();
 		}
 
-		Assertions.assertThrows(RuntimeException.class, () -> {
+		//TODO: check for system error code
+		Assertions.assertThrows(WindowsException.class, () -> {
 			try (var t = WindowsRegistry.startTransaction();
 				 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
 			}
