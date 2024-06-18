@@ -3,7 +3,9 @@ package org.cryptomator.windows.filemanagersidebar;
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.filemanagersidebar.SidebarService;
+import org.cryptomator.integrations.filemanagersidebar.SidebarServiceException;
 import org.cryptomator.windows.common.RegistryKey;
+import org.cryptomator.windows.common.WindowsException;
 import org.cryptomator.windows.common.WindowsRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,12 +25,12 @@ public class ExplorerSidebarService implements SidebarService {
 	private static final Logger LOG = LoggerFactory.getLogger(ExplorerSidebarService.class);
 
 	@Override
-	public SidebarEntry add(String displayName, Path mountpoint) {
+	public SidebarEntry add(Path target, String displayName) throws SidebarServiceException {
 		if (displayName == null) {
 			throw new IllegalArgumentException("Parameter 'displayname' must not be null.");
 		}
-		if (mountpoint == null) {
-			throw new IllegalArgumentException("Parameter 'mountpoint' must not be null.");
+		if (target == null) {
+			throw new IllegalArgumentException("Parameter 'target' must not be null.");
 		}
 		var entryName = "Vault - " + displayName;
 		var clsid = "{" + UUID.randomUUID() + "}";
@@ -64,7 +66,7 @@ public class ExplorerSidebarService implements SidebarService {
 						initPropertyBagKey.setDwordValue("Attributes", 0x411);
 
 						//8. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3}\Instance\InitPropertyBag /v TargetFolderPath /t REG_EXPAND_SZ /d %%USERPROFILE%%\MyCloudStorageApp /f
-						initPropertyBagKey.setStringValue("TargetFolderPath", mountpoint.toString(), false);
+						initPropertyBagKey.setStringValue("TargetFolderPath", target.toString(), false);
 					}
 				}
 
