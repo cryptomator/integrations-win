@@ -10,6 +10,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.charset.StandardCharsets;
 
 import static java.lang.foreign.MemorySegment.NULL;
+import static org.cryptomator.windows.capi.common.Windows_h.ERROR_FILE_NOT_FOUND;
 import static org.cryptomator.windows.capi.common.Windows_h.ERROR_SUCCESS;
 import static org.cryptomator.windows.capi.common.Windows_h.INVALID_HANDLE_VALUE;
 import static org.cryptomator.windows.capi.winreg.Winreg_h.*;
@@ -83,6 +84,10 @@ public class WindowsRegistry {
 		}
 
 		public void deleteRegKey(RegistryKey key, String subkey) throws WindowsException {
+			deleteRegKey(key, subkey, false);
+		}
+
+		public void deleteRegKey(RegistryKey key, String subkey, boolean ignoreNotExisting) throws WindowsException {
 			try (var arena = Arena.ofConfined()) {
 				var lpSubkey = arena.allocateFrom(subkey, StandardCharsets.UTF_16LE);
 				int result = Winreg_h.RegDeleteKeyTransactedW(
@@ -93,8 +98,9 @@ public class WindowsRegistry {
 						transactionHandle,
 						NULL
 				);
-				if (result != ERROR_SUCCESS()) {
-					throw new RuntimeException("Opening key failed with error code " + result);
+				if( result != ERROR_SUCCESS() //
+						&& !(result == ERROR_FILE_NOT_FOUND() && ignoreNotExisting)) {
+					throw new WindowsException("winreg.h:RegDeleteKeyTransactedW", result);
 				}
 			}
 		}

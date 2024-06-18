@@ -509,6 +509,7 @@
 										<includeConstant>ERROR_SUCCESS</includeConstant>
 										<includeConstant>INVALID_HANDLE_VALUE</includeConstant>
 										<includeConstant>ERROR_SUCCESS</includeConstant>
+										<includeConstant>ERROR_FILE_NOT_FOUND</includeConstant>
 										<includeConstant>ERROR_MORE_DATA</includeConstant>
 									</includeConstants>
 								</configuration>

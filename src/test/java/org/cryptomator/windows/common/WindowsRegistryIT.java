@@ -37,6 +37,15 @@ public class WindowsRegistryIT {
 	}
 
 	@Test
+	@DisplayName("Deleting key, ingoring not-existence succeeds")
+	@Order(1)
+	public void testDeleteIgnoreNotExisting() throws WindowsException {
+		try (var t = WindowsRegistry.startTransaction()) {
+			Assertions.assertDoesNotThrow(() -> t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "i\\do\\not\\exist", true));
+		}
+	}
+
+	@Test
 	@DisplayName("Create and no commit leads to rollback")
 	@Order(1)
 	public void testCreateNotExistingRollback() throws WindowsException {

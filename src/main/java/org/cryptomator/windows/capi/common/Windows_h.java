@@ -202,6 +202,15 @@ public class Windows_h {
     public static int ERROR_SUCCESS() {
         return ERROR_SUCCESS;
     }
+    private static final int ERROR_FILE_NOT_FOUND = (int)2L;
+    /**
+     * {@snippet lang=c :
+     * #define ERROR_FILE_NOT_FOUND 2
+     * }
+     */
+    public static int ERROR_FILE_NOT_FOUND() {
+        return ERROR_FILE_NOT_FOUND;
+    }
     private static final int ERROR_MORE_DATA = (int)234L;
     /**
      * {@snippet lang=c :
