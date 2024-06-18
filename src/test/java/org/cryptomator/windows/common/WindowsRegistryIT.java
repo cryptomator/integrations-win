@@ -12,6 +12,8 @@ import static org.cryptomator.windows.capi.common.Windows_h.ERROR_FILE_NOT_FOUND
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class WindowsRegistryIT {
 
+	//independent tests
+
 	@Test
 	@DisplayName("Open not exisitig key fails")
 	@Order(1)
@@ -60,6 +62,18 @@ public class WindowsRegistryIT {
 		});
 		Assertions.assertEquals(ERROR_FILE_NOT_FOUND(), winException.getSystemErrorCode());
 	}
+
+	@Test
+	@DisplayName("Deleting not existing Value on ignore does not throw")
+	@Order(1)
+	public void testDeleteNotExisingValue() throws WindowsException {
+		try (var t = WindowsRegistry.startTransaction();
+			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "")) {
+			Assertions.assertDoesNotThrow(() -> k.deleteValue("i do not really exist", true));
+		}
+	}
+
+	// sequence required tests
 
 	@Test
 	@DisplayName("Creating, commit, open succeeds")

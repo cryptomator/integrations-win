@@ -124,7 +124,7 @@ public class ExplorerSidebarService implements SidebarService {
 				//undo step 12.
 				try (var nameSpaceKey = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel")) {
 					LOG.trace("Removing Value {} of RegKey {}", clsid, nameSpaceKey);
-					nameSpaceKey.deleteValue(clsid);
+					nameSpaceKey.deleteValue(clsid, true);
 				}
 
 				//undo everything else

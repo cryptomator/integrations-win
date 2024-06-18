@@ -8,6 +8,7 @@ import java.lang.foreign.ValueLayout;
 import java.nio.charset.StandardCharsets;
 
 import static java.lang.foreign.MemorySegment.NULL;
+import static org.cryptomator.windows.capi.common.Windows_h.ERROR_FILE_NOT_FOUND;
 import static org.cryptomator.windows.capi.common.Windows_h.ERROR_MORE_DATA;
 import static org.cryptomator.windows.capi.common.Windows_h.ERROR_SUCCESS;
 import static org.cryptomator.windows.capi.winreg.Winreg_h.REG_EXPAND_SZ;
@@ -113,10 +114,15 @@ public class RegistryKey implements AutoCloseable {
 	//-- delete operations
 
 	public void deleteValue(String valueName) throws RegistryValueException {
+		deleteValue(valueName, false);
+	}
+
+	public void deleteValue(String valueName, boolean ignoreNotExisting) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
 			var lpValueName = arena.allocateFrom(valueName, StandardCharsets.UTF_16LE);
 			int result = Winreg_h.RegDeleteKeyValueW(handle, NULL, lpValueName);
-			if (result != ERROR_SUCCESS()) {
+			if (result != ERROR_SUCCESS() //
+					&& !(result == ERROR_FILE_NOT_FOUND() && ignoreNotExisting)) {
 				throw new RegistryValueException("winreg_h:RegSetKeyValueW", path, lpValueName.getString(0, StandardCharsets.UTF_16LE), result);
 			}
 		}
