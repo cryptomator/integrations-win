@@ -1,9 +1,9 @@
-package org.cryptomator.windows.filemanagersidebar;
+package org.cryptomator.windows.sidebar;
 
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
-import org.cryptomator.integrations.filemanagersidebar.SidebarService;
-import org.cryptomator.integrations.filemanagersidebar.SidebarServiceException;
+import org.cryptomator.integrations.sidebar.SidebarService;
+import org.cryptomator.integrations.sidebar.SidebarServiceException;
 import org.cryptomator.windows.common.RegistryKey;
 import org.cryptomator.windows.common.WindowsException;
 import org.cryptomator.windows.common.WindowsRegistry;
@@ -14,7 +14,7 @@ import java.nio.file.Path;
 import java.util.UUID;
 
 /**
- * Implementation of the FileManagerSidebarService for Windows Explorer
+ * Implementation of the {@link SidebarService} for Windows Explorer
  * <p>
  * Based on a <a href="https://learn.microsoft.com/en-us/windows/win32/shell/integrate-cloud-storage">Microsoft docs example</a>.
  */
@@ -94,7 +94,7 @@ public class ExplorerSidebarService implements SidebarService {
 			}
 			t.commit();
 		} catch (WindowsException e) {
-			throw new RuntimeException("Adding entry to Explorer via Windows registry failed.", e);
+			throw new SidebarServiceException("Adding entry to Explorer sidebar via Windows registry failed.", e);
 		}
 		return new ExplorerSidebarEntry(clsid);
 	}
@@ -109,7 +109,7 @@ public class ExplorerSidebarService implements SidebarService {
 		}
 
 		@Override
-		public synchronized void remove() {
+		public synchronized void remove() throws SidebarServiceException {
 			if (isClosed) {
 				return;
 			}
@@ -128,15 +128,15 @@ public class ExplorerSidebarService implements SidebarService {
 				}
 
 				//undo everything else
-				try (var baseKey = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\{%s}".formatted(clsid))) {
+				try (var baseKey = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\" + clsid)) {
 					LOG.trace("Wiping everything under RegKey {} and key itself.", baseKey);
 					baseKey.deleteAllValuesAndSubtrees();
 				}
-				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\{%s}".formatted(clsid), true);
+				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\"+clsid, true);
 				t.commit();
 				isClosed = true;
 			} catch (WindowsException e) {
-				LOG.error("Removing explorer sidebar entry with CLSID {} failed", clsid, e);
+				throw new SidebarServiceException("Removing entry from Explorer sidebar via Windows registry failed.", e);
 			}
 		}
 	}

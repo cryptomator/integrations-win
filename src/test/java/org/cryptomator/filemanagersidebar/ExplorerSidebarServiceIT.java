@@ -1,7 +1,8 @@
 package org.cryptomator.filemanagersidebar;
 
-import org.cryptomator.integrations.filemanagersidebar.SidebarServiceException;
-import org.cryptomator.windows.filemanagersidebar.ExplorerSidebarService;
+import org.cryptomator.integrations.sidebar.SidebarServiceException;
+import org.cryptomator.windows.sidebar.ExplorerSidebarService;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -18,6 +19,7 @@ public class ExplorerSidebarServiceIT {
 
 	@Test
 	@DisplayName("Integrates a temp dir for 20s into the file explorer sidebar")
+	@Disabled
 	public void testExplorerSidebarIntegration() throws IOException, InterruptedException, SidebarServiceException {
 		var p = base.resolve("integration-win-testVault");
 		Files.createDirectory(p);

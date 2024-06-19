@@ -1,10 +1,10 @@
 import org.cryptomator.integrations.autostart.AutoStartProvider;
-import org.cryptomator.integrations.filemanagersidebar.SidebarService;
+import org.cryptomator.integrations.sidebar.SidebarService;
 import org.cryptomator.integrations.keychain.KeychainAccessProvider;
 import org.cryptomator.integrations.revealpath.RevealPathService;
 import org.cryptomator.integrations.uiappearance.UiAppearanceProvider;
 import org.cryptomator.windows.autostart.WindowsAutoStart;
-import org.cryptomator.windows.filemanagersidebar.ExplorerSidebarService;
+import org.cryptomator.windows.sidebar.ExplorerSidebarService;
 import org.cryptomator.windows.keychain.WindowsProtectedKeychainAccess;
 import org.cryptomator.windows.revealpath.ExplorerRevealPathService;
 import org.cryptomator.windows.uiappearance.WinUiAppearanceProvider;
