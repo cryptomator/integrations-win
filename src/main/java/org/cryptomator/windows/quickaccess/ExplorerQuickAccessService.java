@@ -1,9 +1,9 @@
-package org.cryptomator.windows.sidebar;
+package org.cryptomator.windows.quickaccess;
 
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
-import org.cryptomator.integrations.sidebar.SidebarService;
-import org.cryptomator.integrations.sidebar.SidebarServiceException;
+import org.cryptomator.integrations.quickaccess.QuickAccessService;
+import org.cryptomator.integrations.quickaccess.QuickAccessServiceException;
 import org.cryptomator.windows.common.RegistryKey;
 import org.cryptomator.windows.common.WindowsException;
 import org.cryptomator.windows.common.WindowsRegistry;
@@ -14,18 +14,18 @@ import java.nio.file.Path;
 import java.util.UUID;
 
 /**
- * Implementation of the {@link SidebarService} for Windows Explorer
+ * Implementation of the {@link QuickAccessService} for Windows Explorer
  * <p>
  * Based on a <a href="https://learn.microsoft.com/en-us/windows/win32/shell/integrate-cloud-storage">Microsoft docs example</a>.
  */
 @Priority(100)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
-public class ExplorerSidebarService implements SidebarService {
+public class ExplorerQuickAccessService implements QuickAccessService {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ExplorerSidebarService.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ExplorerQuickAccessService.class);
 
 	@Override
-	public SidebarEntry add(Path target, String displayName) throws SidebarServiceException {
+	public QuickAccessEntry add(Path target, String displayName) throws QuickAccessServiceException {
 		if (displayName == null) {
 			throw new IllegalArgumentException("Parameter 'displayname' must not be null.");
 		}
@@ -34,7 +34,7 @@ public class ExplorerSidebarService implements SidebarService {
 		}
 		var entryName = "Vault - " + displayName;
 		var clsid = "{" + UUID.randomUUID() + "}";
-		LOG.debug("Creating sidebar entry with CLSID {}", clsid);
+		LOG.debug("Creating navigation pane entry with CLSID {}", clsid);
 		//1. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /ve /t REG_SZ /d "MyCloudStorageApp" /f
 		try (var t = WindowsRegistry.startTransaction()) {
 			try (var baseKey = t.createRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\" + clsid, true)) {
@@ -94,27 +94,27 @@ public class ExplorerSidebarService implements SidebarService {
 			}
 			t.commit();
 		} catch (WindowsException e) {
-			throw new SidebarServiceException("Adding entry to Explorer sidebar via Windows registry failed.", e);
+			throw new QuickAccessServiceException("Adding entry to Explorer navigation pane via Windows registry failed.", e);
 		}
-		return new ExplorerSidebarEntry(clsid);
+		return new ExplorerQuickAccessEntry(clsid);
 	}
 
-	static class ExplorerSidebarEntry implements SidebarEntry {
+	static class ExplorerQuickAccessEntry implements QuickAccessService.QuickAccessEntry {
 
 		private final String clsid;
 		private volatile boolean isClosed = false;
 
-		private ExplorerSidebarEntry(String clsid) {
+		private ExplorerQuickAccessEntry(String clsid) {
 			this.clsid = clsid;
 		}
 
 		@Override
-		public synchronized void remove() throws SidebarServiceException {
+		public synchronized void remove() throws QuickAccessServiceException {
 			if (isClosed) {
 				return;
 			}
 
-			LOG.debug("Removing sidebar entry with CLSID {}", clsid);
+			LOG.debug("Removing navigation pane entry with CLSID {}", clsid);
 			try (var t = WindowsRegistry.startTransaction()) {
 				//undo step 11.
 				var nameSpaceSubkey = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\" + clsid;
@@ -132,11 +132,11 @@ public class ExplorerSidebarService implements SidebarService {
 					LOG.trace("Wiping everything under RegKey {} and key itself.", baseKey);
 					baseKey.deleteAllValuesAndSubtrees();
 				}
-				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\"+clsid, true);
+				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\" + clsid, true);
 				t.commit();
 				isClosed = true;
 			} catch (WindowsException e) {
-				throw new SidebarServiceException("Removing entry from Explorer sidebar via Windows registry failed.", e);
+				throw new QuickAccessServiceException("Removing entry from Explorer navigation pane via Windows registry failed.", e);
 			}
 		}
 	}

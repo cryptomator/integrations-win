@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.cryptomator</groupId>
 	<artifactId>integrations-win</artifactId>
-	<version>1.3.0-sidebar</version>
+	<version>1.3.0-quickaccess</version>
 
 	<name>Cryptomator Integrations for Windows</name>
 	<description>Provides optional Windows services used by Cryptomator</description>
@@ -37,7 +37,7 @@
 		<project.jdk.version>22</project.jdk.version>
 
 		<!-- runtime dependencies -->
-		<api.version>1.4.0-sidebar</api.version>
+		<api.version>1.4.0-quickaccess</api.version>
 		<slf4j.version>2.0.13</slf4j.version>
 		<jackson.version>2.17.1</jackson.version>
 
