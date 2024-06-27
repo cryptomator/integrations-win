@@ -41,8 +41,14 @@ public class ExplorerQuickAccessService implements QuickAccessService {
 				baseKey.setStringValue("", entryName, false);
 
 				//2. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3}\DefaultIcon /ve /t REG_EXPAND_SZ /d %%SystemRoot%%\system32\imageres.dll,-1043 /f
+				//TODO: should this be customizable?
 				try (var iconKey = t.createRegKey(baseKey, "DefaultIcon", true)) {
-					iconKey.setStringValue("", "C:\\Program Files\\Cryptomator\\Cryptomator.exe", false);
+					var exePath = ProcessHandle.current().info().command();
+					if(exePath.isPresent()) {
+						iconKey.setStringValue("", exePath.get(), false);
+					} else {
+						iconKey.setStringValue("", "%SystemRoot%\\system32\\shell32.dll,4", true); //the regular folder icon
+					}
 				}
 
 				//3. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /v System.IsPinnedToNameSpaceTree /t REG_DWORD /d 0x1 /f
