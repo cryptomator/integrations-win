@@ -18,10 +18,10 @@ import static org.cryptomator.windows.capi.winreg.Winreg_h.RRF_RT_REG_SZ;
 
 public class RegistryKey implements AutoCloseable {
 
-	public static final RegistryKey HKEY_CURRENT_USER = new RegistryKey(Winreg_h.HKEY_CURRENT_USER(), "HKEY_CURRENT_USER");
-	public static final RegistryKey HKEY_LOCAL_MACHINE = new RegistryKey(Winreg_h.HKEY_LOCAL_MACHINE(), "HKEY_LOCAL_MACHINE");
-	public static final RegistryKey HKEY_CLASSES_ROOT = new RegistryKey(Winreg_h.HKEY_CLASSES_ROOT(), "HKEY_CLASSES_ROOT");
-	public static final RegistryKey HKEY_USERS = new RegistryKey(Winreg_h.HKEY_USERS(), "HKEY_USERS");
+	public static final RegistryKey HKEY_CURRENT_USER = new RegistryRoot(Winreg_h.HKEY_CURRENT_USER(), "HKEY_CURRENT_USER");
+	public static final RegistryKey HKEY_LOCAL_MACHINE = new RegistryRoot(Winreg_h.HKEY_LOCAL_MACHINE(), "HKEY_LOCAL_MACHINE");
+	public static final RegistryKey HKEY_CLASSES_ROOT = new RegistryRoot(Winreg_h.HKEY_CLASSES_ROOT(), "HKEY_CLASSES_ROOT");
+	public static final RegistryKey HKEY_USERS = new RegistryRoot(Winreg_h.HKEY_USERS(), "HKEY_USERS");
 
 	private final String path;
 	private MemorySegment handle;
@@ -167,5 +167,21 @@ public class RegistryKey implements AutoCloseable {
 
 	public String getPath() {
 		return path;
+	}
+
+
+	/**
+	 * Closing predefined registry keys has undefined behaviour. Hence, we shade the super method and do nothing on close.
+	 */
+	private static class RegistryRoot extends RegistryKey {
+
+		RegistryRoot(MemorySegment handle, String path) {
+			super(handle, path);
+		}
+
+		@Override
+		public void close() {
+			//no-op
+		}
 	}
 }
