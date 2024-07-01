@@ -16,7 +16,7 @@ import java.util.UUID;
 /**
  * Implementation of the {@link QuickAccessService} for Windows Explorer
  * <p>
- * Based on a <a href="https://learn.microsoft.com/en-us/windows/win32/shell/integrate-cloud-storage">Microsoft docs example</a>.
+ * Uses shell namespace extensions and based on a <a href="https://learn.microsoft.com/en-us/windows/win32/shell/integrate-cloud-storage">Microsoft docs example</a>.
  */
 @Priority(100)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
@@ -35,65 +35,65 @@ public class ExplorerQuickAccessService implements QuickAccessService {
 		var entryName = "Vault - " + displayName;
 		var clsid = "{" + UUID.randomUUID() + "}";
 		LOG.debug("Creating navigation pane entry with CLSID {}", clsid);
-		//1. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /ve /t REG_SZ /d "MyCloudStorageApp" /f
+		//1. Creates the shell extension and names it
 		try (var t = WindowsRegistry.startTransaction()) {
 			try (var baseKey = t.createRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\" + clsid, true)) {
 				baseKey.setStringValue("", entryName, false);
 
-				//2. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3}\DefaultIcon /ve /t REG_EXPAND_SZ /d %%SystemRoot%%\system32\imageres.dll,-1043 /f
+				//2. Set icon
 				//TODO: should this be customizable?
 				try (var iconKey = t.createRegKey(baseKey, "DefaultIcon", true)) {
 					var exePath = ProcessHandle.current().info().command();
-					if(exePath.isPresent()) {
+					if (exePath.isPresent()) {
 						iconKey.setStringValue("", exePath.get(), false);
 					} else {
 						iconKey.setStringValue("", "%SystemRoot%\\system32\\shell32.dll,4", true); //the regular folder icon
 					}
 				}
 
-				//3. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /v System.IsPinnedToNameSpaceTree /t REG_DWORD /d 0x1 /f
+				//3. Pin the entry to navigation pane
 				baseKey.setDwordValue("System.IsPinnedToNameSpaceTree", 0x1);
 
-				//4. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /v SortOrderIndex /t REG_DWORD /d 0x42 /f
+				//4. Place it in the top section of the navigation pane
 				baseKey.setDwordValue("SortOrderIndex", 0x41);
 
-				//5. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3}\InProcServer32 /ve /t REG_EXPAND_SZ /d  /f
+				//5. Regsiter as a namespace extension
 				try (var inProcServer32Key = t.createRegKey(baseKey, "InProcServer32", true)) {
 					inProcServer32Key.setStringValue("", "%systemroot%\\system32\\shell32.dll", true);
 				}
 
-				//6. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3}\Instance /v CLSID /t REG_SZ /d {0E5AAE11-A475-4c5b-AB00-C66DE400274E} /f
+				//6. This extenstion works like a folder
 				try (var instanceKey = t.createRegKey(baseKey, "Instance", true)) {
 					instanceKey.setStringValue("CLSID", "{0E5AAE11-A475-4c5b-AB00-C66DE400274E}", false);
 
-					//7. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3}\Instance\InitPropertyBag /v Attributes /t REG_DWORD /d 0x411 /f
+					//7. Set directory attributes for this "folder"
 					// Attributes are READ_ONLY, DIRECTORY, REPARSE_POINT
 					try (var initPropertyBagKey = t.createRegKey(instanceKey, "InitPropertyBag", true)) {
 						initPropertyBagKey.setDwordValue("Attributes", 0x411);
 
-						//8. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3}\Instance\InitPropertyBag /v TargetFolderPath /t REG_EXPAND_SZ /d %%USERPROFILE%%\MyCloudStorageApp /f
+						//8. Set the target folder
 						initPropertyBagKey.setStringValue("TargetFolderPath", target.toString(), false);
 					}
 				}
 
-				//9. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3}\ShellFolder /v FolderValueFlags /t REG_DWORD /d 0x28 /f
+				//9. Pin extenstion to the File Explorer tree
 				try (var shellFolderKey = t.createRegKey(baseKey, "ShellFolder", true)) {
 					shellFolderKey.setDwordValue("FolderValueFlags", 0x28);
 
-					//10. reg add HKCU\Software\Classes\CLSID\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3}\ShellFolder /v Attributes /t REG_DWORD /d 0xF080004D /f
+					//10. Set SFGAO attributes for the shell folder
 					shellFolderKey.setDwordValue("Attributes", 0xF080004D);
 				}
 				LOG.trace("Created RegKey {} and subkeys, including Values", baseKey);
 			}
 
-			//11. reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /ve /t REG_SZ /d MyCloudStorageApp /f
+			//11. register extenstion in name space root
 			var nameSpaceSubKey = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\" + clsid;
 			try (var nameSpaceKey = t.createRegKey(RegistryKey.HKEY_CURRENT_USER, nameSpaceSubKey, true)) {
 				nameSpaceKey.setStringValue("", entryName, false);
 				LOG.trace("Created RegKey {} and setting default value", nameSpaceKey);
 			}
 
-			//12. reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel /v {0672A6D1-A6E0-40FE-AB16-F25BADC6D9E3} /t REG_DWORD /d 0x1 /f
+			//12. Hide extension from Desktop
 			try (var newStartPanelKey = t.createRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel", true)) {
 				newStartPanelKey.setDwordValue(clsid, 0x1);
 				LOG.trace("Set value {} for RegKey {}", clsid, newStartPanelKey);

@@ -399,9 +399,6 @@
 
 		<profile>
 			<id>jextract</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-			</activation>
 			<build>
 				<plugins>
 					<plugin>
