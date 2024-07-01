@@ -17,8 +17,6 @@ import static org.cryptomator.windows.capi.winreg.Winreg_h.*;
 
 public class WindowsRegistry {
 
-	public static final long MAX_DATA_SIZE = (1L << 32) - 1L; //unsinged integer
-
 	public static RegistryTransaction startTransaction() throws WindowsException {
 		var transactionHandle = Ktmw32_h.CreateTransaction(NULL, NULL, 0, 0, 0, 0, NULL);
 		if (transactionHandle.address() == INVALID_HANDLE_VALUE().address()) {
