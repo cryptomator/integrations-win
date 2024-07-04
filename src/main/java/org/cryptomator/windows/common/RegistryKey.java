@@ -17,7 +17,8 @@ import static org.cryptomator.windows.capi.winreg.Winreg_h.RRF_RT_REG_EXPAND_SZ;
 import static org.cryptomator.windows.capi.winreg.Winreg_h.RRF_RT_REG_SZ;
 
 public class RegistryKey implements AutoCloseable {
-	private static final long MAX_DATA_SIZE = (1L << 32) - 1L; //unsinged integer
+	//allocate at most 128MiB when reading from the registry to keep the library responsive
+	static final int MAX_DATA_SIZE = (1 << 27);
 
 	public static final RegistryKey HKEY_CURRENT_USER = new RegistryRoot(Winreg_h.HKEY_CURRENT_USER(), "HKEY_CURRENT_USER");
 	public static final RegistryKey HKEY_LOCAL_MACHINE = new RegistryRoot(Winreg_h.HKEY_LOCAL_MACHINE(), "HKEY_LOCAL_MACHINE");
@@ -36,48 +37,42 @@ public class RegistryKey implements AutoCloseable {
 	//-- GetValue functions --
 
 	public String getStringValue(String name, boolean isExpandable) throws RegistryValueException {
-		var data = getValue(name, isExpandable ? RRF_RT_REG_EXPAND_SZ() : RRF_RT_REG_SZ(), 256L);
-		return data.getString(0, StandardCharsets.UTF_16LE);
+		try (var arena = Arena.ofConfined()) {
+			var data = getValue(arena, name, isExpandable ? RRF_RT_REG_EXPAND_SZ() : RRF_RT_REG_SZ());
+			return data.getString(0, StandardCharsets.UTF_16LE);
+		}
 	}
 
 	public int getDwordValue(String name) throws RegistryValueException {
-		var data = getValue(name, RRF_RT_REG_DWORD(), 5L);
-		return data.get(ValueLayout.JAVA_INT, 0);
+		try (var arena = Arena.ofConfined()) {
+			var data = getValue(arena, name, RRF_RT_REG_DWORD());
+			return data.get(ValueLayout.JAVA_INT, 0);
+		}
 	}
 
-	private MemorySegment getValue(String name, int dwFlags, long initBufferSizePlus1) throws RegistryValueException {
-		try (var arena = Arena.ofConfined()) {
-			var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
-			var lpDataSize = arena.allocateFrom(ValueLayout.JAVA_INT, 0);
+	private MemorySegment getValue(Arena arena, String name, int dwFlags) throws RegistryValueException {
+		var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
+		var lpDataSize = arena.allocateFrom(ValueLayout.JAVA_INT, 0);
 
-			long bufferSizePlus1 = initBufferSizePlus1;
-			do {
-				long bufferSize = bufferSizePlus1 - 1;
+		int result;
+		int bufferSize = 128; //will be doubled in first iteration
+		MemorySegment lpData;
+		do {
+			bufferSize = bufferSize << 1;
+			if (bufferSize >= MAX_DATA_SIZE) {
+				throw new RuntimeException("Getting value %s for key %s failed. Maximum buffer size of %d reached.".formatted(lpValueName.getString(0, StandardCharsets.UTF_16LE), path, bufferSize));
+			}
+			lpData = arena.allocate(bufferSize);
+			lpDataSize.set(ValueLayout.JAVA_INT, 0, bufferSize);
 
-				//for every try, free old data memory and allocate a new one doubled in size
-				try (var dataArena = Arena.ofConfined()) {
-					var lpData = dataArena.allocate(bufferSize);
-					lpDataSize.set(ValueLayout.JAVA_INT_UNALIGNED, 0, (int) bufferSize);
+			result = Winreg_h.RegGetValueW(handle, NULL, lpValueName, dwFlags, NULL, lpData, lpDataSize);
 
-					int result = Winreg_h.RegGetValueW(handle, NULL, lpValueName, dwFlags, NULL, lpData, lpDataSize);
+		} while (result == ERROR_MORE_DATA());
 
-					if (result == ERROR_SUCCESS()) {
-						//success. Copy the data to a longer segment with auto lifecycle
-						var returnBuffer = Arena.ofAuto().allocate(Integer.toUnsignedLong(lpDataSize.get(ValueLayout.JAVA_INT, 0)));
-						MemorySegment.copy(lpData, 0L, returnBuffer, 0L, returnBuffer.byteSize());
-						return returnBuffer;
-					} else if (result == ERROR_MORE_DATA()) {
-						//increase buffer size and retry
-						if (bufferSize <= MAX_DATA_SIZE) {
-							bufferSizePlus1 = bufferSizePlus1 << 1;
-						} else {
-							throw new RuntimeException("Getting value %s for key %s failed. Maximum buffer size of %d reached.".formatted(lpValueName.getString(0, StandardCharsets.UTF_16LE), path, bufferSize));
-						}
-					} else {
-						throw new RegistryValueException("winreg_h:RegGetValue", path, lpValueName.getString(0, StandardCharsets.UTF_16LE), result);
-					}
-				}
-			} while (true);
+		if (result == ERROR_SUCCESS()) {
+			return lpData;
+		} else {
+			throw new RegistryValueException("winreg_h:RegGetValue", path, lpValueName.getString(0, StandardCharsets.UTF_16LE), result);
 		}
 	}
 

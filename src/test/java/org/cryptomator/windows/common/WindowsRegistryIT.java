@@ -230,4 +230,29 @@ public class WindowsRegistryIT {
 		});
 		Assertions.assertEquals(ERROR_FILE_NOT_FOUND(), regException.getSystemErrorCode());
 	}
+
+	@Test
+	@DisplayName("Set and get big value data")
+	@Order(11)
+	public void testLottaData() throws WindowsException {
+		var filler = "I like big nums and i cannot lie".repeat(1 << 16); //2 MiB
+
+		try (var t = WindowsRegistry.startTransaction();
+			 var k = t.createRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win", true)) {
+			k.setStringValue("bigData", filler, false);
+			t.commit();
+		}
+
+		try (var t = WindowsRegistry.startTransaction();
+			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
+			var value = k.getStringValue("bigData", false);
+			Assertions.assertEquals(filler, value);
+		}
+
+		try (var t = WindowsRegistry.startTransaction()) {
+			t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win");
+			t.commit();
+		}
+
+	}
 }
