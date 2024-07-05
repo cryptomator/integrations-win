@@ -38,12 +38,13 @@ public class RegistryKey implements AutoCloseable {
 
 	/**
 	 * Gets a REG_SZ or REG_EXPAND_SZ value.
+	 * <p>
+	 * The size of the data is restricted to at most  {@value MAX_DATA_SIZE}. If the the value exceeds the size, a runtime exception is thrown.
 	 *
 	 * @param name         name of the value
 	 * @param isExpandable flag indicating if the value is of type REG_EXPAND_SZ
 	 * @return the data of the value
-	 * @throws RegistryValueException, if winreg.h:RegGetValueW returns a result != ERROR_SUCCESS
-	 * @implNote This method is restricted to read at most {@value MAX_DATA_SIZE} from the registry. If the value exceeds the size, a runtime exception is thrown.
+	 * @throws RegistryValueException if winreg.h:RegGetValueW returns a result != ERROR_SUCCESS
 	 */
 	public String getStringValue(String name, boolean isExpandable) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
@@ -57,7 +58,7 @@ public class RegistryKey implements AutoCloseable {
 	 *
 	 * @param name name of the value
 	 * @return the data of the value
-	 * @throws RegistryValueException, if winreg.h:RegGetValueW returns a result != ERROR_SUCCESS
+	 * @throws RegistryValueException if winreg.h:RegGetValueW returns a result != ERROR_SUCCESS
 	 */
 	public int getDwordValue(String name) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
@@ -100,7 +101,7 @@ public class RegistryKey implements AutoCloseable {
 	 * @param name         name of the value
 	 * @param data         Data to be set
 	 * @param isExpandable flag marking if the value is of type REG_EXPAND_SZ
-	 * @throws RegistryValueException, if winreg.h:RegSetKeyValueW returns a result != ERROR_SUCCESS
+	 * @throws RegistryValueException if winreg.h:RegSetKeyValueW returns a result != ERROR_SUCCESS
 	 */
 	public void setStringValue(String name, String data, boolean isExpandable) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
@@ -115,7 +116,7 @@ public class RegistryKey implements AutoCloseable {
 	 *
 	 * @param name name of the value
 	 * @param data Data to be set
-	 * @throws RegistryValueException, if winreg.h:RegSetKeyValueW returns a result != ERROR_SUCCESS
+	 * @throws RegistryValueException if winreg.h:RegSetKeyValueW returns a result != ERROR_SUCCESS
 	 */
 	public void setDwordValue(String name, int data) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
@@ -142,7 +143,7 @@ public class RegistryKey implements AutoCloseable {
 	 * Deletes a value of this registry key.
 	 *
 	 * @param valueName name of the value
-	 * @throws RegistryValueException, if winreg.h:RegDeleteKeyValueW returns a result != ERROR_SUCCESS
+	 * @throws RegistryValueException if winreg.h:RegDeleteKeyValueW returns a result != ERROR_SUCCESS
 	 * @see RegistryKey#deleteValue(String, boolean)
 	 */
 	public void deleteValue(String valueName) throws RegistryValueException {
@@ -154,7 +155,7 @@ public class RegistryKey implements AutoCloseable {
 	 *
 	 * @param valueName         name of the value
 	 * @param ignoreNotExisting flag indicating wether a not existing value should be ignored
-	 * @throws RegistryValueException, if winreg.h:RegDeleteKeyValueW returns a result != ERROR_SUCCESS, <em>except</em> the result is ERROR_FILE_NOT_FOUND and {@code ignoreNotExisting == true}
+	 * @throws RegistryValueException if winreg.h:RegDeleteKeyValueW returns a result != ERROR_SUCCESS, <em>except</em> the result is ERROR_FILE_NOT_FOUND and {@code ignoreNotExisting == true}
 	 */
 	public void deleteValue(String valueName, boolean ignoreNotExisting) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
@@ -174,7 +175,7 @@ public class RegistryKey implements AutoCloseable {
 	 * If an empty string or {@code null} is specified as the subkey, this method deletes <em>all subtrees and values</em> of this registry key.
 	 *
 	 * @param subkey Name of the subkey, being the root of the subtree to be deleted. Can be {@code null} or empty.
-	 * @throws RegistryKeyException, if winreg.h:RegDeleteTreeW returns a result != ERROR_SUCCESS
+	 * @throws RegistryKeyException if winreg.h:RegDeleteTreeW returns a result != ERROR_SUCCESS
 	 */
 	public void deleteTree(String subkey) throws RegistryKeyException {
 		try (var arena = Arena.ofConfined()) {
