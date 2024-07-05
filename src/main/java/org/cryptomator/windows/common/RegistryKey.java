@@ -122,18 +122,16 @@ public class RegistryKey implements AutoCloseable {
 		}
 	}
 
-	public void deleteSubtree(String subkey) throws RegistryKeyException {
-		if (subkey == null || subkey.isBlank()) {
-			throw new IllegalArgumentException("Subkey must not be empty");
-		}
-		deleteValuesAndSubtrees(subkey);
-	}
-
-	public void deleteAllValuesAndSubtrees() throws RegistryKeyException {
-		deleteValuesAndSubtrees("");
-	}
-
-	private void deleteValuesAndSubtrees(String subkey) throws RegistryKeyException {
+	/**
+	 * Deletes recursively content of this registry key.
+	 * <p>
+	 * If a non-empty subkey name is specified, then the corresponding subkey and its descendants are deleted.
+	 * If an empty string or {@code null} is specified as the subkey, this method deletes <em>all subtrees and values</em> of this registry key.
+	 *
+	 * @param subkey Name of the subkey, being the root of the subtree to be deleted. Can be {@code null} or empty.
+	 * @throws RegistryKeyException, if winreg.h:RegDeleteTreeW returns a result != ERROR_SUCCESS
+	 */
+	public void deleteTree(String subkey) throws RegistryKeyException {
 		try (var arena = Arena.ofConfined()) {
 			var lpSubkey = arena.allocateFrom(subkey, StandardCharsets.UTF_16LE);
 			int result = Winreg_h.RegDeleteTreeW(handle, lpSubkey);

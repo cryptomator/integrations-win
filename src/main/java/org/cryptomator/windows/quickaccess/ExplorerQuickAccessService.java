@@ -136,7 +136,7 @@ public class ExplorerQuickAccessService implements QuickAccessService {
 				//undo everything else
 				try (var baseKey = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\" + clsid)) {
 					LOG.trace("Wiping everything under RegKey {} and key itself.", baseKey);
-					baseKey.deleteAllValuesAndSubtrees();
+					baseKey.deleteTree("");
 				}
 				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\" + clsid, true);
 				t.commit();

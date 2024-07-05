@@ -169,7 +169,7 @@ public class WindowsRegistryIT {
 	public void testOpenDeleteTreeRollback() throws WindowsException {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win")) {
-			k.deleteAllValuesAndSubtrees();
+			k.deleteTree("");
 		}
 
 		Assertions.assertDoesNotThrow(() -> {
@@ -187,7 +187,7 @@ public class WindowsRegistryIT {
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win");
 			 var subk = t.createRegKey(k, "subkey", true)) {
-			k.deleteAllValuesAndSubtrees();
+			k.deleteTree("");
 			t.commit();
 		}
 
