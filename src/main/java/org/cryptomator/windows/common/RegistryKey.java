@@ -76,7 +76,7 @@ public class RegistryKey implements AutoCloseable {
 		do {
 			bufferSize = bufferSize << 1;
 			if (bufferSize >= MAX_DATA_SIZE) {
-				throw new RuntimeException("Getting value %s for key %s failed. Maximum buffer size of %d reached.".formatted(lpValueName.getString(0, StandardCharsets.UTF_16LE), path, bufferSize));
+				throw new RuntimeException("Getting value %s for key %s failed. Maximum buffer size of %d reached.".formatted(name, path, bufferSize));
 			}
 			lpData = arena.allocate(bufferSize);
 			lpDataSize.set(ValueLayout.JAVA_INT, 0, bufferSize);
@@ -88,7 +88,7 @@ public class RegistryKey implements AutoCloseable {
 		if (result == ERROR_SUCCESS()) {
 			return lpData;
 		} else {
-			throw new RegistryValueException("winreg_h:RegGetValue", path, lpValueName.getString(0, StandardCharsets.UTF_16LE), result);
+			throw new RegistryValueException("winreg_h:RegGetValue", path, name, result);
 		}
 	}
 
@@ -162,7 +162,7 @@ public class RegistryKey implements AutoCloseable {
 			int result = Winreg_h.RegDeleteKeyValueW(handle, NULL, lpValueName);
 			if (result != ERROR_SUCCESS() //
 					&& !(result == ERROR_FILE_NOT_FOUND() && ignoreNotExisting)) {
-				throw new RegistryValueException("winreg_h:RegSetKeyValueW", path, lpValueName.getString(0, StandardCharsets.UTF_16LE), result);
+				throw new RegistryValueException("winreg_h:RegSetKeyValueW", path, valueName, result);
 			}
 		}
 	}
