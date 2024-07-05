@@ -41,6 +41,17 @@ public class WindowsRegistry {
 			this.transactionHandle = handle;
 		}
 
+		/**
+		 * Creates and opens a registry key.
+		 * <p>
+		 * If the registry key already exists, it is just opened. The key is opened with the access rights KEY_READ and KEY_WRITE.
+		 *
+		 * @param key        handle to an already opened registry key
+		 * @param subkey     name/path of a subkey that this function opens or creates
+		 * @param isVolatile flag indicating if this key is volatile. A volatile key is not preserved over a system restart.
+		 * @return the opened {@link RegistryKey}
+		 * @throws RegistryKeyException if Winreg_h.RegCreateKeyTransactedW returns with a result != ERROR_SUCCESS
+		 */
 		public RegistryKey createRegKey(RegistryKey key, String subkey, boolean isVolatile) throws RegistryKeyException {
 			var pointerToResultKey = Arena.ofAuto().allocate(AddressLayout.ADDRESS);
 			try (var arena = Arena.ofConfined()) {
@@ -61,10 +72,22 @@ public class WindowsRegistry {
 				if (result != ERROR_SUCCESS()) {
 					throw new RegistryKeyException("winreg.h:RegCreateKeyTransactedW", key.getPath() + "\\" + subkey, result);
 				}
+				//TODO: we can check if a registry root is opened (key is any regRoot && subkey == "")
+				//	if so, we should wrap it in the corresponding class
 				return new RegistryKey(pointerToResultKey.get(C_POINTER, 0), key.getPath() + "\\" + subkey);
 			}
 		}
 
+		/**
+		 * Opens a registry key.
+		 * <p>
+		 * The key is opened with the access rights KEY_READ and KEY_WRITE.
+		 *
+		 * @param key    handle to an already opened registry key
+		 * @param subkey name/path of a subkey that this function opens
+		 * @return the opened {@link RegistryKey}
+		 * @throws RegistryKeyException if Winreg_h.RegOpenKeyTransactedW returns with a result != ERROR_SUCCESS
+		 */
 		public RegistryKey openRegKey(RegistryKey key, String subkey) throws RegistryKeyException {
 			var pointerToResultKey = Arena.ofAuto().allocate(AddressLayout.ADDRESS);
 			try (var arena = Arena.ofConfined()) {
@@ -85,10 +108,26 @@ public class WindowsRegistry {
 			}
 		}
 
-		public void deleteRegKey(RegistryKey key, String subkey) throws WindowsException {
+		/**
+		 * Deletes a registry key.
+		 *
+		 * @param key    handle to an already opened registry key
+		 * @param subkey name/path of a subkey that this function opens or creates
+		 * @throws RegistryKeyException if Winreg_h.RegDeleteKeyTransactedW returns with a result != ERROR_SUCCESS
+		 */
+		public void deleteRegKey(RegistryKey key, String subkey) throws RegistryKeyException {
 			deleteRegKey(key, subkey, false);
 		}
 
+		/**
+		 * Deletes a registry key.
+		 * <p>
+		 * If the key does not exists and {@code ignoreNotExisting == true}, no exceptions is thrown.
+		 *
+		 * @param key    handle to an already opened registry key
+		 * @param subkey name/path of a subkey that this function opens or creates
+		 * @throws RegistryKeyException if Winreg_h.RegDeleteKeyTransactedW returns with a result != ERROR_SUCCESS, <em>except</em> the result is ERROR_FILE_NOT_FOUND and {@code ignoreNotExisting == true}
+		 */
 		public void deleteRegKey(RegistryKey key, String subkey, boolean ignoreNotExisting) throws RegistryKeyException {
 			try (var arena = Arena.ofConfined()) {
 				var lpSubkey = arena.allocateFrom(subkey, StandardCharsets.UTF_16LE);
@@ -107,7 +146,11 @@ public class WindowsRegistry {
 			}
 		}
 
-
+		/**
+		 * Commits and closes this transaction.
+		 *
+		 * @throws WindowsException if Ktmw32_h:CommitTransaction returned 0. The exception contains the system error code.
+		 */
 		public synchronized void commit() throws WindowsException {
 			if (isClosed) {
 				throw new IllegalStateException("Transaction already closed");
@@ -121,6 +164,11 @@ public class WindowsRegistry {
 			closeInternal();
 		}
 
+		/**
+		 * Rolls this transaction back and closes it.
+		 *
+		 * @throws WindowsException if Ktmw32_h:RollbackTransaction returned 0. The exception contains the system error code.
+		 */
 		public synchronized void rollback() throws WindowsException {
 			if (isClosed) {
 				throw new IllegalStateException("Transaction already closed");
