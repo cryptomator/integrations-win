@@ -3,6 +3,8 @@ package org.cryptomator.windows.common;
 import org.cryptomator.windows.capi.common.Windows_h;
 import org.cryptomator.windows.capi.ktmw32.Ktmw32_h;
 import org.cryptomator.windows.capi.winreg.Winreg_h;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
@@ -16,6 +18,8 @@ import static org.cryptomator.windows.capi.common.Windows_h.INVALID_HANDLE_VALUE
 import static org.cryptomator.windows.capi.winreg.Winreg_h.*;
 
 public class WindowsRegistry {
+
+	private static final Logger LOG = LoggerFactory.getLogger(WindowsRegistry.class);
 
 	public static RegistryTransaction startTransaction() throws WindowsException {
 		var transactionHandle = Ktmw32_h.CreateTransaction(NULL, NULL, 0, 0, 0, 0, NULL);
@@ -129,26 +133,31 @@ public class WindowsRegistry {
 			closeInternal();
 		}
 
-		;
-
+		/**
+		 * Closes this transaction.
+		 * <p>
+		 * If this transaction is not commited, it is rolled back.
+		 * The close method always discards the transaction handle. If an error occurs in either rolling back or closing the handle, the error is logged, but no exception thrown.
+		 */
 		@Override
-		public synchronized void close() throws WindowsException {
-			if (!isCommited) {
-				try {
+		public synchronized void close() {
+			try {
+				if (!isCommited) {
 					rollback();
-				} catch (WindowsException e) {
-					System.err.printf("Failed to rollback uncommited transaction on close: %s%n", e.getMessage());
 				}
+			} catch (WindowsException e) {
+				LOG.error("Failed to rollback uncommited transaction on close: {}", e.getMessage());
+			} finally {
+				closeInternal();
 			}
-			closeInternal();
 		}
 
-		private synchronized void closeInternal() throws WindowsException {
+		private synchronized void closeInternal() {
 			if (!isClosed) {
 				int result = Windows_h.CloseHandle(transactionHandle);
 				if (result == 0) {
 					int error = Windows_h.GetLastError();
-					throw new WindowsException("Windows.h:CloseHandle", error);
+					LOG.error("Closing transaction handle failed. Function Windows.h:CloseHandle set system error code to {}", error);
 				}
 				transactionHandle = null;
 				isClosed = true;
