@@ -36,6 +36,15 @@ public class RegistryKey implements AutoCloseable {
 
 	//-- GetValue functions --
 
+	/**
+	 * Gets a REG_SZ or REG_EXPAND_SZ value.
+	 *
+	 * @param name         name of the value
+	 * @param isExpandable flag indicating if the value is of type REG_EXPAND_SZ
+	 * @return the data of the value
+	 * @throws RegistryValueException, if winreg.h:RegGetValueW returns a result != ERROR_SUCCESS
+	 * @implNote This method is restricted to read at most {@value MAX_DATA_SIZE} from the registry. If the value exceeds the size, a runtime exception is thrown.
+	 */
 	public String getStringValue(String name, boolean isExpandable) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
 			var data = getValue(arena, name, isExpandable ? RRF_RT_REG_EXPAND_SZ() : RRF_RT_REG_SZ());
@@ -43,6 +52,13 @@ public class RegistryKey implements AutoCloseable {
 		}
 	}
 
+	/**
+	 * Gets a DWORD value.
+	 *
+	 * @param name name of the value
+	 * @return the data of the value
+	 * @throws RegistryValueException, if winreg.h:RegGetValueW returns a result != ERROR_SUCCESS
+	 */
 	public int getDwordValue(String name) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
 			var data = getValue(arena, name, RRF_RT_REG_DWORD());
@@ -78,6 +94,14 @@ public class RegistryKey implements AutoCloseable {
 
 	//-- SetValue functions --
 
+	/**
+	 * Sets a REG_SZ or REG_EXPAND_SZ value for this registry key.
+	 *
+	 * @param name         name of the value
+	 * @param data         Data to be set
+	 * @param isExpandable flag marking if the value is of type REG_EXPAND_SZ
+	 * @throws RegistryValueException, if winreg.h:RegSetKeyValueW returns a result != ERROR_SUCCESS
+	 */
 	public void setStringValue(String name, String data, boolean isExpandable) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
 			var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
@@ -86,6 +110,13 @@ public class RegistryKey implements AutoCloseable {
 		}
 	}
 
+	/**
+	 * Sets a DWORD value for this registry key.
+	 *
+	 * @param name name of the value
+	 * @param data Data to be set
+	 * @throws RegistryValueException, if winreg.h:RegSetKeyValueW returns a result != ERROR_SUCCESS
+	 */
 	public void setDwordValue(String name, int data) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
 			var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
@@ -107,10 +138,24 @@ public class RegistryKey implements AutoCloseable {
 
 	//-- delete operations
 
+	/**
+	 * Deletes a value of this registry key.
+	 *
+	 * @param valueName name of the value
+	 * @throws RegistryValueException, if winreg.h:RegDeleteKeyValueW returns a result != ERROR_SUCCESS
+	 * @see RegistryKey#deleteValue(String, boolean)
+	 */
 	public void deleteValue(String valueName) throws RegistryValueException {
 		deleteValue(valueName, false);
 	}
 
+	/**
+	 * Deletes a value of this registry key.
+	 *
+	 * @param valueName         name of the value
+	 * @param ignoreNotExisting flag indicating wether a not existing value should be ignored
+	 * @throws RegistryValueException, if winreg.h:RegDeleteKeyValueW returns a result != ERROR_SUCCESS, <em>except</em> the result is ERROR_FILE_NOT_FOUND and {@code ignoreNotExisting == true}
+	 */
 	public void deleteValue(String valueName, boolean ignoreNotExisting) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
 			var lpValueName = arena.allocateFrom(valueName, StandardCharsets.UTF_16LE);
@@ -141,8 +186,13 @@ public class RegistryKey implements AutoCloseable {
 		}
 	}
 
+	/**
+	 * Closes this registry key.
+	 *
+	 * @throws RuntimeException wrapping a {@link RegistryKeyException}, if winreg.h:RegCloseKey returns a result != ERROR_SUCCESS
+	 */
 	@Override
-	public synchronized void close() {
+	public synchronized void close() throws RuntimeException {
 		if (!isClosed) {
 			int result = Winreg_h.RegCloseKey(handle);
 			if (result != ERROR_SUCCESS()) {
