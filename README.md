@@ -12,7 +12,7 @@ This project uses the following JVM properties:
 
 This project uses JNI, hence you'll nedd Java as well as GCC build tools:
 
-* JDK 17
+* JDK 22
 * Maven
 * MinGW GCC compiler (`choco install mingw --version=10.2.0`)
 * Make (`choco install make`)

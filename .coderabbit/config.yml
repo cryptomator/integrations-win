@@ -1,0 +1,3 @@
+path_filters:
+  exclude:
+    - src/main/java/org/cryptomator/windows/capi/**
