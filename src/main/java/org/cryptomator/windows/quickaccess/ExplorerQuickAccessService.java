@@ -1,5 +1,6 @@
 package org.cryptomator.windows.quickaccess;
 
+import org.cryptomator.integrations.common.DisplayName;
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.quickaccess.QuickAccessService;
@@ -20,6 +21,7 @@ import java.util.UUID;
  */
 @Priority(100)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
+@DisplayName("Explorer Navigation Pane")
 public class ExplorerQuickAccessService implements QuickAccessService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ExplorerQuickAccessService.class);
