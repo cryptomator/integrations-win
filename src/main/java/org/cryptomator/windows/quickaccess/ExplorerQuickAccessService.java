@@ -85,20 +85,20 @@ public class ExplorerQuickAccessService implements QuickAccessService {
 					//10. Set SFGAO attributes for the shell folder
 					shellFolderKey.setDwordValue("Attributes", 0xF080004D);
 				}
-				LOG.trace("Created RegKey {} and subkeys, including Values", baseKey);
+				LOG.trace("Created RegKey {} and subkeys, including Values", baseKey.getPath());
 			}
 
 			//11. register extenstion in name space root
 			var nameSpaceSubKey = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\" + clsid;
 			try (var nameSpaceKey = t.createRegKey(RegistryKey.HKEY_CURRENT_USER, nameSpaceSubKey, true)) {
 				nameSpaceKey.setStringValue("", entryName, false);
-				LOG.trace("Created RegKey {} and setting default value", nameSpaceKey);
+				LOG.trace("Created RegKey {} and setting default value", nameSpaceKey.getPath());
 			}
 
 			//12. Hide extension from Desktop
 			try (var newStartPanelKey = t.createRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel", true)) {
 				newStartPanelKey.setDwordValue(clsid, 0x1);
-				LOG.trace("Set value {} for RegKey {}", clsid, newStartPanelKey);
+				LOG.trace("Set value {} for RegKey {}", clsid, newStartPanelKey.getPath());
 			}
 			t.commit();
 		} catch (WindowsException e) {
@@ -131,13 +131,13 @@ public class ExplorerQuickAccessService implements QuickAccessService {
 
 				//undo step 12.
 				try (var nameSpaceKey = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel")) {
-					LOG.trace("Removing Value {} of RegKey {}", clsid, nameSpaceKey);
+					LOG.trace("Removing Value {} of RegKey {}", clsid, nameSpaceKey.getPath());
 					nameSpaceKey.deleteValue(clsid, true);
 				}
 
 				//undo everything else
 				try (var baseKey = t.openRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\" + clsid)) {
-					LOG.trace("Wiping everything under RegKey {} and key itself.", baseKey);
+					LOG.trace("Wiping everything under RegKey {} and key itself.", baseKey.getPath());
 					baseKey.deleteTree("");
 				}
 				t.deleteRegKey(RegistryKey.HKEY_CURRENT_USER, "Software\\Classes\\CLSID\\" + clsid, true);
