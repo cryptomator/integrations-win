@@ -46,7 +46,7 @@
 		<mockito.version>5.12.0</mockito.version>
 
 		<!-- build plugin dependencies -->
-		<dependency-check.version>10.0.2</dependency-check.version>
+		<dependency-check.version>10.0.3</dependency-check.version>
 		<nexus-staging.version>1.7.0</nexus-staging.version>
 		<jextract-maven.version>0.4.1</jextract-maven.version>
 
@@ -111,7 +111,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-clean-plugin</artifactId>
-				<version>3.3.2</version>
+				<version>3.4.0</version>
 				<configuration>
 					<filesets>
 						<fileset>
@@ -185,7 +185,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.2.5</version>
+				<version>3.3.1</version>
 			</plugin>
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
@@ -201,7 +201,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.7.0</version>
+				<version>3.8.0</version>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
