@@ -273,7 +273,7 @@
 							<detail>true</detail>
 							<suppressionFile>suppression.xml</suppressionFile>
 							<assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
-							<nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+							<nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
 						</configuration>
 						<executions>
 							<execution>
