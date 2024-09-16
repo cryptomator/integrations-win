@@ -16,10 +16,12 @@ module org.cryptomator.integrations.win {
 	requires com.fasterxml.jackson.databind;
 
 	opens org.cryptomator.windows.keychain to com.fasterxml.jackson.databind;
+	opens org.cryptomator.windows.quickaccess to org.cryptomator.integrations.api;
 
 	provides AutoStartProvider with WindowsAutoStart;
 	provides KeychainAccessProvider with WindowsProtectedKeychainAccess;
 	provides UiAppearanceProvider with WinUiAppearanceProvider;
 	provides RevealPathService with ExplorerRevealPathService;
 	provides QuickAccessService with ExplorerQuickAccessService;
+
 }
