@@ -92,7 +92,7 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	}
 
 	@Override
-	public void storePassphrase(String key, String displayName, CharSequence passphrase) throws KeychainAccessException {
+	public void storePassphrase(String key, String displayName, CharSequence passphrase, boolean ignored) throws KeychainAccessException {
 		loadKeychainEntriesIfNeeded();
 		ByteBuffer buf = UTF_8.encode(CharBuffer.wrap(passphrase));
 		byte[] cleartext = new byte[buf.remaining()];
