@@ -34,7 +34,7 @@ public class ExplorerQuickAccessService implements QuickAccessService {
 		if (target == null) {
 			throw new IllegalArgumentException("Parameter 'target' must not be null.");
 		}
-		var entryName = "Vault - " + displayName;
+		var entryName = displayName.length() > 40? displayName.substring(0, 40) : displayName; //truncate name
 		var clsid = "{" + UUID.randomUUID() + "}";
 		LOG.debug("Creating navigation pane entry with CLSID {}", clsid);
 		//1. Creates the shell extension and names it
