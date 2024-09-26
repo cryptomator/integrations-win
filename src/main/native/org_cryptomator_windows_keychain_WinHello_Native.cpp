@@ -107,18 +107,18 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
       throw std::runtime_error("Failed to generate the encryption key.");
     }
 
-    hstring algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
-    SymmetricKeyAlgorithmProvider aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
+    auto algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
+    auto aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
     auto keyMaterial = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(key.data(), key.size()));
-    CryptographicKey aesKey = aesProvider.CreateSymmetricKey(keyMaterial);
+    auto aesKey = aesProvider.CreateSymmetricKey(keyMaterial);
     auto dataBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(cleartextVec.data(), cleartextVec.size()));
-    IBuffer encryptedBuffer = CryptographicEngine::Encrypt(aesKey, dataBuffer, keyMaterial);
+    auto encryptedBuffer = CryptographicEngine::Encrypt(aesKey, dataBuffer, keyMaterial);
 
     return vectorToJbyteArray(env, iBufferToVector(encryptedBuffer));
 
   } catch (const std::exception& e) {
     std::cout << "Error: " << e.what() << std::endl;
-    jbyteArray byteArray = env->NewByteArray(0);
+    auto byteArray = env->NewByteArray(0);
     return byteArray;
   }
 }
@@ -141,18 +141,18 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_ge
       throw std::runtime_error("Failed to generate the encryption key.");
     }
 
-    hstring algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
-    SymmetricKeyAlgorithmProvider aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
+    auto algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
+    auto aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
     auto keyMaterial = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(key.data(), key.size()));
-    CryptographicKey aesKey = aesProvider.CreateSymmetricKey(keyMaterial);
+    auto aesKey = aesProvider.CreateSymmetricKey(keyMaterial);
     auto dataBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(ciphertextVec.data(), ciphertextVec.size()));
-    IBuffer decryptedBuffer = CryptographicEngine::Decrypt(aesKey, dataBuffer, keyMaterial);
+    auto decryptedBuffer = CryptographicEngine::Decrypt(aesKey, dataBuffer, keyMaterial);
 
     return vectorToJbyteArray(env, iBufferToVector(decryptedBuffer));
 
   } catch (const std::exception& e) {
     std::cout << "Error: " << e.what() << std::endl;
-    jbyteArray byteArray = env->NewByteArray(0);
+    auto byteArray = env->NewByteArray(0);
     return byteArray;
   }
 }
