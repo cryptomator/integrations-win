@@ -6,6 +6,8 @@
 #include <winrt/Windows.Security.Cryptography.Core.h>
 #include <winrt/Windows.Storage.Streams.h>
 #include <windows.h>
+#include <thread>
+#include <chrono>
 #include <string>
 #include <vector>
 #include <stdexcept>
@@ -18,6 +20,7 @@ using namespace Windows::Security::Cryptography::Core;
 using namespace Windows::Storage::Streams;
 
 const std::wstring s_winHelloKeyName{L"cryptomator_winhello"};
+static int g_promptFocusCount = 0;
 
 // Helper method for convertion
 std::vector<uint8_t> jbyteArrayToVector(JNIEnv* env, jbyteArray array) {
@@ -50,6 +53,25 @@ std::vector<uint8_t> iBufferToVector(const IBuffer& buffer) {
   std::vector<uint8_t> result(reader.UnconsumedBufferLength());
   reader.ReadBytes(array_view<uint8_t>(result));
   return result;
+}
+
+void queueSecurityPromptFocus(int delay = 500) {
+    std::thread([delay]() {
+        while (g_promptFocusCount <= 3) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+
+            auto hWnd = ::FindWindowA("Credential Dialog Xaml Host", nullptr);
+
+            if (hWnd) {
+                ::SetForegroundWindow(hWnd);
+                g_promptFocusCount = 0;
+                break;
+            } else if (++g_promptFocusCount > 3) {
+                g_promptFocusCount = 0;
+                break;
+            }
+        }
+    }).detach();
 }
 
 bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, std::vector<uint8_t>& key){
@@ -92,6 +114,7 @@ bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, std::vector<uint
 // Encrypts data using Windows Hello KeyCredentialManager API and derived key from signed salt
 jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_setEncryptionKey
 (JNIEnv* env, jobject obj, jbyteArray cleartext, jbyteArray salt) {
+  queueSecurityPromptFocus();
   try {
     // Convert Java byte arrays to C++ vectors
     std::vector<uint8_t> cleartextVec = jbyteArrayToVector(env, cleartext);
@@ -126,6 +149,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
 // Decrypts data using Windows Hello KeyCredentialManager API and derived key from signed salt
 jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_getEncryptionKey
 (JNIEnv* env, jobject obj, jbyteArray ciphertext, jbyteArray salt) {
+  queueSecurityPromptFocus();
   try {
     // Convert Java byte arrays to C++ vectors
     std::vector<uint8_t> ciphertextVec = jbyteArrayToVector(env, ciphertext);

@@ -7,7 +7,7 @@ SOURCES := $(wildcard src/main/native/*.cpp)
 all: install
 
 #install:
-#	g++ -Wall -D_JNI_IMPLEMENTATION_ -Wl,--kill-at $(HEADERS) -shared -osrc/main/resources/integrations.dll $(SOURCES) -lcrypt32 -lshell32 -lole32 -luuid -lwindowsapp
+#	g++ -Wall -D_JNI_IMPLEMENTATION_ -Wl,--kill-at $(HEADERS) -shared -osrc/main/resources/integrations.dll $(SOURCES) -lcrypt32 -lshell32 -lole32 -luuid -luser32 -lwindowsapp
 
 install:
-	cl /EHsc /std:c++17 /LD /Fe:src/main/resources/integrations.dll $(HEADERS) $(SOURCES) /link crypt32.lib shell32.lib ole32.lib uuid.lib windowsapp.lib
+	cl /EHsc /std:c++17 /LD /Fe:src/main/resources/integrations.dll $(HEADERS) $(SOURCES) /link crypt32.lib shell32.lib ole32.lib uuid.lib user32.lib windowsapp.lib
