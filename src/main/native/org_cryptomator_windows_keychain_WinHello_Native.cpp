@@ -155,9 +155,6 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_ge
     std::vector<uint8_t> ciphertextVec = jbyteArrayToVector(env, ciphertext);
     std::vector<uint8_t> saltVec = jbyteArrayToVector(env, salt);
 
-    // Initialize Windows Runtime
-    init_apartment();
-
     // Take the random challenge and sign it by Windows Hello
     // to create the key. The challenge is also used as the IV.
     std::vector<uint8_t> key;
