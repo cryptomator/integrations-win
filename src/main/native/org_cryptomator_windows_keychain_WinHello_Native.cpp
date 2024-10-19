@@ -94,7 +94,7 @@ bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, std::vector<uint
     if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
       result = KeyCredentialManager::OpenAsync(s_winHelloKeyName).get();
     } else if (result.Status() != KeyCredentialStatus::Success) {
-      std::cout << "Failed to create Windows Hello credential." << std::endl;
+      std::cout << "Failed to retrieve Windows Hello credential." << std::endl;
       return false;
     }
 
@@ -134,7 +134,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
     // to create the key. The challenge is also used as the IV.
     std::vector<uint8_t> key;
     if (!deriveEncryptionKey(saltVec, key)) {
-      throw std::runtime_error("Failed to generate the encryption key.");
+      throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
     }
 
     auto algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
@@ -147,7 +147,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
     return vectorToJbyteArray(env, iBufferToVector(encryptedBuffer));
 
   } catch (const std::exception& e) {
-    std::cout << "Error: " << e.what() << std::endl;
+    std::cout << "Warning: " << e.what() << std::endl;
     auto byteArray = env->NewByteArray(0);
     return byteArray;
   }
@@ -166,7 +166,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_ge
     // to create the key. The challenge is also used as the IV.
     std::vector<uint8_t> key;
     if (!deriveEncryptionKey(saltVec, key)) {
-      throw std::runtime_error("Failed to generate the encryption key.");
+      throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
     }
 
     auto algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
@@ -179,7 +179,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_ge
     return vectorToJbyteArray(env, iBufferToVector(decryptedBuffer));
 
   } catch (const std::exception& e) {
-    std::cout << "Error: " << e.what() << std::endl;
+    std::cout << "Warning: " << e.what() << std::endl;
     auto byteArray = env->NewByteArray(0);
     return byteArray;
   }
