@@ -51,17 +51,19 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 
 	private final List<Path> keychainPaths;
 	private final WinDataProtection dataProtection;
+	private final WinHello windowsHello;
 	private Map<String, KeychainEntry> keychainEntries;
 
 	@SuppressWarnings("unused") // default constructor required by ServiceLoader
 	public WindowsProtectedKeychainAccess() {
-		this(readKeychainPathsFromEnv(), new WinDataProtection());
+		this(readKeychainPathsFromEnv(), new WinDataProtection(), new WinHello());
 	}
 
 	// visible for testing
-	WindowsProtectedKeychainAccess(List<Path> keychainPaths, WinDataProtection dataProtection) {
+	WindowsProtectedKeychainAccess(List<Path> keychainPaths, WinDataProtection dataProtection, WinHello windowsHello) {
 		this.keychainPaths = keychainPaths;
 		this.dataProtection = dataProtection;
+		this.windowsHello = windowsHello;
 	}
 
 	private static List<Path> readKeychainPathsFromEnv() {
@@ -92,13 +94,13 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	}
 
 	@Override
-	public void storePassphrase(String key, String displayName, CharSequence passphrase, boolean ignored) throws KeychainAccessException {
+	public void storePassphrase(String key, String displayName, CharSequence passphrase, boolean requireAuth) throws KeychainAccessException {
 		loadKeychainEntriesIfNeeded();
 		ByteBuffer buf = UTF_8.encode(CharBuffer.wrap(passphrase));
 		byte[] cleartext = new byte[buf.remaining()];
 		buf.get(cleartext);
 		var salt = generateSalt();
-		var ciphertext = dataProtection.protect(cleartext, salt);
+		var ciphertext = !requireAuth ? dataProtection.protect(cleartext, salt) : windowsHello.setEncryptionKey(cleartext, salt);
 		Arrays.fill(buf.array(), (byte) 0x00);
 		Arrays.fill(cleartext, (byte) 0x00);
 		keychainEntries.put(key, new KeychainEntry(ciphertext, salt));

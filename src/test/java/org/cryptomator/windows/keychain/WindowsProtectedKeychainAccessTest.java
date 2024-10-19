@@ -26,18 +26,19 @@ public class WindowsProtectedKeychainAccessTest {
 	public void setup(@TempDir Path tempDir) {
 		Path keychainPath = tempDir.resolve("keychainfile.tmp");
 		WinDataProtection winDataProtection = Mockito.mock(WinDataProtection.class);
+		WinHello winHello = Mockito.mock(WinHello.class);
 		Answer<byte[]> answerReturningFirstArg = invocation -> ((byte[]) invocation.getArgument(0)).clone();
 		Mockito.when(winDataProtection.protect(Mockito.any(), Mockito.any())).thenAnswer(answerReturningFirstArg);
 		Mockito.when(winDataProtection.unprotect(Mockito.any(), Mockito.any())).thenAnswer(answerReturningFirstArg);
-		keychain = new WindowsProtectedKeychainAccess(List.of(keychainPath), winDataProtection);
+		keychain = new WindowsProtectedKeychainAccess(List.of(keychainPath), winDataProtection, winHello);
 	}
 
 	@Test
 	public void testStoreAndLoad() throws KeychainAccessException {
 		String storedPw1 = "topSecret";
 		String storedPw2 = "bottomSecret";
-		keychain.storePassphrase("myPassword", storedPw1);
-		keychain.storePassphrase("myOtherPassword", storedPw2);
+		keychain.storePassphrase("myPassword", null, storedPw1, false);
+		keychain.storePassphrase("myOtherPassword", null, storedPw2, false);
 		String loadedPw1 = new String(keychain.loadPassphrase("myPassword"));
 		String loadedPw2 = new String(keychain.loadPassphrase("myOtherPassword"));
 		Assertions.assertEquals(storedPw1, loadedPw1);
