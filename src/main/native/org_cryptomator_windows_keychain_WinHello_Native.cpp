@@ -21,6 +21,7 @@ using namespace Windows::Storage::Streams;
 
 const std::wstring s_winHelloKeyName{L"cryptomator_winhello"};
 static int g_promptFocusCount = 0;
+static std::once_flag runtimeInitFlag;
 
 // Helper method for convertion
 std::vector<uint8_t> jbyteArrayToVector(JNIEnv* env, jbyteArray array) {
@@ -55,6 +56,7 @@ std::vector<uint8_t> iBufferToVector(const IBuffer& buffer) {
   return result;
 }
 
+// Bring Windows Hello pop-up to the front
 void queueSecurityPromptFocus(int delay = 500) {
     std::thread([delay]() {
         while (g_promptFocusCount <= 3) {
@@ -72,6 +74,12 @@ void queueSecurityPromptFocus(int delay = 500) {
             }
         }
     }).detach();
+}
+
+void InitializeWindowsRuntime() {
+    std::call_once(runtimeInitFlag, []() {
+        winrt::init_apartment();
+    });
 }
 
 bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, std::vector<uint8_t>& key){
@@ -120,8 +128,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
     std::vector<uint8_t> cleartextVec = jbyteArrayToVector(env, cleartext);
     std::vector<uint8_t> saltVec = jbyteArrayToVector(env, salt);
 
-    // Initialize Windows Runtime
-    init_apartment();
+    InitializeWindowsRuntime();
 
     // Take the random challenge and sign it by Windows Hello
     // to create the key. The challenge is also used as the IV.
