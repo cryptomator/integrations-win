@@ -8,22 +8,22 @@ class WinHello {
 	 * Encrypts the given cleartext using a Windows Hello key.
 	 *
 	 * @param cleartext The cleartext to encrypt.
-	 * @param salt A salt, that needs to be provided during {@link #getEncryptionKey(byte[], byte[]) decryption}
+	 * @param challenge A challenge, that needs to be provided during {@link #getEncryptionKey(byte[], byte[]) decryption}
 	 * @return The ciphertext or <code>null</code> if encryption failed.
 	 */
-	public byte[] setEncryptionKey(byte[] cleartext, byte[] salt) {
-		return Native.INSTANCE.setEncryptionKey(cleartext, salt);
+	public byte[] setEncryptionKey(byte[] cleartext, byte[] challenge) {
+		return Native.INSTANCE.setEncryptionKey(cleartext, challenge);
 	}
 
 	/**
 	 * Decrypts the given ciphertext using a Windows Hello key.
 	 *
 	 * @param ciphertext Ciphertext as previously encrypted using {@link #setEncryptionKey(byte[], byte[])}
-	 * @param salt Same salt as used in {@link #setEncryptionKey(byte[], byte[])}
+	 * @param challenge Same challenge as used in {@link #setEncryptionKey(byte[], byte[])}
 	 * @return The cleartext or <code>null</code> if decryption failed.
 	 */
-	public byte[] getEncryptionKey(byte[] ciphertext, byte[] salt) {
-		return Native.INSTANCE.getEncryptionKey(ciphertext, salt);
+	public byte[] getEncryptionKey(byte[] ciphertext, byte[] challenge) {
+		return Native.INSTANCE.getEncryptionKey(ciphertext, challenge);
 	}
 
 	// initialization-on-demand pattern, as loading the .dll is an expensive operation
@@ -34,9 +34,9 @@ class WinHello {
 			NativeLibLoader.loadLib();
 		}
 
-		public native byte[] setEncryptionKey(byte[] cleartext, byte[] salt);
+		public native byte[] setEncryptionKey(byte[] cleartext, byte[] challenge);
 
-		public native byte[] getEncryptionKey(byte[] ciphertext, byte[] salt);
+		public native byte[] getEncryptionKey(byte[] ciphertext, byte[] challenge);
 	}
 
 }

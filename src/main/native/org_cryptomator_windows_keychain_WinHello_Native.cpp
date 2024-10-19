@@ -119,21 +119,21 @@ bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, std::vector<uint
   }
 }
 
-// Encrypts data using Windows Hello KeyCredentialManager API and derived key from signed salt
+// Encrypts data using Windows Hello KeyCredentialManager API and derived key from signed challenge
 jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_setEncryptionKey
-(JNIEnv* env, jobject obj, jbyteArray cleartext, jbyteArray salt) {
+(JNIEnv* env, jobject obj, jbyteArray cleartext, jbyteArray challenge) {
   queueSecurityPromptFocus();
   try {
     // Convert Java byte arrays to C++ vectors
     std::vector<uint8_t> cleartextVec = jbyteArrayToVector(env, cleartext);
-    std::vector<uint8_t> saltVec = jbyteArrayToVector(env, salt);
+    std::vector<uint8_t> challengeVec = jbyteArrayToVector(env, challenge);
 
     InitializeWindowsRuntime();
 
     // Take the random challenge and sign it by Windows Hello
     // to create the key. The challenge is also used as the IV.
     std::vector<uint8_t> key;
-    if (!deriveEncryptionKey(saltVec, key)) {
+    if (!deriveEncryptionKey(challengeVec, key)) {
       throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
     }
 
@@ -153,19 +153,19 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
   }
 }
 
-// Decrypts data using Windows Hello KeyCredentialManager API and derived key from signed salt
+// Decrypts data using Windows Hello KeyCredentialManager API and derived key from signed challenge
 jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_getEncryptionKey
-(JNIEnv* env, jobject obj, jbyteArray ciphertext, jbyteArray salt) {
+(JNIEnv* env, jobject obj, jbyteArray ciphertext, jbyteArray challenge) {
   queueSecurityPromptFocus();
   try {
     // Convert Java byte arrays to C++ vectors
     std::vector<uint8_t> ciphertextVec = jbyteArrayToVector(env, ciphertext);
-    std::vector<uint8_t> saltVec = jbyteArrayToVector(env, salt);
+    std::vector<uint8_t> challengeVec = jbyteArrayToVector(env, challange);
 
     // Take the random challenge and sign it by Windows Hello
     // to create the key. The challenge is also used as the IV.
     std::vector<uint8_t> key;
-    if (!deriveEncryptionKey(saltVec, key)) {
+    if (!deriveEncryptionKey(challengeVec, key)) {
       throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
     }
 
