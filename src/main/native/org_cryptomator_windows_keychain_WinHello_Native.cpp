@@ -160,7 +160,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_ge
   try {
     // Convert Java byte arrays to C++ vectors
     std::vector<uint8_t> ciphertextVec = jbyteArrayToVector(env, ciphertext);
-    std::vector<uint8_t> challengeVec = jbyteArrayToVector(env, challange);
+    std::vector<uint8_t> challengeVec = jbyteArrayToVector(env, challenge);
 
     // Take the random challenge and sign it by Windows Hello
     // to create the key. The challenge is also used as the IV.
