@@ -146,8 +146,18 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
 
     return vectorToJbyteArray(env, iBufferToVector(encryptedBuffer));
 
+  } catch (winrt::hresult_error const& hre) {
+    HRESULT hr = hre.code();
+    winrt::hstring message = hre.message();
+    std::wcout << L"Error: " << message.c_str() << L" (HRESULT: 0x" << std::hex << hr << L")" << std::endl;
+    auto byteArray = env->NewByteArray(0);
+    return byteArray;
   } catch (const std::exception& e) {
     std::cout << "Warning: " << e.what() << std::endl;
+    auto byteArray = env->NewByteArray(0);
+    return byteArray;
+  } catch (...) {
+    std::cout << "Caught an unknown exception" << std::endl;
     auto byteArray = env->NewByteArray(0);
     return byteArray;
   }
@@ -178,8 +188,18 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_ge
 
     return vectorToJbyteArray(env, iBufferToVector(decryptedBuffer));
 
+  } catch (winrt::hresult_error const& hre) {
+    HRESULT hr = hre.code();
+    winrt::hstring message = hre.message();
+    std::wcout << L"Error: " << message.c_str() << L" (HRESULT: 0x" << std::hex << hr << L")" << std::endl;
+    auto byteArray = env->NewByteArray(0);
+    return byteArray;
   } catch (const std::exception& e) {
     std::cout << "Warning: " << e.what() << std::endl;
+    auto byteArray = env->NewByteArray(0);
+    return byteArray;
+  } catch (...) {
+    std::cout << "Caught an unknown exception" << std::endl;
     auto byteArray = env->NewByteArray(0);
     return byteArray;
   }
