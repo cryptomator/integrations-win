@@ -22,8 +22,9 @@ using namespace Windows::Storage::Streams;
 const std::wstring s_winHelloKeyName{L"cryptomator_winhello"};
 static int g_promptFocusCount = 0;
 static std::once_flag runtimeInitFlag;
+static IBuffer info = CryptographicBuffer::ConvertStringToBinary(L"EncryptionKey", BinaryStringEncoding::Utf8);
 
-// Helper method for convertion
+// Helper methods for convertion
 std::vector<uint8_t> jbyteArrayToVector(JNIEnv* env, jbyteArray array) {
   if (array == nullptr) {
     return std::vector<uint8_t>();
@@ -82,7 +83,26 @@ void InitializeWindowsRuntime() {
     });
 }
 
-bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, std::vector<uint8_t>& key){
+IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32_t keySizeInBytes, const IBuffer& info) {
+  auto macProvider = MacAlgorithmProvider::OpenAlgorithm(L"HMAC_SHA256");
+
+  // HKDF-extract
+  auto hmacKey = macProvider.CreateKey(salt);
+  auto pseudorandomKey = CryptographicEngine::Sign(hmacKey, inputData);
+
+  // HKDF-expand
+  hmacKey = macProvider.CreateKey(pseudorandomKey); // Re-create HMAC with pseudorandomKey as key
+  auto keyMaterial = CryptographicEngine::Sign(hmacKey, info);
+
+  // Truncate key to the desired size if needed (SHA256 output is 32 bytes by default)
+  if (keyMaterial.Length() > keySizeInBytes) {
+      keyMaterial = CryptographicBuffer::CreateFromByteArray(std::vector<uint8_t>(keyMaterial.begin(), keyMaterial.begin() + keySizeInBytes));
+  }
+
+  return keyMaterial;
+}
+
+bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, IBuffer& key){
   auto challengeBuffer = CryptographicBuffer::CreateFromByteArray(
         array_view<const uint8_t>(challenge.data(), challenge.size()));
 
@@ -106,11 +126,9 @@ bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, std::vector<uint
       return false;
     }
 
-    // Use the SHA-256 hash of the challenge signature as the encryption key
+    // Derive the encryption/decryption key using HKDF
     const auto response = signature.Result();
-    HashAlgorithmProvider hashProvider = HashAlgorithmProvider::OpenAlgorithm(HashAlgorithmNames::Sha256());
-    IBuffer hashBuffer = hashProvider.HashData(response);
-    key = iBufferToVector(hashBuffer);
+    key = DeriveKeyUsingHKDF(response, challengeBuffer, 32, info);
     return true;
 
   } catch (winrt::hresult_error const& ex) {
@@ -132,12 +150,12 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
 
     // Take the random challenge and sign it by Windows Hello
     // to create the key. The challenge is also used as the IV.
-    std::vector<uint8_t> key;
+    IBuffer key;
     if (!deriveEncryptionKey(challengeVec, key)) {
       throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
     }
 
-    auto algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
+    auto algorithmName = SymmetricAlgorithmNames.AesCbc;
     auto aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
     auto keyMaterial = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(key.data(), key.size()));
     auto aesKey = aesProvider.CreateSymmetricKey(keyMaterial);
@@ -174,12 +192,12 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_ge
 
     // Take the random challenge and sign it by Windows Hello
     // to create the key. The challenge is also used as the IV.
-    std::vector<uint8_t> key;
+    IBuffer key;
     if (!deriveEncryptionKey(challengeVec, key)) {
       throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
     }
 
-    auto algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
+    auto algorithmName = SymmetricAlgorithmNames.AesCbc;
     auto aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
     auto keyMaterial = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(key.data(), key.size()));
     auto aesKey = aesProvider.CreateSymmetricKey(keyMaterial);
