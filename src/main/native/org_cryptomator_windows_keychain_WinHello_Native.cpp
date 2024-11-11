@@ -95,8 +95,12 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
   auto keyMaterial = CryptographicEngine::Sign(hmacKey, info);
 
   // Truncate key to the desired size if needed (SHA256 output is 32 bytes by default)
-  if (keyMaterial.Length() > keySizeInBytes) {
-      keyMaterial = CryptographicBuffer::CreateFromByteArray(std::vector<uint8_t>(keyMaterial.begin(), keyMaterial.begin() + keySizeInBytes));
+  uint32_t actualKeySize = keyMaterial.Length();
+  if (actualKeySize > keySizeInBytes) {
+    com_array<uint8_t> keyBytes;
+    CryptographicBuffer::CopyToByteArray(keyMaterial, keyBytes);
+    keyBytes = com_array<uint8_t>(keyBytes.begin(), keyBytes.begin() + keySizeInBytes);
+    keyMaterial = CryptographicBuffer::CreateFromByteArray(keyBytes);
   }
 
   return keyMaterial;
@@ -128,7 +132,7 @@ bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, IBuffer& key){
 
     // Derive the encryption/decryption key using HKDF
     const auto response = signature.Result();
-    key = DeriveKeyUsingHKDF(response, challengeBuffer, 32, info);
+    key = DeriveKeyUsingHKDF(response, challengeBuffer, 32, info); // needs to be 32 bytes for SHA256
     return true;
 
   } catch (winrt::hresult_error const& ex) {
@@ -155,9 +159,9 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
       throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
     }
 
-    auto algorithmName = SymmetricAlgorithmNames.AesCbc;
+    auto algorithmName = SymmetricAlgorithmNames::AesCbc();
     auto aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
-    auto keyMaterial = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(key.data(), key.size()));
+    auto keyMaterial = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(key.data(), key.Length()));
     auto aesKey = aesProvider.CreateSymmetricKey(keyMaterial);
     auto dataBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(cleartextVec.data(), cleartextVec.size()));
     auto encryptedBuffer = CryptographicEngine::Encrypt(aesKey, dataBuffer, keyMaterial);
@@ -197,9 +201,9 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_ge
       throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
     }
 
-    auto algorithmName = SymmetricAlgorithmNames.AesCbc;
+    auto algorithmName = SymmetricAlgorithmNames::AesCbc();
     auto aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
-    auto keyMaterial = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(key.data(), key.size()));
+    auto keyMaterial = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(key.data(), key.Length()));
     auto aesKey = aesProvider.CreateSymmetricKey(keyMaterial);
     auto dataBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(ciphertextVec.data(), ciphertextVec.size()));
     auto decryptedBuffer = CryptographicEngine::Decrypt(aesKey, dataBuffer, keyMaterial);
