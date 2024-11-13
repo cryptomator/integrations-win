@@ -6,6 +6,7 @@ class WinHello {
 
 	/**
 	 * Encrypts the given cleartext using a Windows Hello key.
+	 * Note: Caller is responsible for zeroing the cleartext array after use.
 	 *
 	 * @param cleartext The cleartext to encrypt.
 	 * @param challenge A challenge, that needs to be provided during {@link #getEncryptionKey(byte[], byte[]) decryption}
@@ -17,6 +18,7 @@ class WinHello {
 
 	/**
 	 * Decrypts the given ciphertext using a Windows Hello key.
+	 * Note: Caller is responsible for zeroing the ciphertext array after use.
 	 *
 	 * @param ciphertext Ciphertext as previously encrypted using {@link #setEncryptionKey(byte[], byte[])}
 	 * @param challenge Same challenge as used in {@link #setEncryptionKey(byte[], byte[])}

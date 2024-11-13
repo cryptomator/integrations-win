@@ -166,6 +166,9 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
     auto dataBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(cleartextVec.data(), cleartextVec.size()));
     auto encryptedBuffer = CryptographicEngine::Encrypt(aesKey, dataBuffer, keyMaterial);
 
+    std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
+    std::fill(challengeVec.begin(), challengeVec.end(), 0);
+
     return vectorToJbyteArray(env, iBufferToVector(encryptedBuffer));
 
   } catch (winrt::hresult_error const& hre) {
@@ -207,6 +210,9 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_ge
     auto aesKey = aesProvider.CreateSymmetricKey(keyMaterial);
     auto dataBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(ciphertextVec.data(), ciphertextVec.size()));
     auto decryptedBuffer = CryptographicEngine::Decrypt(aesKey, dataBuffer, keyMaterial);
+
+    std::fill(ciphertextVec.begin(), ciphertextVec.end(), 0);
+    std::fill(challengeVec.begin(), challengeVec.end(), 0);
 
     return vectorToJbyteArray(env, iBufferToVector(decryptedBuffer));
 
