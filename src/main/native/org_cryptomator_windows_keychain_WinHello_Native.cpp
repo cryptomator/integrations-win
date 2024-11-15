@@ -160,7 +160,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
       throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
     }
 
-    auto algorithmName = SymmetricAlgorithmNames::AesGcm();
+    auto algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
     auto aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
     auto keyMaterial = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(key.data(), key.Length()));
     auto aesKey = aesProvider.CreateSymmetricKey(keyMaterial);
@@ -205,7 +205,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_ge
       throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
     }
 
-    auto algorithmName = SymmetricAlgorithmNames::AesGcm();
+    auto algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
     auto aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
     auto keyMaterial = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(key.data(), key.Length()));
     auto aesKey = aesProvider.CreateSymmetricKey(keyMaterial);
