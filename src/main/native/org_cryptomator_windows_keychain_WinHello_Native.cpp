@@ -118,14 +118,14 @@ bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, IBuffer& key){
     if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
       result = KeyCredentialManager::OpenAsync(s_winHelloKeyName).get();
     } else if (result.Status() != KeyCredentialStatus::Success) {
-      std::cout << "Failed to retrieve Windows Hello credential." << std::endl;
+      std::cerr << "Failed to retrieve Windows Hello credential." << std::endl;
       return false;
     }
 
     const auto signature = result.Credential().RequestSignAsync(challengeBuffer).get();
     if (signature.Status() != KeyCredentialStatus::Success) {
       if (signature.Status() != KeyCredentialStatus::UserCanceled) {
-        std::cout << "Failed to sign challenge using Windows Hello." << std::endl;
+        std::cerr << "Failed to sign challenge using Windows Hello." << std::endl;
       }
       return false;
     }
@@ -136,7 +136,7 @@ bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, IBuffer& key){
     return true;
 
   } catch (winrt::hresult_error const& ex) {
-    std::cout << winrt::to_string(ex.message()) << std::endl;
+    std::cerr << winrt::to_string(ex.message()) << std::endl;
     return false;
   }
 }
@@ -174,15 +174,15 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
   } catch (winrt::hresult_error const& hre) {
     HRESULT hr = hre.code();
     winrt::hstring message = hre.message();
-    std::wcout << L"Error: " << message.c_str() << L" (HRESULT: 0x" << std::hex << hr << L")" << std::endl;
+    std::cerr << "Error: " << winrt::to_string(message) << " (HRESULT: 0x" << std::hex << hr << ")" << std::endl;
     auto byteArray = env->NewByteArray(0);
     return byteArray;
   } catch (const std::exception& e) {
-    std::cout << "Warning: " << e.what() << std::endl;
+    std::cerr << "Warning: " << e.what() << std::endl;
     auto byteArray = env->NewByteArray(0);
     return byteArray;
   } catch (...) {
-    std::cout << "Caught an unknown exception" << std::endl;
+    std::cerr << "Caught an unknown exception" << std::endl;
     auto byteArray = env->NewByteArray(0);
     return byteArray;
   }
@@ -219,15 +219,15 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_ge
   } catch (winrt::hresult_error const& hre) {
     HRESULT hr = hre.code();
     winrt::hstring message = hre.message();
-    std::wcout << L"Error: " << message.c_str() << L" (HRESULT: 0x" << std::hex << hr << L")" << std::endl;
+    std::cerr << "Error: " << winrt::to_string(message) << " (HRESULT: 0x" << std::hex << hr << ")" << std::endl;
     auto byteArray = env->NewByteArray(0);
     return byteArray;
   } catch (const std::exception& e) {
-    std::cout << "Warning: " << e.what() << std::endl;
+    std::cerr << "Warning: " << e.what() << std::endl;
     auto byteArray = env->NewByteArray(0);
     return byteArray;
   } catch (...) {
-    std::cout << "Caught an unknown exception" << std::endl;
+    std::cerr << "Caught an unknown exception" << std::endl;
     auto byteArray = env->NewByteArray(0);
     return byteArray;
   }
