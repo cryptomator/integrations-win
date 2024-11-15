@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <windows.h>
 #include <wincrypt.h>
+#include <dpapi.h>
 #include "org_cryptomator_windows_keychain_WinDataProtection_Native.h"
 
 JNIEXPORT jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinDataProtection_00024Native_protect(JNIEnv *env, jobject thisObj, jbyteArray cleartext, jbyteArray salt) {

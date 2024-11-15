@@ -10,9 +10,14 @@ This project uses the following JVM properties:
 
 ## Building
 
-This project uses JNI, hence you'll nedd Java as well as GCC build tools:
+### Requirements
 
 * JDK 22
 * Maven
-* MinGW GCC compiler (`choco install mingw --version=10.2.0`)
-* Make (`choco install make`)
+* MSVC 2022 toolchain (Visual Studio 2022, Workset "Desktop development with C++")
+
+### Build
+Start the _Developer PowerShell for Visual Studio 2022_ and run the following commands:
+```pwsh
+mvn clean verify
+```
