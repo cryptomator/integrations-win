@@ -12,6 +12,7 @@
 #include <vector>
 #include <stdexcept>
 #include <iostream>
+#include <atomic>
 
 using namespace winrt;
 using namespace Windows::Security::Credentials;
@@ -20,7 +21,7 @@ using namespace Windows::Security::Cryptography::Core;
 using namespace Windows::Storage::Streams;
 
 const std::wstring s_winHelloKeyName{L"cryptomator_winhello"};
-static int g_promptFocusCount = 0;
+static std::atomic<int> g_promptFocusCount{0};
 static std::once_flag runtimeInitFlag;
 static IBuffer info = CryptographicBuffer::ConvertStringToBinary(L"EncryptionKey", BinaryStringEncoding::Utf8);
 
@@ -60,17 +61,17 @@ std::vector<uint8_t> iBufferToVector(const IBuffer& buffer) {
 // Bring Windows Hello pop-up to the front
 void queueSecurityPromptFocus(int delay = 500) {
     std::thread([delay]() {
-        while (g_promptFocusCount <= 3) {
+        while (g_promptFocusCount.load() <= 3) {
             std::this_thread::sleep_for(std::chrono::milliseconds(delay));
 
             auto hWnd = ::FindWindowA("Credential Dialog Xaml Host", nullptr);
 
             if (hWnd) {
                 ::SetForegroundWindow(hWnd);
-                g_promptFocusCount = 0;
+                g_promptFocusCount.store(0); // Reset the counter
                 break;
-            } else if (++g_promptFocusCount > 3) {
-                g_promptFocusCount = 0;
+            } else if (g_promptFocusCount.fetch_add(1) + 1 > 3) {
+                g_promptFocusCount.store(0);
                 break;
             }
         }
