@@ -93,7 +93,6 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 		return Localization.get().getString("org.cryptomator.windows.keychain.displayName");
 	}
 
-	@Override
 	public void storePassphrase(String key, String displayName, CharSequence passphrase, boolean requireAuth) throws KeychainAccessException {
 		loadKeychainEntriesIfNeeded();
 		ByteBuffer buf = UTF_8.encode(CharBuffer.wrap(passphrase));
@@ -136,8 +135,9 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 	@Override
 	public void changePassphrase(String key, String displayName, CharSequence passphrase) throws KeychainAccessException {
 		loadKeychainEntriesIfNeeded();
-		if (keychainEntries.remove(key) != null) {
-			storePassphrase(key, displayName, passphrase);
+		var entry = keychainEntries.get(key);
+		if (entry != null) {
+			storePassphrase(key, displayName, passphrase, entry.requireAuth());
 		}
 	}
 
