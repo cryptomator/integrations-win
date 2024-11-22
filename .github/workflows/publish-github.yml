@@ -21,7 +21,7 @@ jobs:
       - name: Enforce project version ${{ github.event.release.tag_name }}
         run: mvn versions:set -B -DnewVersion="${{ github.event.release.tag_name }}"
       - name: Deploy
-        run: mvn deploy -B -DskipTests -Psign,deploy-github --no-transfer-progress -DdevCommandFileDir="C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\"
+        run: mvn deploy -B -DskipTests -Psign,deploy-github --no-transfer-progress -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.RELEASES_GPG_PASSPHRASE }}
