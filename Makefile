@@ -19,4 +19,4 @@ install:
 		$(HEADERS) $(SOURCES) \
 		-link -NXCOMPAT -DYNAMICBASE \
 		-implib:target/integrations.lib \
-		crypt32.lib shell32.lib ole32.lib uuid.lib user32.lib windowsapp.lib
+		crypt32.lib shell32.lib ole32.lib uuid.lib user32.lib Advapi32.lib
