@@ -32,6 +32,6 @@ jobs:
       with:
         languages: java
     - name: Build
-      run: mvn -B compile
+      run: mvn -B compile -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
