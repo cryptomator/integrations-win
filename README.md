@@ -14,10 +14,13 @@ This project uses the following JVM properties:
 
 * JDK 22
 * Maven
-* MSVC 2022 toolchain (Visual Studio 2022, Workset "Desktop development with C++")
+* MSVC 2022 toolset (e.g. by installing Visual Studio 2022, Workset "Desktop development with C++")
+* make
 
 ### Build
-Start the _Developer PowerShell for Visual Studio 2022_ and run the following commands:
-```pwsh
+Open a terminal and run
+```
 mvn clean verify
 ```
+
+If building the dlls fails with "`cl.exe` cannot be found", you have to specify the developer command file directory as a property `-DdevCommandFileDir=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\"`.

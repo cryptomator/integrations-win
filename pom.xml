@@ -295,6 +295,9 @@
 					<name>!skipNativeCompile</name>
 				</property>
 			</activation>
+			<properties>
+				<devCommandFileDir>C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\</devCommandFileDir>
+			</properties>
 			<build>
 				<plugins>
 					<plugin>
@@ -308,13 +311,14 @@
 								</goals>
 								<phase>compile</phase>
 								<configuration>
-									<executable>make</executable>
+									<executable>cmd</executable>
 									<workingDirectory>${project.basedir}</workingDirectory>
 									<environmentVariables>
 										<JAVA_HOME>${java.home}</JAVA_HOME>
 									</environmentVariables>
 									<arguments>
-										<argument>install</argument>
+										<argument>/c</argument>
+										<argument>"${devCommandFileDir}\vcvars64.bat" &amp;&amp; make install</argument>
 									</arguments>
 								</configuration>
 							</execution>
