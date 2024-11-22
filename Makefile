@@ -4,8 +4,7 @@ MSVC_VERSION ?= 14.41.34120
 HEADERS := -I"src\main\headers" \
 	-I"${JAVA_HOME}\include" \
 	-I"${JAVA_HOME}\include\win32" \
-	-I"C:\Program Files (x86)\Windows Kits\10\Include\$(WIN_SDK_VERSION)\cppwinrt" \
-	-I"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\$(MSVC_VERSION)\include"
+	-I"C:\Program Files (x86)\Windows Kits\10\Include\$(WIN_SDK_VERSION)\cppwinrt"
 SOURCES := $(wildcard src/main/native/*.cpp)
 
 ########
