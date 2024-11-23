@@ -38,6 +38,9 @@ std::vector<uint8_t> jbyteArrayToVector(JNIEnv* env, jbyteArray array) {
 
 jbyteArray vectorToJbyteArray(JNIEnv* env, const std::vector<uint8_t>& vec) {
   jbyteArray array = env->NewByteArray(vec.size());
+  if (array == nullptr) {
+    return nullptr;
+  }
   env->SetByteArrayRegion(array, 0, vec.size(), reinterpret_cast<const jbyte*>(vec.data()));
   return array;
 }
