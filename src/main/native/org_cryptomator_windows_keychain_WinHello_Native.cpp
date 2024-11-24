@@ -22,7 +22,6 @@ using namespace Windows::Storage::Streams;
 
 const std::wstring s_winHelloKeyName{L"cryptomator_winhello"};
 static std::atomic<int> g_promptFocusCount{0};
-static std::once_flag runtimeInitFlag;
 static IBuffer info = CryptographicBuffer::ConvertStringToBinary(L"EncryptionKey", BinaryStringEncoding::Utf8);
 
 // Helper methods for convertion
@@ -79,12 +78,6 @@ void queueSecurityPromptFocus(int delay = 500) {
             }
         }
     }).detach();
-}
-
-void InitializeWindowsRuntime() {
-    std::call_once(runtimeInitFlag, []() {
-        winrt::init_apartment();
-    });
 }
 
 IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32_t keySizeInBytes, const IBuffer& info) {
@@ -154,7 +147,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
     std::vector<uint8_t> cleartextVec = jbyteArrayToVector(env, cleartext);
     std::vector<uint8_t> challengeVec = jbyteArrayToVector(env, challenge);
 
-    InitializeWindowsRuntime();
+    winrt::init_apartment(winrt::apartment_type::single_threaded);
 
     // Take the random challenge and sign it by Windows Hello
     // to create the key.
@@ -225,6 +218,8 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_ge
     // Convert Java byte arrays to C++ vectors
     std::vector<uint8_t> ciphertextVec = jbyteArrayToVector(env, ciphertext);
     std::vector<uint8_t> challengeVec = jbyteArrayToVector(env, challenge);
+
+    winrt::init_apartment(winrt::apartment_type::single_threaded);
 
     size_t ivSize = 16; // IV size (128-bit)
     size_t hmacSize = 32; // HMAC size (256-bit)
