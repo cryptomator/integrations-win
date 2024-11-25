@@ -158,6 +158,19 @@
 				</executions>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.7.1</version>
+				<executions>
+					<execution>
+						<id>jar-paths-to-properties</id>
+						<goals>
+							<goal>properties</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<artifactId>maven-resources-plugin</artifactId>
 				<version>3.3.1</version>
 				<executions>
@@ -186,6 +199,25 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.3.1</version>
+				<dependencies>
+					<dependency>
+						<groupId>me.fabriciorby</groupId>
+						<artifactId>maven-surefire-junit5-tree-reporter</artifactId>
+						<version>1.3.0</version>
+					</dependency>
+				</dependencies>
+				<configuration>
+					<systemPropertyVariables>
+						<org.slf4j.simpleLogger.defaultLogLevel>ERROR</org.slf4j.simpleLogger.defaultLogLevel>
+					</systemPropertyVariables>
+					<consoleOutputReporter>
+						<disable>true</disable>
+					</consoleOutputReporter>
+					<statelessTestsetInfoReporter
+							implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5StatelessTestsetInfoTreeReporter">
+					</statelessTestsetInfoReporter>
+					<argLine>-javaagent:${net.bytebuddy:byte-buddy-agent:jar}</argLine>
+				</configuration>
 			</plugin>
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
@@ -295,6 +327,9 @@
 					<name>!skipNativeCompile</name>
 				</property>
 			</activation>
+			<properties>
+				<devCommandFileDir>C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\</devCommandFileDir>
+			</properties>
 			<build>
 				<plugins>
 					<plugin>
@@ -308,13 +343,14 @@
 								</goals>
 								<phase>compile</phase>
 								<configuration>
-									<executable>make</executable>
+									<executable>cmd</executable>
 									<workingDirectory>${project.basedir}</workingDirectory>
 									<environmentVariables>
 										<JAVA_HOME>${java.home}</JAVA_HOME>
 									</environmentVariables>
 									<arguments>
-										<argument>install</argument>
+										<argument>/c</argument>
+										<argument>"${devCommandFileDir}\vcvars64.bat" &amp;&amp; make install</argument>
 									</arguments>
 								</configuration>
 							</execution>
