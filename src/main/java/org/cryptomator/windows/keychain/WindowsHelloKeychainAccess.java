@@ -43,7 +43,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
 public class WindowsHelloKeychainAccess implements KeychainAccessProvider {
 
-	private static final String WINDOWS_HELLO_KEYCHAIN_PATHS_PROPERTY = "cryptomator.integrationsWin.winHelloKeychainPaths";
+	private static final String WINDOWS_HELLO_KEYCHAIN_PATHS_PROPERTY = "cryptomator.integrationsWin.windowsHelloKeychainPaths";
 	private static final Logger LOG = LoggerFactory.getLogger(WindowsHelloKeychainAccess.class);
 	private static final Path USER_HOME_REL = Path.of("~");
 	private static final Path USER_HOME = Path.of(System.getProperty("user.home"));
