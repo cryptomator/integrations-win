@@ -4,6 +4,8 @@ import org.cryptomator.integrations.quickaccess.QuickAccessService;
 import org.cryptomator.integrations.revealpath.RevealPathService;
 import org.cryptomator.integrations.uiappearance.UiAppearanceProvider;
 import org.cryptomator.windows.autostart.WindowsAutoStart;
+import org.cryptomator.windows.capi.common.Windows_h;
+import org.cryptomator.windows.keychain.WindowsHelloKeychainAccess;
 import org.cryptomator.windows.keychain.WindowsProtectedKeychainAccess;
 import org.cryptomator.windows.quickaccess.ExplorerQuickAccessService;
 import org.cryptomator.windows.revealpath.ExplorerRevealPathService;
@@ -19,7 +21,7 @@ module org.cryptomator.integrations.win {
 	opens org.cryptomator.windows.quickaccess to org.cryptomator.integrations.api;
 
 	provides AutoStartProvider with WindowsAutoStart;
-	provides KeychainAccessProvider with WindowsProtectedKeychainAccess;
+	provides KeychainAccessProvider with WindowsProtectedKeychainAccess, WindowsHelloKeychainAccess;
 	provides UiAppearanceProvider with WinUiAppearanceProvider;
 	provides RevealPathService with ExplorerRevealPathService;
 	provides QuickAccessService with ExplorerQuickAccessService;
