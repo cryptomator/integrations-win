@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 /*
- * Class:     Native
+ * Class:     org_cryptomator_windows_keychain_WindowsHello_Native
  * Method:    isSupported
  * Signature: ()Z
  */
