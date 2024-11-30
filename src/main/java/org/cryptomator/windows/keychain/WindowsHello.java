@@ -2,7 +2,7 @@ package org.cryptomator.windows.keychain;
 
 import org.cryptomator.windows.common.NativeLibLoader;
 
-class WinHello {
+class WindowsHello {
 
 	/**
 	 * Encrypts the given cleartext using a Windows Hello key.
@@ -35,6 +35,8 @@ class WinHello {
 		private Native() {
 			NativeLibLoader.loadLib();
 		}
+
+		public native boolean isSupported();
 
 		public native byte[] setEncryptionKey(byte[] cleartext, byte[] challenge);
 

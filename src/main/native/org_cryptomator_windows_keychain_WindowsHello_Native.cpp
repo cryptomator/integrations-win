@@ -1,5 +1,5 @@
 #include <jni.h>
-#include "org_cryptomator_windows_keychain_WinHello_Native.h"
+#include "org_cryptomator_windows_keychain_WindowsHello_Native.h"
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Security.Credentials.h>
 #include <winrt/Windows.Security.Cryptography.h>
@@ -20,7 +20,7 @@ using namespace Windows::Security::Cryptography;
 using namespace Windows::Security::Cryptography::Core;
 using namespace Windows::Storage::Streams;
 
-const std::wstring s_winHelloKeyName{L"cryptomator_winhello"};
+const std::wstring s_windowsHelloKeyName{L"cryptomator_windowshello"};
 static std::atomic<int> g_promptFocusCount{0};
 static IBuffer info = CryptographicBuffer::ConvertStringToBinary(L"EncryptionKey", BinaryStringEncoding::Utf8);
 
@@ -109,11 +109,11 @@ bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, IBuffer& key){
 
   try {
     // The first time this is used a key-pair will be generated using the common name
-    auto result = KeyCredentialManager::RequestCreateAsync(s_winHelloKeyName,
+    auto result = KeyCredentialManager::RequestCreateAsync(s_windowsHelloKeyName,
           KeyCredentialCreationOption::FailIfExists).get();
 
     if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
-      result = KeyCredentialManager::OpenAsync(s_winHelloKeyName).get();
+      result = KeyCredentialManager::OpenAsync(s_windowsHelloKeyName).get();
     } else if (result.Status() != KeyCredentialStatus::Success) {
       std::cerr << "Failed to retrieve Windows Hello credential." << std::endl;
       return false;
@@ -138,8 +138,33 @@ bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, IBuffer& key){
   }
 }
 
+jboolean JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_isSupported
+  (JNIEnv * env, jobject obj) {
+  try {
+    winrt::init_apartment(winrt::apartment_type::single_threaded);
+
+    auto keyCredentialAvailable = KeyCredentialManager::IsSupportedAsync().get();
+    return keyCredentialAvailable ? JNI_TRUE : JNI_FALSE;
+
+  } catch (winrt::hresult_error const& hre) {
+     HRESULT hr = hre.code();
+     winrt::hstring message = hre.message();
+     std::cerr << "Error: " << winrt::to_string(message) << " (HRESULT: 0x" << std::hex << hr << ")" << std::endl;
+     auto byteArray = env->NewByteArray(0);
+     return byteArray;
+   } catch (const std::exception& e) {
+     std::cerr << "Warning: " << e.what() << std::endl;
+     auto byteArray = env->NewByteArray(0);
+     return byteArray;
+   } catch (...) {
+     std::cerr << "Caught an unknown exception" << std::endl;
+     auto byteArray = env->NewByteArray(0);
+     return byteArray;
+   }
+}
+
 // Encrypts data using Windows Hello KeyCredentialManager API
-jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_setEncryptionKey
+jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_setEncryptionKey
 (JNIEnv* env, jobject obj, jbyteArray cleartext, jbyteArray challenge) {
   queueSecurityPromptFocus();
   try {
@@ -211,7 +236,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_se
 }
 
 // Decrypts data using Windows Hello KeyCredentialManager API
-jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WinHello_00024Native_getEncryptionKey
+jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_getEncryptionKey
 (JNIEnv* env, jobject obj, jbyteArray ciphertext, jbyteArray challenge) {
   queueSecurityPromptFocus();
   try {

@@ -37,35 +37,35 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Windows implementation for the {@link KeychainAccessProvider} based on the <a href="https://en.wikipedia.org/wiki/Data_Protection_API">data protection API</a>.
- * The storage locations to check for encrypted data can be set with the JVM property {@value KEYCHAIN_PATHS_PROPERTY} with the paths seperated with the character defined in the JVM property path.separator.
+ * The storage locations to check for encrypted data can be set with the JVM property {@value WINDOWS_HELLO_KEYCHAIN_PATHS_PROPERTY} with the paths seperated with the character defined in the JVM property path.separator.
  */
 @Priority(1000)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
-public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
+public class WindowsHelloKeychainAccess implements KeychainAccessProvider {
 
-	private static final String KEYCHAIN_PATHS_PROPERTY = "cryptomator.integrationsWin.keychainPaths";
-	private static final Logger LOG = LoggerFactory.getLogger(WindowsProtectedKeychainAccess.class);
+	private static final String WINDOWS_HELLO_KEYCHAIN_PATHS_PROPERTY = "cryptomator.integrationsWin.winHelloKeychainPaths";
+	private static final Logger LOG = LoggerFactory.getLogger(WindowsHelloKeychainAccess.class);
 	private static final Path USER_HOME_REL = Path.of("~");
 	private static final Path USER_HOME = Path.of(System.getProperty("user.home"));
 	private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
 	private final List<Path> keychainPaths;
-	private final WinDataProtection dataProtection;
+	private final WindowsHello windowsHello;
 	private Map<String, KeychainEntry> keychainEntries;
 
 	@SuppressWarnings("unused") // default constructor required by ServiceLoader
-	public WindowsProtectedKeychainAccess() {
-		this(readKeychainPathsFromEnv(), new WinDataProtection());
+	public WindowsHelloKeychainAccess() {
+		this(readKeychainPathsFromEnv(), new WindowsHello());
 	}
 
 	// visible for testing
-	WindowsProtectedKeychainAccess(List<Path> keychainPaths, WinDataProtection dataProtection) {
+	WindowsHelloKeychainAccess(List<Path> keychainPaths, WindowsHello windowsHello) {
 		this.keychainPaths = keychainPaths;
-		this.dataProtection = dataProtection;
+		this.windowsHello = windowsHello;
 	}
 
 	private static List<Path> readKeychainPathsFromEnv() {
-		var keychainPaths = System.getProperty(KEYCHAIN_PATHS_PROPERTY, "");
+		var keychainPaths = System.getProperty(WINDOWS_HELLO_KEYCHAIN_PATHS_PROPERTY, "");
 		return parsePaths(keychainPaths, System.getProperty("path.separator"));
 	}
 
@@ -74,7 +74,7 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 		return Arrays.stream(listOfPaths.split(pathSeparator))
 				.filter(Predicate.not(String::isEmpty))
 				.map(Path::of)
-				.map(WindowsProtectedKeychainAccess::resolveHomeDir)
+				.map(WindowsHelloKeychainAccess::resolveHomeDir)
 				.collect(Collectors.toList());
 	}
 
@@ -88,7 +88,12 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 
 	@Override
 	public String displayName() {
-		return Localization.get().getString("org.cryptomator.windows.keychain.displayName");
+		return Localization.get().getString("org.cryptomator.windows.keychain.displayWindowsHelloName");
+	}
+
+	@Override
+	public void storePassphrase(String key, String displayName, CharSequence passphrase) throws KeychainAccessException {
+		storePassphrase(key, displayName, passphrase, false);
 	}
 
 	@Override
@@ -98,7 +103,7 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 		byte[] cleartext = new byte[buf.remaining()];
 		buf.get(cleartext);
 		var salt = generateSalt();
-		var ciphertext = dataProtection.protect(cleartext, salt);
+		var ciphertext = windowsHello.setEncryptionKey(cleartext, salt);
 		Arrays.fill(buf.array(), (byte) 0x00);
 		Arrays.fill(cleartext, (byte) 0x00);
 		keychainEntries.put(key, new KeychainEntry(ciphertext, salt));
@@ -112,7 +117,7 @@ public class WindowsProtectedKeychainAccess implements KeychainAccessProvider {
 		if (entry == null) {
 			return null;
 		}
-		byte[] cleartext = dataProtection.unprotect(entry.ciphertext(), entry.salt());
+		var cleartext = windowsHello.getEncryptionKey(entry.ciphertext(), entry.salt());
 		if (cleartext == null) {
 			return null;
 		}

@@ -26,11 +26,10 @@ public class WindowsProtectedKeychainAccessTest {
 	public void setup(@TempDir Path tempDir) {
 		Path keychainPath = tempDir.resolve("keychainfile.tmp");
 		WinDataProtection winDataProtection = Mockito.mock(WinDataProtection.class);
-		WinHello winHello = Mockito.mock(WinHello.class);
 		Answer<byte[]> answerReturningFirstArg = invocation -> ((byte[]) invocation.getArgument(0)).clone();
 		Mockito.when(winDataProtection.protect(Mockito.any(), Mockito.any())).thenAnswer(answerReturningFirstArg);
 		Mockito.when(winDataProtection.unprotect(Mockito.any(), Mockito.any())).thenAnswer(answerReturningFirstArg);
-		keychain = new WindowsProtectedKeychainAccess(List.of(keychainPath), winDataProtection, winHello);
+		keychain = new WindowsProtectedKeychainAccess(List.of(keychainPath), winDataProtection);
 	}
 
 	@Test

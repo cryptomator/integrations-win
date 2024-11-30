@@ -11,13 +11,13 @@ import org.junit.jupiter.api.condition.OS;
 
 @EnabledOnOs(OS.WINDOWS)
 @DisabledIfEnvironmentVariable(named = "CI", matches = ".*")
-class WinHelloTest {
+class WindowsHelloTest {
 
 	@Test
 	@DisplayName("Test Windows Hello Authentication")
 	@Disabled
 	public void testStoreAndLoadWithAuth() throws KeychainAccessException {
-		var winhello = new WinHello();
+		var winhello = new WindowsHello();
 		String storedPw = "h€llo wørld123";
 		byte[] ciphertext = winhello.setEncryptionKey(storedPw.getBytes(), "salt".getBytes());
 		Assertions.assertNotNull(ciphertext);
