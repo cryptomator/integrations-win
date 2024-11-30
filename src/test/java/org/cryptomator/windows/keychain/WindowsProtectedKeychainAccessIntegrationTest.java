@@ -46,7 +46,7 @@ public class WindowsProtectedKeychainAccessIntegrationTest {
 
 		@Test
 		public void testNonExistingFileReturnsEmpty() throws KeychainAccessException, IOException {
-			var result = keychainAccess.loadKeychainEntries(keychainPath);
+			var result = Util.loadKeychainEntries(keychainPath);
 
 			Assertions.assertTrue(result.isEmpty());
 		}
@@ -55,7 +55,7 @@ public class WindowsProtectedKeychainAccessIntegrationTest {
 		public void testEmptyFileReturnsEmpty() throws KeychainAccessException, IOException {
 			Files.write(keychainPath, new byte[] {});
 
-			var result = keychainAccess.loadKeychainEntries(keychainPath);
+			var result = Util.loadKeychainEntries(keychainPath);
 
 			Assertions.assertTrue(result.isEmpty());
 		}
@@ -63,7 +63,7 @@ public class WindowsProtectedKeychainAccessIntegrationTest {
 		@Test
 		public void testLegacyKeychainFiles() throws URISyntaxException, KeychainAccessException {
 			var keychainPath = Path.of(this.getClass().getResource("keychain.v1.2.2.json").toURI());
-			var result = keychainAccess.loadKeychainEntries(keychainPath);
+			var result = Util.loadKeychainEntries(keychainPath);
 
 			Assertions.assertTrue(result.isPresent());
 			Assertions.assertEquals(3, result.get().size());
