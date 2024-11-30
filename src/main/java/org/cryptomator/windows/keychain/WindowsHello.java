@@ -28,6 +28,10 @@ class WindowsHello {
 		return Native.INSTANCE.getEncryptionKey(ciphertext, challenge);
 	}
 
+	public boolean isSupported() {
+		return Native.INSTANCE.isSupported();
+	}
+
 	// initialization-on-demand pattern, as loading the .dll is an expensive operation
 	private static class Native {
 		static final Native INSTANCE = new Native();

@@ -146,7 +146,7 @@ public class WindowsHelloKeychainAccess implements KeychainAccessProvider {
 
 	@Override
 	public boolean isSupported() {
-		return !keychainPaths.isEmpty();
+		return !keychainPaths.isEmpty() && windowsHello.isSupported();
 	}
 
 	@Override
