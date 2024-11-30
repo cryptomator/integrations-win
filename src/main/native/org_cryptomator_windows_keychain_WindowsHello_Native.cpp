@@ -150,16 +150,13 @@ jboolean JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_
      HRESULT hr = hre.code();
      winrt::hstring message = hre.message();
      std::cerr << "Error: " << winrt::to_string(message) << " (HRESULT: 0x" << std::hex << hr << ")" << std::endl;
-     auto byteArray = env->NewByteArray(0);
-     return byteArray;
+     return JNI_FALSE;
    } catch (const std::exception& e) {
      std::cerr << "Warning: " << e.what() << std::endl;
-     auto byteArray = env->NewByteArray(0);
-     return byteArray;
+     return JNI_FALSE;
    } catch (...) {
      std::cerr << "Caught an unknown exception" << std::endl;
-     auto byteArray = env->NewByteArray(0);
-     return byteArray;
+     return JNI_FALSE;
    }
 }
 
