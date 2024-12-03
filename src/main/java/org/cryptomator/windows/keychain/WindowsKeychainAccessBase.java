@@ -90,18 +90,64 @@ abstract class WindowsKeychainAccessBase implements KeychainAccessProvider {
 	}
 
 	interface Keychain {
+
+		/**
+		 * Puts a new entry in the keychain
+		 *
+		 * @param id    Identifier of the keychain entry
+		 * @param value {@link KeychainEntry} to be stored in the keychain
+		 * @return the former entry or null, if none was present
+		 * @throws KeychainAccessException if the keychain cannot be accessed or persisted
+		 */
 		KeychainEntry put(String id, KeychainEntry value) throws KeychainAccessException;
 
-		KeychainEntry get(String key) throws KeychainAccessException;
+		/**
+		 * Looks up and retrieves a keychain entry.
+		 *
+		 * @param id Identifier of the keychain entry
+		 * @return the {@link KeychainEntry} associated with the given id or null, if no entry is associated for the id
+		 * @throws KeychainAccessException if the keychain cannot be accessed
+		 */
+		KeychainEntry get(String id) throws KeychainAccessException;
 
-		KeychainEntry remove(String key) throws KeychainAccessException;
+		/**
+		 * Removes a keychain entry.
+		 *
+		 * @param id Identifier of the keychain entry
+		 * @return the {@link KeychainEntry} formerly associated with the given id or null, if no entry was associated for the id
+		 * @throws KeychainAccessException if the keychain cannot be accessed or persisted
+		 */
+		KeychainEntry remove(String id) throws KeychainAccessException;
 
-		KeychainEntry change(String key, KeychainEntry newValue) throws KeychainAccessException;
+		/**
+		 * Replaces an existing keychain entry. Returns null, if the id is not mapped.
+		 *
+		 * @param id       Identifier of the keychain entry
+		 * @param newValue the new {@link KeychainEntry} to be associated for {@code id}
+		 * @return the former keychain entry or null, if there was no mapping for the given id
+		 * @throws KeychainAccessException if the keychain cannot be accessed or persisted
+		 */
+		KeychainEntry change(String id, KeychainEntry newValue) throws KeychainAccessException;
 	}
 
 	interface PassphraseCryptor {
-		byte[] encrypt(byte[] cleartext, byte[] salt);
 
-		byte[] decrypt(byte[] ciphertext, byte[] salt);
+		/**
+		 * Encrypts the given cleartext using a key provided by Windows.
+		 *
+		 * @param cleartext      The cleartext to encrypt.
+		 * @param additionalData Additional data fed into the encryption. Needs to be provided during {@link #decrypt(byte[], byte[])} decryption}
+		 * @return The ciphertext or {@code null} if encryption failed.
+		 */
+		byte[] encrypt(byte[] cleartext, byte[] additionalData);
+
+		/**
+		 * Decrypts the given ciphertext using a key provided by Windows.
+		 *
+		 * @param ciphertext     The cleartext to encrypt.
+		 * @param additionalData Additional data fed into decryption. Must be the same as used in {@link #encrypt(byte[], byte[])} encryption}
+		 * @return The cleartext or {@code null} if decryption failed.
+		 */
+		byte[] decrypt(byte[] ciphertext, byte[] additionalData);
 	}
 }
