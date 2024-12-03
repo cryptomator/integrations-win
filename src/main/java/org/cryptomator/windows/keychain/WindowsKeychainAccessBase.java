@@ -25,7 +25,7 @@ abstract class WindowsKeychainAccessBase implements KeychainAccessProvider {
 		keychain.put(id, keychainEntry);
 	}
 
-	KeychainEntry encryptPassphrase(CharSequence passphrase) throws KeychainAccessException {
+	private KeychainEntry encryptPassphrase(CharSequence passphrase) throws KeychainAccessException {
 		ByteBuffer buf = UTF_8.encode(CharBuffer.wrap(passphrase));
 		byte[] cleartext = new byte[buf.remaining()];
 		try {
@@ -48,7 +48,7 @@ abstract class WindowsKeychainAccessBase implements KeychainAccessProvider {
 		if (entry == null) {
 			return null;
 		}
-		byte[] cleartext = {};
+		byte[] cleartext = null;
 		CharBuffer intermediate = null;
 		try {
 			cleartext = passphraseCryptor.decrypt(entry.ciphertext(), entry.salt());
