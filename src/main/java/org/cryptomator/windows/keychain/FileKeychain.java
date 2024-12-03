@@ -45,33 +45,41 @@ class FileKeychain implements WindowsKeychainAccessBase.Keychain {
 
 	FileKeychain(String keychainPathsProperty) {
 		keychainPaths = parsePaths(System.getProperty(keychainPathsProperty, ""), System.getProperty("path.separator"));
+		cache = new HashMap<>();
 	}
 
 	//testing
 	FileKeychain(List<Path> paths) {
 		keychainPaths = paths;
+		cache = new HashMap<>();
 	}
 
 	synchronized void load() throws KeychainAccessException {
 		if (!loaded) {
-			if (keychainPaths.isEmpty()) {
-				throw new KeychainAccessException("No path specified to store keychain");
-			}
-
-			//Note: We are trying out all keychainPaths to see, if we have to migrate an old keychain file to a new location
-			for (Path keychainPath : keychainPaths) {
-				Optional<Map<String, KeychainEntry>> maybeKeychain = parse(keychainPath);
-				if (maybeKeychain.isPresent()) {
-					cache = maybeKeychain.get();
-					break;
-				}
-			}
-			if (cache == null) {
-				LOG.debug("Keychain file not found or not parsable. Using new keychain.");
-				cache = new HashMap<>();
-			}
+			loadInternal();
 			loaded = true;
 		}
+	}
+
+	//for testing
+	void loadInternal() throws KeychainAccessException {
+		if (keychainPaths.isEmpty()) {
+			throw new KeychainAccessException("No path specified to store keychain");
+		}
+		//Note: We are trying out all keychainPaths to see, if we have to migrate an old keychain file to a new location
+		boolean useExisting = false;
+		for (Path keychainPath : keychainPaths) {
+			Optional<Map<String, KeychainEntry>> maybeKeychain = parse(keychainPath);
+			if (maybeKeychain.isPresent()) {
+				cache = maybeKeychain.get();
+				useExisting = true;
+				break;
+			}
+		}
+		if (!useExisting) {
+			LOG.debug("Keychain file not found or not parsable. Using new keychain.");
+		}
+
 	}
 
 	//visible for testing
@@ -88,10 +96,12 @@ class FileKeychain implements WindowsKeychainAccessBase.Keychain {
 			LOG.warn("Ignoring existing keychain file {}: Parsing failed.", keychainPath);
 			return Optional.empty();
 		} catch (IOException e) {
+			//TODO: we could ignore this
 			throw new KeychainAccessException("Failed to read keychain from path " + keychainPath, e);
 		}
 	}
 
+	//visible for testing
 	void save() throws KeychainAccessException {
 		var keychainFile = keychainPaths.getFirst(); //Note: we are always storing the keychain to the first entry to use the 'newest' keychain path and thus migrate old data
 		LOG.debug("Writing keychain to {}", keychainFile);
