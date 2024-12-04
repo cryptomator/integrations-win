@@ -126,7 +126,7 @@ class FileKeychain implements WindowsKeychainAccessBase.Keychain {
 				})
 				.filter(Objects::nonNull)
 				.map(Util::resolveHomeDir)
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	@Override

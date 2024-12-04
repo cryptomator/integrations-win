@@ -3,6 +3,8 @@ package org.cryptomator.windows.keychain;
 import org.cryptomator.integrations.keychain.KeychainAccessException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
@@ -174,6 +176,45 @@ public class FileKeychainTest {
 		var keychainFile = keychainFileDir.resolve("realJson.json");
 		var result = fileKeychain.parse(keychainFile);
 		Assertions.assertTrue(result.isEmpty());
+	}
+
+	@Nested
+	public class ParsePaths {
+		@Test
+		@DisplayName("String is split with path separator")
+		public void testParsePaths() {
+			String paths = "C:\\foo\\bar;bar\\kuz";
+			var result = FileKeychain.parsePaths(paths, ";");
+			Assertions.assertEquals(2, result.size());
+			Assertions.assertTrue(result.contains(Path.of("C:\\foo\\bar")));
+			Assertions.assertTrue(result.contains(Path.of("bar\\kuz")));
+		}
+
+		@Test
+		@DisplayName("Empty string returns empty list")
+		public void testParsePathsEmpty() {
+			var result = FileKeychain.parsePaths("", ";");
+			Assertions.assertEquals(0, result.size());
+		}
+
+		@Test
+		@DisplayName("Strings starting with ~ are resolved to user home")
+		public void testParsePathsUserHome() {
+			var userHome = Path.of(System.getProperty("user.home"));
+			var result = FileKeychain.parsePaths("this\\~\\not;~\\foo\\bar", ";");
+			Assertions.assertEquals(2, result.size());
+			Assertions.assertTrue(result.contains(Path.of("this\\~\\not")));
+			Assertions.assertTrue(result.contains(userHome.resolve("foo\\bar")));
+		}
+
+		@Test
+		@DisplayName("Invalid paths are ignored")
+		public void testParseInvalidPaths() {
+			var result = FileKeychain.parsePaths("ax?|*;C:\\foo", ";");
+			Assertions.assertEquals(1, result.size());
+			Assertions.assertTrue(result.contains(Path.of("C:\\foo")));
+		}
+
 	}
 
 }
