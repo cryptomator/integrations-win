@@ -28,7 +28,6 @@ import java.util.UUID;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Util {
-	private static final Logger LOG = LoggerFactory.getLogger(Util.class);
 	private static final Path USER_HOME_REL = Path.of("~");
 	private static final Path USER_HOME = Path.of(System.getProperty("user.home"));
 

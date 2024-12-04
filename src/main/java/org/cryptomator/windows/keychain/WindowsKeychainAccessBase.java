@@ -136,6 +136,7 @@ abstract class WindowsKeychainAccessBase implements KeychainAccessProvider {
 
 		/**
 		 * Encrypts the given cleartext using a key provided by Windows.
+		 * The caller is responsible for zeroing the cleartext array after use.
 		 *
 		 * @param cleartext      The cleartext to encrypt.
 		 * @param additionalData Additional data fed into the encryption. Needs to be provided during {@link #decrypt(byte[], byte[])} decryption}
