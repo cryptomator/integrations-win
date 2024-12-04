@@ -6,67 +6,101 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class WindowsProtectedKeychainAccessIntegrationTest {
+	static Path keychainFile;
 
 	@BeforeAll
 	public static void setup(@TempDir Path tmpDir) {
-		Path keychainPath = tmpDir.resolve("keychain.tmp");
-		System.setProperty("cryptomator.integrationsWin.keychainPaths", keychainPath.toString());
+		keychainFile = tmpDir.resolve("keychain.tmp");
+		System.setProperty("cryptomator.integrationsWin.keychainPaths", keychainFile.toString());
 	}
 
 	@Test
 	@DisplayName("WindowsProtectedKeychainAccess can be loaded")
 	public void testLoadWindowsProtectedKeychainAccess() {
-		var windowsKeychainAccessProvider = KeychainAccessProvider.get().findAny();
-
-		Assertions.assertTrue(windowsKeychainAccessProvider.isPresent());
-		Assertions.assertInstanceOf(WindowsProtectedKeychainAccess.class, windowsKeychainAccessProvider.get());
+		var found = KeychainAccessProvider.get().anyMatch(s -> s instanceof WindowsProtectedKeychainAccess);
+		Assertions.assertTrue(found);
 	}
 
 	@Nested
-	public class LoadKeyChainEntries {
+	@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+	public class FunctionalTests {
 
-		Path keychainPath;
 		WindowsProtectedKeychainAccess keychainAccess;
 
 		@BeforeEach
-		public void init(@TempDir Path tmpDir) {
-			keychainPath = tmpDir.resolve("keychain.tmp");
-			keychainAccess = (WindowsProtectedKeychainAccess) KeychainAccessProvider.get().findAny().get();
+		public void beforeEach(@TempDir Path tmpDir) {
+			keychainAccess = (WindowsProtectedKeychainAccess) KeychainAccessProvider.get().filter(s -> s instanceof WindowsProtectedKeychainAccess).findFirst().get();
 		}
 
 		@Test
-		public void testNonExistingFileReturnsEmpty() throws KeychainAccessException, IOException {
-			var result = Util.loadKeychainEntries(keychainPath);
-
-			Assertions.assertTrue(result.isEmpty());
+		@DisplayName("The DataProtection Keychain cannot be locked")
+		@Order(1)
+		public void cannotBeLocked() {
+			Assertions.assertFalse(keychainAccess.isLocked());
 		}
 
 		@Test
-		public void testEmptyFileReturnsEmpty() throws KeychainAccessException, IOException {
-			Files.write(keychainPath, new byte[] {});
-
-			var result = Util.loadKeychainEntries(keychainPath);
-
-			Assertions.assertTrue(result.isEmpty());
+		@DisplayName("The DataProtection API works, although the file does not exists")
+		@Order(2)
+		public void notExistingFile() throws KeychainAccessException, IOException {
+			Assertions.assertNull(keychainAccess.loadPassphrase("ozelot"));
+			Assertions.assertTrue(Files.notExists(keychainFile));
 		}
 
 		@Test
-		public void testLegacyKeychainFiles() throws URISyntaxException, KeychainAccessException {
-			var keychainPath = Path.of(this.getClass().getResource("keychain.v1.2.2.json").toURI());
-			var result = Util.loadKeychainEntries(keychainPath);
+		@DisplayName("A credential can be stored")
+		@Order(3)
+		public void testStoringCredential() throws KeychainAccessException, IOException {
+			keychainAccess.storePassphrase("ozelot", "oZeLoT", "abc", false);
+			var passphrase = keychainAccess.loadPassphrase("ozelot");
+			Assertions.assertEquals("abc", String.valueOf(passphrase));
+		}
 
-			Assertions.assertTrue(result.isPresent());
-			Assertions.assertEquals(3, result.get().size());
+		@Test
+		@DisplayName("A credential can be removed")
+		@Order(4)
+		public void testRemovingCredential() throws KeychainAccessException, IOException {
+			Assertions.assertNotNull(keychainAccess.loadPassphrase("ozelot"));
+			keychainAccess.deletePassphrase("ozelot");
+			Assertions.assertNull(keychainAccess.loadPassphrase("ozelot"));
+		}
+
+		@Test
+		@DisplayName("Not existing credential can be \"removed\"")
+		@Order(5)
+		public void testRemovingCredentialNotExisting() throws KeychainAccessException, IOException {
+			keychainAccess.deletePassphrase("ozelot");
+			Assertions.assertNull(keychainAccess.loadPassphrase("ozelot"));
+		}
+
+		@Test
+		@DisplayName("Not existing credential can be \"changed\"")
+		@Order(6)
+		public void testChangingCredentialNotExisting() throws KeychainAccessException, IOException {
+			keychainAccess.changePassphrase("ozelot", "oZeLoT", "qwe");
+			Assertions.assertNull(keychainAccess.loadPassphrase("ozelot"));
+		}
+
+		@Test
+		@DisplayName("Existing credential can be changed")
+		@Order(7)
+		public void testChangingCredential() throws KeychainAccessException, IOException {
+			keychainAccess.storePassphrase("ozelot", "oZeLoT", "abc", false);
+			keychainAccess.changePassphrase("ozelot", "oZeLoT", "qwe");
+			var passphrase = keychainAccess.loadPassphrase("ozelot");
+			Assertions.assertEquals("qwe", String.valueOf(passphrase));
 		}
 	}
 
