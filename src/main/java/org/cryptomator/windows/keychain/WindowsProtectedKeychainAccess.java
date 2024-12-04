@@ -11,21 +11,13 @@ import org.cryptomator.windows.common.Localization;
  */
 @Priority(1000)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
-public final class WindowsProtectedKeychainAccess extends WindowsFileKeychainAccess {
+public final class WindowsProtectedKeychainAccess extends WindowsKeychainAccessBase {
 
 	private static final String KEYCHAIN_PATHS_PROPERTY = "cryptomator.integrationsWin.keychainPaths";
 
-	private final WinDataProtection dataProtection;
-
-	@SuppressWarnings("unused") // default constructor required by ServiceLoader
+	//no-arg constructuor required for ServiceLoader
 	public WindowsProtectedKeychainAccess() {
-		this(KEYCHAIN_PATHS_PROPERTY, new WinDataProtection());
-	}
-
-	// visible for testing
-	WindowsProtectedKeychainAccess(String keychainPathsProp, WinDataProtection dataProtection) {
-		super(keychainPathsProp);
-		this.dataProtection = dataProtection;
+		super(new FileKeychain(KEYCHAIN_PATHS_PROPERTY),new WinDataProtection());
 	}
 
 	@Override
@@ -33,23 +25,4 @@ public final class WindowsProtectedKeychainAccess extends WindowsFileKeychainAcc
 		return Localization.get().getString("org.cryptomator.windows.keychain.displayName");
 	}
 
-	@Override
-	public boolean isSupported() {
-		return super.keychainPathPresent;
-	}
-
-	@Override
-	public boolean isLocked() {
-		return false;
-	}
-
-	@Override
-	byte[] encrypt(byte[] passphrase, byte[] salt) {
-		return dataProtection.protect(passphrase, salt);
-	}
-
-	@Override
-	byte[] decrypt(byte[] ciphertext, byte[] salt) {
-		return dataProtection.unprotect(ciphertext, salt);
-	}
 }

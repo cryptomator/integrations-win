@@ -81,7 +81,7 @@ abstract class WindowsKeychainAccessBase implements KeychainAccessProvider {
 
 	@Override
 	public boolean isSupported() {
-		return false;
+		return keychain.isSupported() && passphraseCryptor.isSupported();
 	}
 
 	@Override
@@ -128,6 +128,8 @@ abstract class WindowsKeychainAccessBase implements KeychainAccessProvider {
 		 * @throws KeychainAccessException if the keychain cannot be accessed or persisted
 		 */
 		KeychainEntry change(String id, KeychainEntry newValue) throws KeychainAccessException;
+
+		boolean isSupported();
 	}
 
 	interface PassphraseCryptor {
@@ -149,5 +151,7 @@ abstract class WindowsKeychainAccessBase implements KeychainAccessProvider {
 		 * @return The cleartext or {@code null} if decryption failed.
 		 */
 		byte[] decrypt(byte[] ciphertext, byte[] additionalData);
+
+		boolean isSupported();
 	}
 }

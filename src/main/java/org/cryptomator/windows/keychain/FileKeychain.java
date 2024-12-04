@@ -158,4 +158,10 @@ class FileKeychain implements WindowsKeychainAccessBase.Keychain {
 		save();
 		return result;
 	}
+
+	@Override
+	public boolean isSupported() {
+		//TODO: actually, we would like the location to be writable as well
+		return !keychainPaths.isEmpty();
+	}
 }
