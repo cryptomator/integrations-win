@@ -14,7 +14,7 @@ defaults:
     shell: bash
 
 env:
-  MSVC_DEV_FILES_DIR: ${{ github.secret_source == 'Actions' && vars.MSVC_DEV_FILES_DIR ||'C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\' }}
+  MSVC_DEV_FILES_DIR: ${{ vars.MSVC_DEV_FILES_DIR ||'C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\' }}
 
 jobs:
   analyse:
