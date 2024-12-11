@@ -10,13 +10,13 @@ public class WinDataProtectionTest {
 		WinDataProtection dataProtection = new WinDataProtection();
 
 		String storedPw = "h€llo wørld123";
-		byte[] ciphertext = dataProtection.protect(storedPw.getBytes(), "salt".getBytes());
+		byte[] ciphertext = dataProtection.encrypt(storedPw.getBytes(), "salt".getBytes());
 		Assertions.assertNotNull(ciphertext);
 
-		byte[] shouldBeNull = dataProtection.unprotect(ciphertext, "pepper".getBytes());
+		byte[] shouldBeNull = dataProtection.decrypt(ciphertext, "pepper".getBytes());
 		Assertions.assertNull(shouldBeNull);
 
-		byte[] cleartext = dataProtection.unprotect(ciphertext, "salt".getBytes());
+		byte[] cleartext = dataProtection.decrypt(ciphertext, "salt".getBytes());
 		Assertions.assertArrayEquals(storedPw.getBytes(), cleartext);
 	}
 

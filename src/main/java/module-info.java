@@ -4,7 +4,6 @@ import org.cryptomator.integrations.quickaccess.QuickAccessService;
 import org.cryptomator.integrations.revealpath.RevealPathService;
 import org.cryptomator.integrations.uiappearance.UiAppearanceProvider;
 import org.cryptomator.windows.autostart.WindowsAutoStart;
-import org.cryptomator.windows.capi.common.Windows_h;
 import org.cryptomator.windows.keychain.WindowsHelloKeychainAccess;
 import org.cryptomator.windows.keychain.WindowsProtectedKeychainAccess;
 import org.cryptomator.windows.quickaccess.ExplorerQuickAccessService;

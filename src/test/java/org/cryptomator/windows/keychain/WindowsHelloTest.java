@@ -19,13 +19,13 @@ class WindowsHelloTest {
 	public void testStoreAndLoadWithAuth() throws KeychainAccessException {
 		var winhello = new WindowsHello();
 		String storedPw = "h€llo wørld123";
-		byte[] ciphertext = winhello.setEncryptionKey(storedPw.getBytes(), "salt".getBytes());
+		byte[] ciphertext = winhello.encrypt(storedPw.getBytes(), "salt".getBytes());
 		Assertions.assertNotNull(ciphertext);
 
-		byte[] shouldBeNull = winhello.getEncryptionKey(ciphertext, "pepper".getBytes());
+		byte[] shouldBeNull = winhello.decrypt(ciphertext, "pepper".getBytes());
 		Assertions.assertNull(shouldBeNull);
 
-		byte[] cleartext = winhello.getEncryptionKey(ciphertext, "salt".getBytes());
+		byte[] cleartext = winhello.encrypt(ciphertext, "salt".getBytes());
 		Assertions.assertArrayEquals(storedPw.getBytes(), cleartext);
 	}
 
