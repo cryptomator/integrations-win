@@ -25,7 +25,7 @@ class WindowsHelloTest {
 		byte[] shouldBeNull = winhello.decrypt(ciphertext, "pepper".getBytes());
 		Assertions.assertNull(shouldBeNull);
 
-		byte[] cleartext = winhello.encrypt(ciphertext, "salt".getBytes());
+		byte[] cleartext = winhello.decrypt(ciphertext, "salt".getBytes());
 		Assertions.assertArrayEquals(storedPw.getBytes(), cleartext);
 	}
 
