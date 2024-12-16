@@ -81,26 +81,44 @@ void queueSecurityPromptFocus(int delay = 500) {
 }
 
 IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32_t keySizeInBytes, const IBuffer& info) {
-  auto macProvider = MacAlgorithmProvider::OpenAlgorithm(L"HMAC_SHA256");
+	auto macProvider = MacAlgorithmProvider::OpenAlgorithm(L"HMAC_SHA256"); //MacLength is 32 bytes for SHA256
 
   // HKDF-extract
-  auto hmacKey = macProvider.CreateKey(salt);
-  auto pseudorandomKey = CryptographicEngine::Sign(hmacKey, inputData);
-
+  auto extractKey = macProvider.CreateKey(salt);
+  auto pseudorandomKey = CryptographicEngine::Sign(extractKey, inputData);
+  
   // HKDF-expand
-  hmacKey = macProvider.CreateKey(pseudorandomKey); // Re-create HMAC with pseudorandomKey as key
-  auto keyMaterial = CryptographicEngine::Sign(hmacKey, info);
-
-  // Truncate key to the desired size if needed (SHA256 output is 32 bytes by default)
-  uint32_t actualKeySize = keyMaterial.Length();
-  if (actualKeySize > keySizeInBytes) {
-    com_array<uint8_t> keyBytes;
-    CryptographicBuffer::CopyToByteArray(keyMaterial, keyBytes);
-    keyBytes = com_array<uint8_t>(keyBytes.begin(), keyBytes.begin() + keySizeInBytes);
-    keyMaterial = CryptographicBuffer::CreateFromByteArray(keyBytes);
+  auto expandKey = macProvider.CreateKey(pseudorandomKey);
+  if (expandKey.KeySize() < macProvider.MacLength()) {
+	  throw std::runtime_error("Key provided by HMAC_SHA256 implementation is shorter than the HMAC length.");
+  }
+  int maxKeySize = 255 * macProvider.MacLength();
+  if (keySizeInBytes > maxKeySize) {
+	  throw std::runtime_error("HKDF requires keySizeInBytes to be at most " +  std::to_string(maxKeySize) + " bytes.");
   }
 
-  return keyMaterial;
+  int N = std::ceil(keySizeInBytes / macProvider.MacLength());
+  std::vector<uint8_t> result;
+  std::vector<uint8_t> previousBlock = std::vector<uint8_t>(0);
+
+  for (uint8_t i = 0; i < N; i++) {
+      std::vector<uint8_t> input(previousBlock);
+      if (info.Length() > 0) {
+          input.insert(input.end(), info.data(), info.data() + info.Length());
+      }
+      input.push_back(i+1);
+      
+      auto inputBuffer = CryptographicBuffer::CreateFromByteArray(input);
+      auto blockBuffer = CryptographicEngine::Sign(expandKey, inputBuffer);
+
+      std::vector<uint8_t> block;
+	  block.insert(block.end(), blockBuffer.data(), blockBuffer.data() + blockBuffer.Length());
+      previousBlock = block;
+      result.insert(result.end(), block.begin(), block.end());
+  }
+
+  result.resize(keySizeInBytes);
+  return CryptographicBuffer::CreateFromByteArray(result);
 }
 
 bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, IBuffer& key){
