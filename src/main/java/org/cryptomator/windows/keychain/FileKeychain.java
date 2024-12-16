@@ -20,11 +20,11 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -44,13 +44,13 @@ class FileKeychain implements WindowsKeychainAccessBase.Keychain {
 
 	FileKeychain(String keychainPathsProperty) {
 		keychainPaths = parsePaths(System.getProperty(keychainPathsProperty, ""), System.getProperty("path.separator"));
-		cache = new HashMap<>();
+		cache = new ConcurrentHashMap<>();
 	}
 
 	//testing
 	FileKeychain(List<Path> paths) {
 		keychainPaths = paths;
-		cache = new HashMap<>();
+		cache = new ConcurrentHashMap<>();
 	}
 
 	synchronized void load() throws KeychainAccessException {
@@ -101,7 +101,7 @@ class FileKeychain implements WindowsKeychainAccessBase.Keychain {
 	}
 
 	//visible for testing
-	void save() throws KeychainAccessException {
+	synchronized void save() throws KeychainAccessException {
 		var keychainFile = keychainPaths.getFirst(); //Note: we are always storing the keychain to the first entry to use the 'newest' keychain path and thus migrate old data
 		LOG.debug("Writing keychain to {}", keychainFile);
 		try (OutputStream out = Files.newOutputStream(keychainFile, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING); //

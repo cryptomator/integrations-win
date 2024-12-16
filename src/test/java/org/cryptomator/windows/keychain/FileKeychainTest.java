@@ -57,7 +57,7 @@ public class FileKeychainTest {
 		Mockito.doNothing().when(fileKeychainSpy).load();
 		Mockito.doNothing().when(fileKeychainSpy).save();
 
-		var result = fileKeychainSpy.put("test3000", null);
+		var result = fileKeychainSpy.put("test3000", new KeychainEntry(new byte[] {}, new byte[] {}));
 
 		var ordering = Mockito.inOrder(fileKeychainSpy);
 		ordering.verify(fileKeychainSpy).load();
@@ -97,7 +97,7 @@ public class FileKeychainTest {
 		Mockito.doNothing().when(fileKeychainSpy).load();
 		Mockito.doNothing().when(fileKeychainSpy).save();
 
-		var result = fileKeychainSpy.change("test3000", null);
+		var result = fileKeychainSpy.change("test3000", new KeychainEntry(new byte[] {}, new byte[] {}));
 
 		var ordering = Mockito.inOrder(fileKeychainSpy);
 		ordering.verify(fileKeychainSpy).load();
