@@ -17,7 +17,7 @@ class WindowsHelloTest {
 	@DisplayName("Test Windows Hello Authentication")
 	@Disabled
 	public void testStoreAndLoadWithAuth() throws KeychainAccessException {
-		var winhello = new WindowsHello();
+		var winhello = new WindowsHello("integrations-win-test");
 		String storedPw = "h€llo wørld123";
 		byte[] ciphertext = winhello.encrypt(storedPw.getBytes(), "salt".getBytes());
 		Assertions.assertNotNull(ciphertext);

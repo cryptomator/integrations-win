@@ -20,7 +20,6 @@ using namespace Windows::Security::Cryptography;
 using namespace Windows::Security::Cryptography::Core;
 using namespace Windows::Storage::Streams;
 
-const std::wstring s_windowsHelloKeyName{ L"cryptomator_windowshello" };
 static std::atomic<int> g_promptFocusCount{ 0 };
 static IBuffer info = CryptographicBuffer::ConvertStringToBinary(L"EncryptionKey", BinaryStringEncoding::Utf8);
 
@@ -127,17 +126,17 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
 }
 
 
-bool deriveEncryptionKey(const std::vector<uint8_t>& challenge, IBuffer& key) {
+bool deriveEncryptionKey(const std::wstring keyId, const std::vector<uint8_t>& challenge, IBuffer& key) {
     auto challengeBuffer = CryptographicBuffer::CreateFromByteArray(
         array_view<const uint8_t>(challenge.data(), challenge.size()));
 
     try {
         // The first time this is used a key-pair will be generated using the common name
-        auto result = KeyCredentialManager::RequestCreateAsync(s_windowsHelloKeyName,
+        auto result = KeyCredentialManager::RequestCreateAsync(keyId,
             KeyCredentialCreationOption::FailIfExists).get();
 
         if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
-            result = KeyCredentialManager::OpenAsync(s_windowsHelloKeyName).get();
+            result = KeyCredentialManager::OpenAsync(keyId).get();
         }
         else if (result.Status() != KeyCredentialStatus::Success) {
             std::cerr << "Failed to retrieve Windows Hello credential." << std::endl;
@@ -193,7 +192,7 @@ jboolean JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_
 
 // Encrypts data using Windows Hello KeyCredentialManager API
 jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_setEncryptionKey
-(JNIEnv* env, jobject obj, jbyteArray cleartext, jbyteArray challenge) {
+(JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray cleartext, jbyteArray challenge) {
     queueSecurityPromptFocus();
     try {
         // Convert Java byte arrays to C++ vectors
@@ -202,10 +201,13 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
 
         winrt::init_apartment(winrt::apartment_type::single_threaded);
 
+        auto toReleaseKeyId = (LPCWSTR)env->GetByteArrayElements(keyId, NULL);
+        const std::wstring keyIdentifier(toReleaseKeyId);
+
         // Take the random challenge and sign it by Windows Hello
         // to create the key.
         IBuffer key;
-        if (!deriveEncryptionKey(challengeVec, key)) {
+        if (!deriveEncryptionKey(keyIdentifier, challengeVec, key)) {
             throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
         }
 
@@ -243,6 +245,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         std::fill(encryptedVec.begin(), encryptedVec.end(), 0);
         std::fill(dataToAuthenticate.begin(), dataToAuthenticate.end(), 0);
         std::fill(hmacVec.begin(), hmacVec.end(), 0);
+        env->ReleaseByteArrayElements(keyId, (jbyte*) toReleaseKeyId, JNI_ABORT);
 
         return vectorToJbyteArray(env, output);
 
@@ -265,7 +268,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
 
 // Decrypts data using Windows Hello KeyCredentialManager API
 jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_getEncryptionKey
-(JNIEnv* env, jobject obj, jbyteArray ciphertext, jbyteArray challenge) {
+(JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray ciphertext, jbyteArray challenge) {
     queueSecurityPromptFocus();
     try {
         // Convert Java byte arrays to C++ vectors
@@ -284,8 +287,10 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
 
         // Take the random challenge and sign it by Windows Hello
         // to create the key.
+        auto toReleaseKeyId = (LPCWSTR)env->GetByteArrayElements(keyId, NULL);
+        const std::wstring keyIdentifier(toReleaseKeyId);
         IBuffer key;
-        if (!deriveEncryptionKey(challengeVec, key)) {
+        if (!deriveEncryptionKey(keyIdentifier, challengeVec, key)) {
             throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
         }
 
@@ -329,6 +334,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         std::fill(hmacVec.begin(), hmacVec.end(), 0);
         std::fill(dataToAuthenticate.begin(), dataToAuthenticate.end(), 0);
         std::fill(computedHmacVec.begin(), computedHmacVec.end(), 0);
+        env->ReleaseByteArrayElements(keyId, (jbyte*)toReleaseKeyId, JNI_ABORT);
 
         return vectorToJbyteArray(env, iBufferToVector(decryptedBuffer));
 

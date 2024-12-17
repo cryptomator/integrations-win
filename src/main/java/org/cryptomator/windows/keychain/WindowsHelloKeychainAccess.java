@@ -14,10 +14,12 @@ import org.cryptomator.windows.common.Localization;
 public final class WindowsHelloKeychainAccess extends WindowsKeychainAccessBase {
 
 	private static final String WINDOWS_HELLO_KEYCHAIN_PATHS_PROPERTY = "cryptomator.integrationsWin.windowsHelloKeychainPaths";
+	private static final String WINDOWS_HELLO_KEY_ID_PROPERTY = "cryptomator.integrationsWin.windowsHelloKeyId";
 
 	@SuppressWarnings("unused") // default constructor required by ServiceLoader
 	public WindowsHelloKeychainAccess() {
-		super(new FileKeychain(WINDOWS_HELLO_KEYCHAIN_PATHS_PROPERTY), new WindowsHello());
+		super(new FileKeychain(WINDOWS_HELLO_KEYCHAIN_PATHS_PROPERTY),
+				new WindowsHello(System.getProperty(WINDOWS_HELLO_KEY_ID_PROPERTY, "org.cryptomator.integrations-win")));
 	}
 
 	@Override
