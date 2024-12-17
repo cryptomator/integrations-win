@@ -22,6 +22,6 @@ public final class WindowsHelloKeychainAccess extends WindowsKeychainAccessBase 
 
 	@Override
 	public String displayName() {
-		return Localization.get().getString("org.cryptomator.windows.keychain.displayName");
+		return Localization.get().getString("org.cryptomator.windows.keychain.displayWindowsHelloName");
 	}
 }
