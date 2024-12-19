@@ -6,6 +6,8 @@ Windows-specific implementations of [integrations-api](https://github.com/crypto
 
 This project uses the following JVM properties:
 * `cryptomator.integrationsWin.autoStartShellLinkName` - Name of the shell link, which is placed in the Windows startup folder to start application on user login
+* `cryptomator.integrationsWin.windowsHelloKeyId` - Identifier for the Windows Hello keypair
+* `cryptomator.integrationsWin.windowsHelloKeychainPaths` - Locations of the file-based windowsHello keychain 
 * `cryptomator.integrationsWin.keychainPaths` - List of file paths, which are checked for data encrypted with the Windows data protection api
 
 ## Building

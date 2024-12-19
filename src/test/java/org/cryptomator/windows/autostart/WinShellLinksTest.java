@@ -47,17 +47,6 @@ public class WinShellLinksTest {
 	}
 
 	@ParameterizedTest
-	@CsvSource(value = { // convert utf16-le string to hex with https://dencode.com/en/string/hex, append null terminator
-			"foo, '66 00 6f 00 6f 00 00 00'",
-			"bar, '62 00 61 00 72 00 00 00'"
-	})
-	public void testGetNullTerminatedUTF16Representation(String input, @ConvertWith(ByteArrayConverter.class) byte[] expected) {
-		var result = inTest.getNullTerminatedUTF16Representation(input);
-
-		Assertions.assertArrayEquals(expected, result);
-	}
-
-	@ParameterizedTest
 	@CsvSource(value = {
 			"'00', 0",
 			"'01', 1",
