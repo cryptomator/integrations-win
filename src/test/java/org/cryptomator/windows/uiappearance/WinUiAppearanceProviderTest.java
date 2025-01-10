@@ -23,9 +23,9 @@ public class WinUiAppearanceProviderTest {
 	}
 
 	@Test
-	@DisplayName("get current system theme")
+	@DisplayName("get always returns a theme")
 	public void testGetSystemTheme() {
-		Theme myTheme = appearanceProvider.getSystemTheme();
+		Theme myTheme = Assertions.assertDoesNotThrow(appearanceProvider::getSystemTheme);
 
 		Assertions.assertNotNull(myTheme);
 		System.out.println("current theme: " + myTheme.name());
