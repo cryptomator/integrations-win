@@ -96,7 +96,7 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
     if (expandKey.KeySize() < macProvider.MacLength()) {
         throw std::runtime_error("Key provided by HMAC_SHA256 implementation is shorter than the HMAC length.");
     }
-    int maxKeySize = 255 * macProvider.MacLength();
+    auto maxKeySize = 255 * macProvider.MacLength();
     if (keySizeInBytes > maxKeySize) {
         throw std::runtime_error("HKDF requires keySizeInBytes to be at most " + std::to_string(maxKeySize) + " bytes.");
     }
