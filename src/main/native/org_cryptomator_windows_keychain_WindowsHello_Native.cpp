@@ -21,7 +21,7 @@ using namespace Windows::Security::Cryptography::Core;
 using namespace Windows::Storage::Streams;
 
 static std::atomic<int> g_promptFocusCount{ 0 };
-static IBuffer info = CryptographicBuffer::ConvertStringToBinary(L"EncryptionKey", BinaryStringEncoding::Utf8);
+static auto HKDF_INFO = L"org.cryptomator.windows.keychain.windowsHello";
 
 // Helper methods for conversion
 std::vector<uint8_t> jbyteArrayToVector(JNIEnv* env, jbyteArray array) {
@@ -96,7 +96,7 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
     if (expandKey.KeySize() < macProvider.MacLength()) {
         throw std::runtime_error("Key provided by HMAC_SHA256 implementation is shorter than the HMAC length.");
     }
-    int maxKeySize = 255 * macProvider.MacLength();
+    auto maxKeySize = 255 * macProvider.MacLength();
     if (keySizeInBytes > maxKeySize) {
         throw std::runtime_error("HKDF requires keySizeInBytes to be at most " + std::to_string(maxKeySize) + " bytes.");
     }
@@ -153,6 +153,7 @@ bool deriveEncryptionKey(const std::wstring keyId, const std::vector<uint8_t>& c
 
         // Derive the encryption/decryption key using HKDF
         const auto response = signature.Result();
+        IBuffer info = CryptographicBuffer::ConvertStringToBinary(HKDF_INFO, BinaryStringEncoding::Utf8);
         key = DeriveKeyUsingHKDF(response, challengeBuffer, 32, info); // needs to be 32 bytes for SHA256
         return true;
 
