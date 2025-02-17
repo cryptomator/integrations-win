@@ -46,7 +46,7 @@
 		<mockito.version>5.15.2</mockito.version>
 
 		<!-- build plugin dependencies -->
-		<dependency-check.version>11.1.1</dependency-check.version>
+		<dependency-check.version>12.1.0</dependency-check.version>
 		<nexus-staging.version>1.7.0</nexus-staging.version>
 		<jextract-maven.version>0.4.1</jextract-maven.version>
 
