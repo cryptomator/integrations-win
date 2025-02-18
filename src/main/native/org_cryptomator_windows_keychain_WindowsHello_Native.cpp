@@ -6,6 +6,9 @@
 #include <winrt/Windows.Security.Cryptography.Core.h>
 #include <winrt/Windows.Storage.Streams.h>
 #include <windows.h>
+#include <wincrypt.h>
+#include <unordered_map>
+#include <mutex>
 #include <thread>
 #include <chrono>
 #include <string>
@@ -21,7 +24,53 @@ using namespace Windows::Security::Cryptography::Core;
 using namespace Windows::Storage::Streams;
 
 static std::atomic<int> g_promptFocusCount{ 0 };
+static std::mutex cacheMutex;
+static std::unordered_map<std::wstring, std::vector<uint8_t>> keyCache;
 static auto HKDF_INFO = L"org.cryptomator.windows.keychain.windowsHello";
+
+// Helper methods to handle KeyCredential
+bool ProtectMemory(std::vector<uint8_t>& data) {
+    if (data.empty()) return false;
+    if (!CryptProtectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
+        return false;
+    }
+    return true;
+}
+
+bool UnprotectMemory(std::vector<uint8_t>& data) {
+    if (data.empty()) return false;
+    if (!CryptUnprotectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
+        return false;
+    }
+    return true;
+}
+
+std::vector<uint8_t> SerializeKeyCredential(const winrt::Windows::Security::Credentials::KeyCredential& credential) {
+    // Serialize key reference (assuming `KeyCredential` can be serialized this way)
+    std::wstring keyStr = credential.Name();
+    std::vector<uint8_t> data(reinterpret_cast<const uint8_t*>(keyStr.data()),
+                              reinterpret_cast<const uint8_t*>(keyStr.data()) + keyStr.size() * sizeof(wchar_t));
+
+    // Pad to multiple of 16 bytes for CryptProtectMemory
+    while (data.size() % CRYPTPROTECTMEMORY_BLOCK_SIZE != 0) {
+        data.push_back(0);
+    }
+
+    return data;
+}
+
+winrt::Windows::Security::Credentials::KeyCredential DeserializeKeyCredential(const std::vector<uint8_t>& data) {
+    if (data.empty()) throw std::runtime_error("Empty key credential data.");
+
+    std::wstring keyStr(reinterpret_cast<const wchar_t*>(data.data()), data.size() / sizeof(wchar_t));
+    auto result = winrt::Windows::Security::Credentials::KeyCredentialManager::OpenAsync(keyStr).get();
+
+    if (result.Status() != winrt::Windows::Security::Credentials::KeyCredentialStatus::Success) {
+        throw std::runtime_error("Failed to open stored key credential.");
+    }
+
+    return result.Credential();
+}
 
 // Helper methods for conversion
 std::vector<uint8_t> jbyteArrayToVector(JNIEnv* env, jbyteArray array) {
@@ -126,24 +175,56 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
 }
 
 
-bool deriveEncryptionKey(const std::wstring keyId, const std::vector<uint8_t>& challenge, IBuffer& key) {
+bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& challenge, IBuffer& key) {
+
     auto challengeBuffer = CryptographicBuffer::CreateFromByteArray(
         array_view<const uint8_t>(challenge.data(), challenge.size()));
 
     try {
-        // The first time this is used a key-pair will be generated using the common name
-        auto result = KeyCredentialManager::RequestCreateAsync(keyId,
-            KeyCredentialCreationOption::FailIfExists).get();
+        KeyCredential credential;
 
-        if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
-            result = KeyCredentialManager::OpenAsync(keyId).get();
-        }
-        else if (result.Status() != KeyCredentialStatus::Success) {
-            std::cerr << "Failed to retrieve Windows Hello credential." << std::endl;
-            return false;
+        {
+            // Lock for thread safety
+            std::lock_guard<std::mutex> lock(cacheMutex);
+            auto it = keyCache.find(keyId);
+            if (it != keyCache.end()) {
+                std::vector<uint8_t> protectedData = it->second;
+                if (!UnprotectMemory(protectedData)) {
+                    throw std::runtime_error("Failed to unprotect memory.");
+                }
+                credential = DeserializeKeyCredential(protectedData);
+                std::fill(protectedKey.begin(), protectedKey.end(), 0);
+            }
         }
 
-        const auto signature = result.Credential().RequestSignAsync(challengeBuffer).get();
+        if (!credential) {
+            auto result = KeyCredentialManager::RequestCreateAsync(keyId, KeyCredentialCreationOption::FailIfExists).get();
+
+            if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
+                result = KeyCredentialManager::OpenAsync(keyId).get();
+            }
+            else if (result.Status() != KeyCredentialStatus::Success) {
+                std::cerr << "Failed to retrieve Windows Hello credential." << std::endl;
+                return false;
+            }
+
+            credential = result.Credential();
+
+            // Serialize and protect credential
+            std::vector<uint8_t> serializedCredential = SerializeKeyCredential(credential);
+            if (!ProtectMemory(serializedCredential)) {
+                throw std::runtime_error("Failed to protect memory.");
+            }
+
+            // Store in cache
+            {
+                std::lock_guard<std::mutex> lock(cacheMutex);
+                keyCache[keyId] = serializedCredential;
+                std::fill(serializedCredential.begin(), serializedCredential.end(), 0);
+            }
+        }
+
+        const auto signature = credential.RequestSignAsync(challengeBuffer).get();
         if (signature.Status() != KeyCredentialStatus::Success) {
             if (signature.Status() != KeyCredentialStatus::UserCanceled) {
                 std::cerr << "Failed to sign challenge using Windows Hello." << std::endl;
@@ -155,8 +236,8 @@ bool deriveEncryptionKey(const std::wstring keyId, const std::vector<uint8_t>& c
         const auto response = signature.Result();
         IBuffer info = CryptographicBuffer::ConvertStringToBinary(HKDF_INFO, BinaryStringEncoding::Utf8);
         key = DeriveKeyUsingHKDF(response, challengeBuffer, 32, info); // needs to be 32 bytes for SHA256
-        return true;
 
+        return true;
     }
     catch (winrt::hresult_error const& ex) {
         std::cerr << winrt::to_string(ex.message()) << std::endl;
