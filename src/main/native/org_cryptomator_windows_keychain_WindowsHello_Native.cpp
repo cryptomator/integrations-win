@@ -47,7 +47,7 @@ bool UnprotectMemory(std::vector<uint8_t>& data) {
 
 std::vector<uint8_t> SerializeKeyCredential(const winrt::Windows::Security::Credentials::KeyCredential& credential) {
     // Serialize key reference (assuming `KeyCredential` can be serialized this way)
-    std::wstring keyStr = credential.Name();
+    std::wstring keyStr = credential.Name().c_str();
     std::vector<uint8_t> data(reinterpret_cast<const uint8_t*>(keyStr.data()),
                               reinterpret_cast<const uint8_t*>(keyStr.data()) + keyStr.size() * sizeof(wchar_t));
 
@@ -181,7 +181,7 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
         array_view<const uint8_t>(challenge.data(), challenge.size()));
 
     try {
-        KeyCredential credential;
+        KeyCredential credential = nullptr;
 
         {
             // Lock for thread safety
@@ -193,7 +193,7 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
                     throw std::runtime_error("Failed to unprotect memory.");
                 }
                 credential = DeserializeKeyCredential(protectedData);
-                std::fill(protectedKey.begin(), protectedKey.end(), 0);
+                std::fill(protectedData.begin(), protectedData.end(), 0);
             }
         }
 
