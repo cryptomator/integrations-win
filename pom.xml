@@ -37,9 +37,9 @@
 		<project.jdk.version>22</project.jdk.version>
 
 		<!-- runtime dependencies -->
-		<api.version>1.5.0</api.version>
-		<slf4j.version>2.0.16</slf4j.version>
-		<jackson.version>2.18.2</jackson.version>
+		<api.version>1.5.1</api.version>
+		<slf4j.version>2.0.17</slf4j.version>
+		<jackson.version>2.18.3</jackson.version>
 
 		<!-- test dependencies -->
 		<junit.jupiter.version>5.12.0</junit.jupiter.version>
@@ -48,7 +48,7 @@
 		<!-- build plugin dependencies -->
 		<dependency-check.version>12.1.0</dependency-check.version>
 		<nexus-staging.version>1.7.0</nexus-staging.version>
-		<jextract-maven.version>0.4.1</jextract-maven.version>
+		<jextract-maven.version>0.4.3</jextract-maven.version>
 
 		<!-- jextract props -->
 		<win.umHeaderPath>C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\um</win.umHeaderPath>
