@@ -20,7 +20,7 @@ module org.cryptomator.integrations.win {
 	opens org.cryptomator.windows.quickaccess to org.cryptomator.integrations.api;
 
 	provides AutoStartProvider with WindowsAutoStart;
-	provides KeychainAccessProvider with WindowsProtectedKeychainAccess, WindowsHelloKeychainAccess;
+	provides KeychainAccessProvider with WindowsProtectedKeychainAccess;
 	provides UiAppearanceProvider with WinUiAppearanceProvider;
 	provides RevealPathService with ExplorerRevealPathService;
 	provides QuickAccessService with ExplorerQuickAccessService;
