@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <atomic>
+#include <functional>
 
 using namespace winrt;
 using namespace Windows::Security::Credentials;
@@ -25,10 +26,36 @@ using namespace Windows::Storage::Streams;
 
 static std::atomic<int> g_promptFocusCount{ 0 };
 static std::mutex cacheMutex;
-static std::unordered_map<std::wstring, std::vector<uint8_t>> keyCache;
+
+// C++'s std::unordered_map needs a hash function for the key type.
+// While std::string and int already have hash functions built in,
+// std::vector<uint8_t> doesn't — so we need to provide one manually.
+// The VectorHash struct defines a custom hash function for
+// std::vector<uint8_t> so it can be used as a key in an unordered_map.
+struct VectorHash {
+    std::size_t operator()(const std::vector<uint8_t>& v) const {
+        std::size_t hash = 0;
+        for (auto b : v) {
+            // Hashes every single byte b.
+            // ^=: XORs the new hash value into the current one.
+            // + 0x9e3779b9: Adds a magic constant (from the golden ratio), used to help disperse hash values better.
+            // hash << 6 and hash >> 2: Shift the hash bits to mix it more thoroughly.
+            hash ^= std::hash<uint8_t>()(b) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+        }
+        return hash;
+    }
+};
+
+struct VectorEqual {
+    bool operator()(const std::vector<uint8_t>& lhs, const std::vector<uint8_t>& rhs) const {
+        return lhs == rhs;
+    }
+};
+
+static std::unordered_map<std::vector<uint8_t>, std::vector<uint8_t>, VectorHash, VectorEqual> keyCache;
 static auto HKDF_INFO = L"org.cryptomator.windows.keychain.windowsHello";
 
-// Helper methods to handle KeyCredential
+// Protect sensitive data using CryptProtectMemory
 bool ProtectMemory(std::vector<uint8_t>& data) {
     if (data.empty()) return false;
     if (!CryptProtectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
@@ -160,7 +187,7 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
         {
             // Lock for thread safety
             std::lock_guard<std::mutex> lock(cacheMutex);
-            auto it = keyCache.find(keyId);
+            auto it = keyCache.find(challenge);
             if (it != keyCache.end()) {
                 std::cerr << "Found signature in cache." << std::endl;
                 signatureData = it->second;
@@ -185,8 +212,7 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
                 return false;
             }
 
-            credential = result.Credential();
-            auto signature = credential.RequestSignAsync(challengeBuffer).get();
+            const auto signature = result.Credential().RequestSignAsync(challengeBuffer).get();
 
             if (signature.Status() != KeyCredentialStatus::Success) {
                 if (signature.Status() != KeyCredentialStatus::UserCanceled) {
@@ -196,8 +222,9 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
             }
 
             signatureData = iBufferToVector(signature.Result());
+            std::vector<uint8_t> protectCopy = signatureData;
 
-            if (!ProtectMemory(signatureData)) {
+            if (!ProtectMemory(protectCopy)) {
                 throw std::runtime_error("Failed to protect memory.");
             }
 
@@ -205,7 +232,7 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
             {
                 std::cerr << "Storing signature in cache." << std::endl;
                 std::lock_guard<std::mutex> lock(cacheMutex);
-                keyCache[keyId] = signatureData;
+                keyCache[challenge] = protectCopy;
             }
         }
 
