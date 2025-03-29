@@ -45,33 +45,6 @@ bool UnprotectMemory(std::vector<uint8_t>& data) {
     return true;
 }
 
-std::vector<uint8_t> SerializeKeyCredential(const winrt::Windows::Security::Credentials::KeyCredential& credential) {
-    // Serialize key reference (assuming `KeyCredential` can be serialized this way)
-    std::wstring keyStr = credential.Name().c_str();
-    std::vector<uint8_t> data(reinterpret_cast<const uint8_t*>(keyStr.data()),
-                              reinterpret_cast<const uint8_t*>(keyStr.data()) + keyStr.size() * sizeof(wchar_t));
-
-    // Pad to multiple of 16 bytes for CryptProtectMemory
-    while (data.size() % CRYPTPROTECTMEMORY_BLOCK_SIZE != 0) {
-        data.push_back(0);
-    }
-
-    return data;
-}
-
-winrt::Windows::Security::Credentials::KeyCredential DeserializeKeyCredential(const std::vector<uint8_t>& data) {
-    if (data.empty()) throw std::runtime_error("Empty key credential data.");
-
-    std::wstring keyStr(reinterpret_cast<const wchar_t*>(data.data()), data.size() / sizeof(wchar_t));
-    auto result = winrt::Windows::Security::Credentials::KeyCredentialManager::OpenAsync(keyStr).get();
-
-    if (result.Status() != winrt::Windows::Security::Credentials::KeyCredentialStatus::Success) {
-        throw std::runtime_error("Failed to open stored key credential.");
-    }
-
-    return result.Credential();
-}
-
 // Helper methods for conversion
 std::vector<uint8_t> jbyteArrayToVector(JNIEnv* env, jbyteArray array) {
     if (array == nullptr) {
@@ -181,23 +154,27 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
         array_view<const uint8_t>(challenge.data(), challenge.size()));
 
     try {
-        KeyCredential credential = nullptr;
+        std::vector<uint8_t> signatureData;
+        bool foundInCache = false;
 
         {
             // Lock for thread safety
             std::lock_guard<std::mutex> lock(cacheMutex);
             auto it = keyCache.find(keyId);
             if (it != keyCache.end()) {
-                std::vector<uint8_t> protectedData = it->second;
-                if (!UnprotectMemory(protectedData)) {
+                std::cerr << "Found signature in cache." << std::endl;
+                signatureData = it->second;
+                if (!UnprotectMemory(signatureData)) {
                     throw std::runtime_error("Failed to unprotect memory.");
                 }
-                credential = DeserializeKeyCredential(protectedData);
-                std::fill(protectedData.begin(), protectedData.end(), 0);
+                foundInCache = true;
+            } else {
+                std::cerr << "Could not find signature in cache." << std::endl;
             }
         }
 
-        if (!credential) {
+        if (!foundInCache) {
+            KeyCredential credential = nullptr;
             auto result = KeyCredentialManager::RequestCreateAsync(keyId, KeyCredentialCreationOption::FailIfExists).get();
 
             if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
@@ -209,33 +186,35 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
             }
 
             credential = result.Credential();
+            auto signature = credential.RequestSignAsync(challengeBuffer).get();
 
-            // Serialize and protect credential
-            std::vector<uint8_t> serializedCredential = SerializeKeyCredential(credential);
-            if (!ProtectMemory(serializedCredential)) {
+            if (signature.Status() != KeyCredentialStatus::Success) {
+                if (signature.Status() != KeyCredentialStatus::UserCanceled) {
+                    std::cerr << "Failed to sign challenge using Windows Hello." << std::endl;
+                }
+                return false;
+            }
+
+            signatureData = iBufferToVector(signature.Result());
+
+            if (!ProtectMemory(signatureData)) {
                 throw std::runtime_error("Failed to protect memory.");
             }
 
             // Store in cache
             {
+                std::cerr << "Storing signature in cache." << std::endl;
                 std::lock_guard<std::mutex> lock(cacheMutex);
-                keyCache[keyId] = serializedCredential;
-                std::fill(serializedCredential.begin(), serializedCredential.end(), 0);
+                keyCache[keyId] = signatureData;
             }
         }
 
-        const auto signature = credential.RequestSignAsync(challengeBuffer).get();
-        if (signature.Status() != KeyCredentialStatus::Success) {
-            if (signature.Status() != KeyCredentialStatus::UserCanceled) {
-                std::cerr << "Failed to sign challenge using Windows Hello." << std::endl;
-            }
-            return false;
-        }
+        auto signatureBuffer = CryptographicBuffer::CreateFromByteArray(
+            array_view<const uint8_t>(signatureData.data(), signatureData.size()));
 
         // Derive the encryption/decryption key using HKDF
-        const auto response = signature.Result();
         IBuffer info = CryptographicBuffer::ConvertStringToBinary(HKDF_INFO, BinaryStringEncoding::Utf8);
-        key = DeriveKeyUsingHKDF(response, challengeBuffer, 32, info); // needs to be 32 bytes for SHA256
+        key = DeriveKeyUsingHKDF(signatureBuffer, challengeBuffer, 32, info); // needs to be 32 bytes for SHA256
 
         return true;
     }
