@@ -189,14 +189,11 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
             std::lock_guard<std::mutex> lock(cacheMutex);
             auto it = keyCache.find(challenge);
             if (it != keyCache.end()) {
-                std::cerr << "Found signature in cache." << std::endl;
                 signatureData = it->second;
                 if (!UnprotectMemory(signatureData)) {
                     throw std::runtime_error("Failed to unprotect memory.");
                 }
                 foundInCache = true;
-            } else {
-                std::cerr << "Could not find signature in cache." << std::endl;
             }
         }
 
@@ -230,7 +227,6 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
 
             // Store in cache
             {
-                std::cerr << "Storing signature in cache." << std::endl;
                 std::lock_guard<std::mutex> lock(cacheMutex);
                 keyCache[challenge] = protectCopy;
             }
