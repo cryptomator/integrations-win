@@ -243,6 +243,7 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
         IBuffer info = CryptographicBuffer::ConvertStringToBinary(HKDF_INFO, BinaryStringEncoding::Utf8);
         key = DeriveKeyUsingHKDF(signatureBuffer, challengeBuffer, 32, info); // needs to be 32 bytes for SHA256
         std::fill(signatureData.begin(), signatureData.end(), 0);
+        std::fill(protectCopy.begin(), protectCopy.end(), 0);
 
         return true;
     }
