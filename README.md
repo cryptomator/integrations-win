@@ -16,7 +16,7 @@ This project uses the following JVM properties:
 
 * JDK 22
 * Maven
-* MSVC 2022 toolset (e.g. by installing Visual Studio 2022, Workset "Desktop development with C++")
+* MSVC 2022 toolset (e.g. by installing Visual Studio 2022, Workset "Desktop development with C++" and component "MSVC v143 VS 2022 C++ ARM64/ARM64EC-Buildtools")
 * Make (`choco install make`)
 
 ### Build

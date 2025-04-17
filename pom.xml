@@ -350,7 +350,7 @@
 									</environmentVariables>
 									<arguments>
 										<argument>/c</argument>
-										<argument>"${devCommandFileDir}\vcvars64.bat" &amp;&amp; make install</argument>
+										<argument>"${devCommandFileDir}\vcvars64.bat" &amp;&amp; make install &amp;&amp; "${devCommandFileDir}\vcvarsamd64_arm64.bat" &amp;&amp; make install ARCH=arm64</argument>
 									</arguments>
 								</configuration>
 							</execution>
