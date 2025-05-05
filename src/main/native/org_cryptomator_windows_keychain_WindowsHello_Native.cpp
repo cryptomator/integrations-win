@@ -171,7 +171,6 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
         }
 
         if (!foundInCache) {
-            KeyCredential credential = nullptr;
             auto result = KeyCredentialManager::RequestCreateAsync(keyId, KeyCredentialCreationOption::FailIfExists).get();
 
             if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
@@ -182,8 +181,7 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
                 return false;
             }
 
-            credential = result.Credential();
-            auto signature = credential.RequestSignAsync(challengeBuffer).get();
+            const auto signature = result.Credential().RequestSignAsync(challengeBuffer).get();
 
             if (signature.Status() != KeyCredentialStatus::Success) {
                 if (signature.Status() != KeyCredentialStatus::UserCanceled) {
