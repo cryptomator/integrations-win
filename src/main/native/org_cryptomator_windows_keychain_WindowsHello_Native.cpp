@@ -203,7 +203,6 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
                 std::lock_guard<std::mutex> lock(cacheMutex);
                 keyCache[keyId] = signatureData;
             }
-            std::fill(protectCopy.begin(), protectCopy.end(), 0);
         }
 
         auto signatureBuffer = CryptographicBuffer::CreateFromByteArray(
