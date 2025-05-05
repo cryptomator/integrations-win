@@ -193,16 +193,18 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
             }
 
             signatureData = iBufferToVector(signature.Result());
+            std::vector<uint8_t> protectedCopy = signatureData;
 
-            if (!ProtectMemory(signatureData)) {
+            if (!ProtectMemory(protectedCopy)) {
                 throw std::runtime_error("Failed to protect memory.");
             }
 
             // Store in cache
             {
                 std::lock_guard<std::mutex> lock(cacheMutex);
-                keyCache[keyId] = signatureData;
+                keyCache[keyId] = protectedCopy;
             }
+            std::fill(protectedCopy.begin(), protectedCopy.end(), 0);
         }
 
         auto signatureBuffer = CryptographicBuffer::CreateFromByteArray(
