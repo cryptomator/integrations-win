@@ -148,6 +148,44 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
 }
 
 
+// Sign the challenge with the user's Windows Hello credentials
+bool retrieveAndCacheSignatureData(const std::wstring& keyId, const IBuffer& challengeBuffer, std::vector<uint8_t>& signatureData) {
+    auto result = KeyCredentialManager::RequestCreateAsync(keyId, KeyCredentialCreationOption::FailIfExists).get();
+
+    if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
+        result = KeyCredentialManager::OpenAsync(keyId).get();
+    } else if (result.Status() != KeyCredentialStatus::Success) {
+        std::cerr << "Failed to retrieve Windows Hello credential." << std::endl;
+        return false;
+    }
+
+    const auto signature = result.Credential().RequestSignAsync(challengeBuffer).get();
+
+    if (signature.Status() != KeyCredentialStatus::Success) {
+        if (signature.Status() != KeyCredentialStatus::UserCanceled) {
+            std::cerr << "Failed to sign challenge using Windows Hello." << std::endl;
+        }
+        return false;
+    }
+
+    signatureData = iBufferToVector(signature.Result());
+    std::vector<uint8_t> protectedCopy = signatureData;
+
+    if (!ProtectMemory(protectedCopy)) {
+        throw std::runtime_error("Failed to protect memory.");
+    }
+
+    // Store in cache
+    {
+        std::lock_guard<std::mutex> lock(cacheMutex);
+        keyCache[keyId] = protectedCopy;
+    }
+
+    std::fill(protectedCopy.begin(), protectedCopy.end(), 0);
+    return true;
+}
+
+
 bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& challenge, IBuffer& key) {
 
     auto challengeBuffer = CryptographicBuffer::CreateFromByteArray(
@@ -171,38 +209,9 @@ bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& 
         }
 
         if (!foundInCache) {
-            auto result = KeyCredentialManager::RequestCreateAsync(keyId, KeyCredentialCreationOption::FailIfExists).get();
-
-            if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
-                result = KeyCredentialManager::OpenAsync(keyId).get();
-            }
-            else if (result.Status() != KeyCredentialStatus::Success) {
-                std::cerr << "Failed to retrieve Windows Hello credential." << std::endl;
+            if (!retrieveAndCacheSignatureData(keyId, challengeBuffer, signatureData)) {
                 return false;
             }
-
-            const auto signature = result.Credential().RequestSignAsync(challengeBuffer).get();
-
-            if (signature.Status() != KeyCredentialStatus::Success) {
-                if (signature.Status() != KeyCredentialStatus::UserCanceled) {
-                    std::cerr << "Failed to sign challenge using Windows Hello." << std::endl;
-                }
-                return false;
-            }
-
-            signatureData = iBufferToVector(signature.Result());
-            std::vector<uint8_t> protectedCopy = signatureData;
-
-            if (!ProtectMemory(protectedCopy)) {
-                throw std::runtime_error("Failed to protect memory.");
-            }
-
-            // Store in cache
-            {
-                std::lock_guard<std::mutex> lock(cacheMutex);
-                keyCache[keyId] = protectedCopy;
-            }
-            std::fill(protectedCopy.begin(), protectedCopy.end(), 0);
         }
 
         auto signatureBuffer = CryptographicBuffer::CreateFromByteArray(
