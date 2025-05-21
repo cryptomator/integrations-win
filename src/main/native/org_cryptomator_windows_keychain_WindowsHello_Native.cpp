@@ -31,6 +31,9 @@ static auto HKDF_INFO = L"org.cryptomator.windows.keychain.windowsHello";
 // Helper methods to handle KeyCredential
 bool ProtectMemory(std::vector<uint8_t>& data) {
     if (data.empty()) return false;
+    if (data.size() % CRYPTPROTECTMEMORY_BLOCK_SIZE != 0) {
+        throw std::runtime_error("Data size must be a multiple of CRYPTPROTECTMEMORY_BLOCK_SIZE (16 bytes).");
+    }
     if (!CryptProtectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
         return false;
     }
@@ -39,6 +42,9 @@ bool ProtectMemory(std::vector<uint8_t>& data) {
 
 bool UnprotectMemory(std::vector<uint8_t>& data) {
     if (data.empty()) return false;
+    if (data.size() % CRYPTPROTECTMEMORY_BLOCK_SIZE != 0) {
+        throw std::runtime_error("Data size must be a multiple of CRYPTPROTECTMEMORY_BLOCK_SIZE (16 bytes).");
+    }
     if (!CryptUnprotectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
         return false;
     }
