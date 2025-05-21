@@ -338,23 +338,39 @@
 						<version>3.5.0</version>
 						<executions>
 							<execution>
+								<id>compile-x64</id>
 								<goals>
 									<goal>exec</goal>
 								</goals>
 								<phase>compile</phase>
 								<configuration>
-									<executable>cmd</executable>
-									<workingDirectory>${project.basedir}</workingDirectory>
-									<environmentVariables>
-										<JAVA_HOME>${java.home}</JAVA_HOME>
-									</environmentVariables>
 									<arguments>
 										<argument>/c</argument>
-										<argument>"${devCommandFileDir}\vcvars64.bat" &amp;&amp; make install &amp;&amp; "${devCommandFileDir}\vcvarsamd64_arm64.bat" &amp;&amp; make install ARCH=arm64</argument>
+										<argument>"${devCommandFileDir}\vcvars64.bat" &amp;&amp; make install</argument>
+									</arguments>
+								</configuration>
+							</execution>
+							<execution>
+								<id>compile-arm64</id>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<phase>compile</phase>
+								<configuration>
+									<arguments>
+										<argument>/c</argument>
+										<argument>"${devCommandFileDir}\vcvarsamd64_arm64.bat" &amp;&amp; make install ARCH=arm64</argument>
 									</arguments>
 								</configuration>
 							</execution>
 						</executions>
+						<configuration>
+							<executable>cmd</executable>
+							<workingDirectory>${project.basedir}</workingDirectory>
+							<environmentVariables>
+								<JAVA_HOME>${java.home}</JAVA_HOME>
+							</environmentVariables>
+						</configuration>
 					</plugin>
 				</plugins>
 			</build>
