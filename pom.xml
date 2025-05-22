@@ -47,6 +47,7 @@
 
 		<!-- build plugin dependencies -->
 		<mvn-surefire.version>3.5.3</mvn-surefire.version>
+		<mvn-failsafe.version>3.5.3</mvn-failsafe.version>
 		<dependency-check.version>12.1.1</dependency-check.version>
 		<central-publishing.version>0.7.0</central-publishing.version>
 		<jextract-maven.version>0.4.3</jextract-maven.version>
@@ -219,6 +220,19 @@
 					</statelessTestsetInfoReporter>
 					<argLine>-javaagent:"${net.bytebuddy:byte-buddy-agent:jar}"</argLine>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>${mvn-failsafe.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
