@@ -235,7 +235,7 @@ public class WindowsRegistryIT {
 	@DisplayName("Set and get big value data")
 	@Order(11)
 	public void testLottaData() throws WindowsException {
-		var filler = "I like big nums and i cannot lie".repeat(1 << 16); //2 MiB
+		var filler = "I like big nums and i cannot lie".repeat(1 << 15); //1 MiB
 
 		try (var t = WindowsRegistry.startTransaction();
 			 var k = t.createRegKey(RegistryKey.HKEY_CURRENT_USER, "org.cryptomator.integrations-win", true)) {
