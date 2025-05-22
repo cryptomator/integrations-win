@@ -20,7 +20,7 @@ abstract class WindowsKeychainAccessBase implements KeychainAccessProvider {
 	}
 
 	@Override
-	public void storePassphrase(String id, String displayName, CharSequence passphrase, boolean ignored) throws KeychainAccessException {
+	public void storePassphrase(String id, String displayName, CharSequence passphrase) throws KeychainAccessException {
 		var keychainEntry = encryptPassphrase(passphrase);
 		keychain.put(id, keychainEntry);
 	}
