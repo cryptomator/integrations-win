@@ -46,6 +46,7 @@
 		<mockito.version>5.15.2</mockito.version>
 
 		<!-- build plugin dependencies -->
+		<mvn-surefire.version>3.5.3</mvn-surefire.version>
 		<dependency-check.version>12.1.1</dependency-check.version>
 		<central-publishing.version>0.7.0</central-publishing.version>
 		<jextract-maven.version>0.4.3</jextract-maven.version>
@@ -198,7 +199,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.5.2</version>
+				<version>${mvn-surefire.version}</version>
 				<dependencies>
 					<dependency>
 						<groupId>me.fabriciorby</groupId>
