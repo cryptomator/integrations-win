@@ -192,48 +192,39 @@ bool retrieveAndCacheSignatureData(const std::wstring& keyId, const IBuffer& cha
 }
 
 
-bool deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& challenge, IBuffer& key) {
+IBuffer deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& challenge) {
 
     auto challengeBuffer = CryptographicBuffer::CreateFromByteArray(
         array_view<const uint8_t>(challenge.data(), challenge.size()));
 
-    try {
-        std::vector<uint8_t> signatureData;
-        bool foundInCache = false;
+    std::vector<uint8_t> signatureData;
+    bool foundInCache = false;
 
-        {
-            // Lock for thread safety
-            std::lock_guard<std::mutex> lock(cacheMutex);
-            auto it = keyCache.find(keyId);
-            if (it != keyCache.end()) {
-                signatureData = it->second;
-                if (!UnprotectMemory(signatureData)) {
-                    throw std::runtime_error("Failed to unprotect memory.");
-                }
-                foundInCache = true;
+    {
+        // Lock for thread safety
+        std::lock_guard<std::mutex> lock(cacheMutex);
+        auto it = keyCache.find(keyId);
+        if (it != keyCache.end()) {
+            signatureData = it->second;
+            if (!UnprotectMemory(signatureData)) {
+                throw std::runtime_error("Failed to unprotect memory.");
             }
+            foundInCache = true;
         }
+    }
 
-        if (!foundInCache) {
-            if (!retrieveAndCacheSignatureData(keyId, challengeBuffer, signatureData)) {
-                return false;
-            }
+    if (!foundInCache) {
+        if (!retrieveAndCacheSignatureData(keyId, challengeBuffer, signatureData)) {
+            throw std::runtime_error("Failed to retrieve or cache key.");;
         }
-
-        auto signatureBuffer = CryptographicBuffer::CreateFromByteArray(
-            array_view<const uint8_t>(signatureData.data(), signatureData.size()));
-
-        // Derive the encryption/decryption key using HKDF
-        IBuffer info = CryptographicBuffer::ConvertStringToBinary(HKDF_INFO, BinaryStringEncoding::Utf8);
-        key = DeriveKeyUsingHKDF(signatureBuffer, challengeBuffer, 32, info); // needs to be 32 bytes for SHA256
-        std::fill(signatureData.begin(), signatureData.end(), 0);
-
-        return true;
     }
-    catch (winrt::hresult_error const& ex) {
-        std::cerr << winrt::to_string(ex.message()) << std::endl;
-        return false;
-    }
+
+    auto signatureBuffer = CryptographicBuffer::CreateFromByteArray(
+        array_view<const uint8_t>(signatureData.data(), signatureData.size()));
+
+    // Derive the encryption/decryption key using HKDF
+    IBuffer info = CryptographicBuffer::ConvertStringToBinary(HKDF_INFO, BinaryStringEncoding::Utf8);
+    return DeriveKeyUsingHKDF(signatureBuffer, challengeBuffer, 32, info); // needs to be 32 bytes for SHA256
 }
 
 
@@ -279,10 +270,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
 
         // Take the random challenge and sign it by Windows Hello
         // to create the key.
-        IBuffer keyMaterial;
-        if (!deriveEncryptionKey(keyIdentifier, challengeVec, keyMaterial)) {
-            throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
-        }
+        IBuffer keyMaterial = deriveEncryptionKey(keyIdentifier, challengeVec);
 
         //encrypt
         auto iv = CryptographicBuffer::GenerateRandom(16); // 128-bit IV for AES-CBC
@@ -362,10 +350,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         // to create the key.
         auto toReleaseKeyId = (LPCWSTR)env->GetByteArrayElements(keyId, NULL);
         const std::wstring keyIdentifier(toReleaseKeyId);
-        IBuffer keyMaterial;
-        if (!deriveEncryptionKey(keyIdentifier, challengeVec, keyMaterial)) {
-            throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
-        }
+        IBuffer keyMaterial = deriveEncryptionKey(keyIdentifier, challengeVec);
 
         auto aesCbcPkcs7Algorithm = SymmetricKeyAlgorithmProvider::OpenAlgorithm(SymmetricAlgorithmNames::AesCbcPkcs7());
         auto aesKey = aesCbcPkcs7Algorithm.CreateSymmetricKey(keyMaterial);
