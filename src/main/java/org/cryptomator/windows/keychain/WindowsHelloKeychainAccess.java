@@ -1,5 +1,6 @@
 package org.cryptomator.windows.keychain;
 
+import org.cryptomator.integrations.common.LocalizedDisplayName;
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.keychain.KeychainAccessProvider;
@@ -11,6 +12,7 @@ import org.cryptomator.windows.common.Localization;
  */
 @Priority(1001)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
+@LocalizedDisplayName(bundle = "WinIntegrationsBundle", key ="org.cryptomator.windows.keychain.displayWindowsHelloName")
 public final class WindowsHelloKeychainAccess extends WindowsKeychainAccessBase {
 
 	private static final String WINDOWS_HELLO_KEYCHAIN_PATHS_PROPERTY = "cryptomator.integrationsWin.windowsHelloKeychainPaths";
@@ -20,10 +22,5 @@ public final class WindowsHelloKeychainAccess extends WindowsKeychainAccessBase 
 	public WindowsHelloKeychainAccess() {
 		super(new FileKeychain(WINDOWS_HELLO_KEYCHAIN_PATHS_PROPERTY),
 				new WindowsHello(System.getProperty(WINDOWS_HELLO_KEY_ID_PROPERTY, "org.cryptomator.integrations-win")));
-	}
-
-	@Override
-	public String displayName() {
-		return Localization.get().getString("org.cryptomator.windows.keychain.displayWindowsHelloName");
 	}
 }

@@ -63,7 +63,7 @@ public class WindowsProtectedKeychainAccessIntegrationTest {
 		@DisplayName("A credential can be stored")
 		@Order(3)
 		public void testStoringCredential() throws KeychainAccessException, IOException {
-			keychainAccess.storePassphrase("ozelot", "oZeLoT", "abc", false);
+			keychainAccess.storePassphrase("ozelot", "oZeLoT", "abc");
 			var passphrase = keychainAccess.loadPassphrase("ozelot");
 			Assertions.assertEquals("abc", String.valueOf(passphrase));
 		}
@@ -97,7 +97,7 @@ public class WindowsProtectedKeychainAccessIntegrationTest {
 		@DisplayName("Existing credential can be changed")
 		@Order(7)
 		public void testChangingCredential() throws KeychainAccessException, IOException {
-			keychainAccess.storePassphrase("ozelot", "oZeLoT", "abc", false);
+			keychainAccess.storePassphrase("ozelot", "oZeLoT", "abc");
 			keychainAccess.changePassphrase("ozelot", "oZeLoT", "qwe");
 			var passphrase = keychainAccess.loadPassphrase("ozelot");
 			Assertions.assertEquals("qwe", String.valueOf(passphrase));
