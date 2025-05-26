@@ -285,7 +285,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         }
 
         auto iv = CryptographicBuffer::GenerateRandom(16); // 128-bit IV for AES-CBC
-        auto algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
+        auto algorithmName = SymmetricAlgorithmNames::AesGcm(); //AesCbcPkcs7();
         auto aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
         auto aesKey = aesProvider.CreateSymmetricKey(key);
         auto dataBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(cleartextVec.data(), cleartextVec.size()));
