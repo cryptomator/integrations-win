@@ -336,6 +336,13 @@
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>exec-maven-plugin</artifactId>
 						<version>3.5.0</version>
+						<configuration>
+							<executable>cmd</executable>
+							<workingDirectory>${project.basedir}</workingDirectory>
+							<environmentVariables>
+								<JAVA_HOME>${java.home}</JAVA_HOME>
+							</environmentVariables>
+						</configuration>
 						<executions>
 							<execution>
 								<id>compile-x64</id>
@@ -364,13 +371,6 @@
 								</configuration>
 							</execution>
 						</executions>
-						<configuration>
-							<executable>cmd</executable>
-							<workingDirectory>${project.basedir}</workingDirectory>
-							<environmentVariables>
-								<JAVA_HOME>${java.home}</JAVA_HOME>
-							</environmentVariables>
-						</configuration>
 					</plugin>
 				</plugins>
 			</build>

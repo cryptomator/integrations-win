@@ -16,7 +16,9 @@ OUT_LIB := $(OUT_DIR)/integrations.lib
 all: install
 
 install:
-	@if not exist "$(OUT_DIR)" mkdir "$(OUT_DIR)"
+ifeq "$(wildcard $(OUT_DIR))" ""
+	mkdir "$(OUT_DIR)"
+endif
 	cl -EHsc -std:c++17 -LD -W4 -guard:cf \
 		-Fe"$(OUT_DLL)" \
 		-Fo"$(OUT_DIR)/" \
