@@ -279,21 +279,21 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
 
         // Take the random challenge and sign it by Windows Hello
         // to create the key.
-        IBuffer key;
-        if (!deriveEncryptionKey(keyIdentifier, challengeVec, key)) {
+        IBuffer keyMaterial;
+        if (!deriveEncryptionKey(keyIdentifier, challengeVec, keyMaterial)) {
             throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
         }
 
+        //encrypt
         auto iv = CryptographicBuffer::GenerateRandom(16); // 128-bit IV for AES-CBC
-        auto algorithmName = SymmetricAlgorithmNames::AesGcm(); //AesCbcPkcs7();
-        auto aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
-        auto aesKey = aesProvider.CreateSymmetricKey(key);
+        auto aesCbcPkcs7Algorithm = SymmetricKeyAlgorithmProvider::OpenAlgorithm(SymmetricAlgorithmNames::AesCbcPkcs7());
+        auto aesKey = aesCbcPkcs7Algorithm.CreateSymmetricKey(keyMaterial);
         auto dataBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(cleartextVec.data(), cleartextVec.size()));
         auto encryptedBuffer = CryptographicEngine::Encrypt(aesKey, dataBuffer, iv);
 
         // Compute HMAC over (IV || ciphertext)
         auto macProvider = MacAlgorithmProvider::OpenAlgorithm(MacAlgorithmNames::HmacSha256());
-        auto hmacKey = macProvider.CreateKey(key);
+        auto hmacKey = macProvider.CreateKey(keyMaterial);
 
         // Concatenate IV and ciphertext into a single buffer
         std::vector<uint8_t> ivVec = iBufferToVector(iv);
@@ -362,14 +362,13 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         // to create the key.
         auto toReleaseKeyId = (LPCWSTR)env->GetByteArrayElements(keyId, NULL);
         const std::wstring keyIdentifier(toReleaseKeyId);
-        IBuffer key;
-        if (!deriveEncryptionKey(keyIdentifier, challengeVec, key)) {
+        IBuffer keyMaterial;
+        if (!deriveEncryptionKey(keyIdentifier, challengeVec, keyMaterial)) {
             throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
         }
 
-        auto algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
-        auto aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
-        auto aesKey = aesProvider.CreateSymmetricKey(key);
+        auto aesCbcPkcs7Algorithm = SymmetricKeyAlgorithmProvider::OpenAlgorithm(SymmetricAlgorithmNames::AesCbcPkcs7());
+        auto aesKey = aesCbcPkcs7Algorithm.CreateSymmetricKey(keyMaterial);
 
         // Split the input data
         std::vector<uint8_t> ivVec(ciphertextVec.begin(), ciphertextVec.begin() + ivSize);
@@ -381,7 +380,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
 
         // Compute HMAC to verify integrity
         auto macProvider = MacAlgorithmProvider::OpenAlgorithm(MacAlgorithmNames::HmacSha256());
-        auto hmacKey = macProvider.CreateKey(key);
+        auto hmacKey = macProvider.CreateKey(keyMaterial);
         auto dataToAuthenticateBuffer = CryptographicBuffer::CreateFromByteArray(
             array_view<const uint8_t>(dataToAuthenticate.data(), dataToAuthenticate.size())
         );
