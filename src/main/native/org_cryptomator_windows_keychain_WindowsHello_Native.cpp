@@ -153,38 +153,26 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
 
 
 // Sign the challenge with the user's Windows Hello credentials
-bool retrieveAndCacheSignatureData(const std::wstring& keyId, const IBuffer& challengeBuffer, std::vector<uint8_t>& signatureData) {
+IBuffer getSignature(const std::wstring& keyId, const IBuffer& challengeBuffer) {
     auto result = KeyCredentialManager::RequestCreateAsync(keyId, KeyCredentialCreationOption::FailIfExists).get();
 
     if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
         result = KeyCredentialManager::OpenAsync(keyId).get();
     } else if (result.Status() != KeyCredentialStatus::Success) {
-        std::cerr << "Failed to retrieve Windows Hello credential." << std::endl;
-        return false;
+        throw std::runtime_error("Failed to retrieve Windows Hello credential."); //TODO: error code
     }
 
     const auto signature = result.Credential().RequestSignAsync(challengeBuffer).get();
 
     if (signature.Status() != KeyCredentialStatus::Success) {
         if (signature.Status() != KeyCredentialStatus::UserCanceled) {
-            std::cerr << "Failed to sign challenge using Windows Hello." << std::endl;
+            throw std::runtime_error("Failed to sign challenge using Windows Hello. Reason:"); //TODO: reason
+        } else {
+            throw std::runtime_error("User canceled operation"); //TODO: can we catch/prevent this?
         }
-        return false;
     }
 
-    signatureData = iBufferToVector(signature.Result());
-    std::vector<uint8_t> protectedCopy = signatureData;
-
-    ProtectMemory(protectedCopy);
-
-    // Store in cache
-    {
-        std::lock_guard<std::mutex> lock(cacheMutex);
-        keyCache[keyId] = protectedCopy;
-    }
-
-    std::fill(protectedCopy.begin(), protectedCopy.end(), 0);
-    return true;
+    return signature.Result();
 }
 
 
@@ -195,7 +183,6 @@ IBuffer getOrCreateKey(const std::wstring& keyId, const std::vector<uint8_t>& ch
 
     std::vector<uint8_t> signatureData;
     bool foundInCache = false;
-
     {
         // Lock for thread safety
         std::lock_guard<std::mutex> lock(cacheMutex);
@@ -206,10 +193,17 @@ IBuffer getOrCreateKey(const std::wstring& keyId, const std::vector<uint8_t>& ch
             foundInCache = true;
         }
     }
-
     if (!foundInCache) {
-        if (!retrieveAndCacheSignatureData(keyId, challengeBuffer, signatureData)) {
-            throw std::runtime_error("Failed to retrieve or cache key.");;
+        signatureData = iBufferToVector(getSignature(keyId, challengeBuffer));
+        auto protectedCopy = signatureData;
+        // cache
+        try {
+            ProtectMemory(protectedCopy);
+            std::lock_guard<std::mutex> lock(cacheMutex);
+            keyCache[keyId] = protectedCopy;
+            std::fill(protectedCopy.begin(), protectedCopy.end(), 0);
+        } catch(...) {
+            std::fill(protectedCopy.begin(), protectedCopy.end(), 0); //TODO: RAII
         }
     }
 
