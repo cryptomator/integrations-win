@@ -17,18 +17,18 @@ JNIEXPORT jboolean JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00
 
 /*
  * Class:     org_cryptomator_windows_keychain_WindowsHello_Native
- * Method:    setEncryptionKey
+ * Method:    encrypt
  * Signature: ([B[B[B)[B
  */
-JNIEXPORT jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_setEncryptionKey
+JNIEXPORT jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_encrypt
   (JNIEnv *, jobject, jbyteArray, jbyteArray, jbyteArray);
 
 /*
  * Class:     org_cryptomator_windows_keychain_WindowsHello_Native
- * Method:    getEncryptionKey
+ * Method:    decrypt
  * Signature: ([B[B[B)[B
  */
-JNIEXPORT jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_getEncryptionKey
+JNIEXPORT jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_decrypt
   (JNIEnv *, jobject, jbyteArray, jbyteArray, jbyteArray);
 
 #ifdef __cplusplus
