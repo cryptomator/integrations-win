@@ -188,7 +188,7 @@ bool retrieveAndCacheSignatureData(const std::wstring& keyId, const IBuffer& cha
 }
 
 
-IBuffer deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t>& challenge) {
+IBuffer getOrCreateKey(const std::wstring& keyId, const std::vector<uint8_t>& challenge) {
 
     auto challengeBuffer = CryptographicBuffer::CreateFromByteArray(
         array_view<const uint8_t>(challenge.data(), challenge.size()));
@@ -264,7 +264,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
 
         // Take the random challenge and sign it by Windows Hello
         // to create the key.
-        IBuffer keyMaterial = deriveEncryptionKey(keyIdentifier, challengeVec);
+        IBuffer keyMaterial = getOrCreateKey(keyIdentifier, challengeVec);
 
         //encrypt
         auto iv = CryptographicBuffer::GenerateRandom(16); // 128-bit IV for AES-CBC
@@ -344,7 +344,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         // to create the key.
         auto toReleaseKeyId = (LPCWSTR)env->GetByteArrayElements(keyId, NULL);
         const std::wstring keyIdentifier(toReleaseKeyId);
-        IBuffer keyMaterial = deriveEncryptionKey(keyIdentifier, challengeVec);
+        IBuffer keyMaterial = getOrCreateKey(keyIdentifier, challengeVec);
 
         // Split the input data
         std::vector<uint8_t> ivVec(ciphertextVec.begin(), ciphertextVec.begin() + ivSize);
