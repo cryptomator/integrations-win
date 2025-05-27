@@ -29,26 +29,24 @@ static std::unordered_map<std::wstring, std::vector<uint8_t>> keyCache;
 static auto HKDF_INFO = L"org.cryptomator.windows.keychain.windowsHello";
 
 // Helper methods to handle KeyCredential
-bool ProtectMemory(std::vector<uint8_t>& data) {
-    if (data.empty()) return false;
-    if (data.size() % CRYPTPROTECTMEMORY_BLOCK_SIZE != 0) {
-        throw std::runtime_error("Data size must be a multiple of CRYPTPROTECTMEMORY_BLOCK_SIZE (16 bytes).");
+void ProtectMemory(std::vector<uint8_t>& data) {
+    if (data.empty()) {
+        throw std::invalid_argument("Data to protect must not be empty");
+    } else if (data.size() % CRYPTPROTECTMEMORY_BLOCK_SIZE != 0) {
+        throw std::invalid_argument("Data to protect must have a size being a multiple of CRYPTPROTECTMEMORY_BLOCK_SIZE (16 bytes).");
+    } else if (CryptProtectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
+        throw std::runtime_error("Failed to protect data: " ); //TODO: error code!
     }
-    if (!CryptProtectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
-        return false;
-    }
-    return true;
 }
 
-bool UnprotectMemory(std::vector<uint8_t>& data) {
-    if (data.empty()) return false;
-    if (data.size() % CRYPTPROTECTMEMORY_BLOCK_SIZE != 0) {
-        throw std::runtime_error("Data size must be a multiple of CRYPTPROTECTMEMORY_BLOCK_SIZE (16 bytes).");
+void UnprotectMemory(std::vector<uint8_t>& data) {
+    if (data.empty()) {
+        throw std::invalid_argument("Data to unprotect must not be empty");
+    } else if (data.size() % CRYPTPROTECTMEMORY_BLOCK_SIZE != 0) {
+        throw std::invalid_argument("Data to unprotect must have a size being a multiple of CRYPTPROTECTMEMORY_BLOCK_SIZE (16 bytes).");
+    } else if (!CryptUnprotectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
+        throw std::runtime_error("Failed to unprotect data: " ); //TODO: error code!
     }
-    if (!CryptUnprotectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
-        return false;
-    }
-    return true;
 }
 
 // Helper methods for conversion
@@ -177,9 +175,7 @@ bool retrieveAndCacheSignatureData(const std::wstring& keyId, const IBuffer& cha
     signatureData = iBufferToVector(signature.Result());
     std::vector<uint8_t> protectedCopy = signatureData;
 
-    if (!ProtectMemory(protectedCopy)) {
-        throw std::runtime_error("Failed to protect memory.");
-    }
+    ProtectMemory(protectedCopy);
 
     // Store in cache
     {
@@ -206,9 +202,7 @@ IBuffer deriveEncryptionKey(const std::wstring& keyId, const std::vector<uint8_t
         auto it = keyCache.find(keyId);
         if (it != keyCache.end()) {
             signatureData = it->second;
-            if (!UnprotectMemory(signatureData)) {
-                throw std::runtime_error("Failed to unprotect memory.");
-            }
+            UnprotectMemory(signatureData);
             foundInCache = true;
         }
     }
