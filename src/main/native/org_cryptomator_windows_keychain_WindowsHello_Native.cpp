@@ -352,9 +352,6 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         const std::wstring keyIdentifier(toReleaseKeyId);
         IBuffer keyMaterial = deriveEncryptionKey(keyIdentifier, challengeVec);
 
-        auto aesCbcPkcs7Algorithm = SymmetricKeyAlgorithmProvider::OpenAlgorithm(SymmetricAlgorithmNames::AesCbcPkcs7());
-        auto aesKey = aesCbcPkcs7Algorithm.CreateSymmetricKey(keyMaterial);
-
         // Split the input data
         std::vector<uint8_t> ivVec(ciphertextVec.begin(), ciphertextVec.begin() + ivSize);
         std::vector<uint8_t> encryptedVec(ciphertextVec.begin() + ivSize, ciphertextVec.end() - hmacSize);
@@ -378,6 +375,8 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         }
 
         // Decrypt ciphertext
+        auto aesCbcPkcs7Algorithm = SymmetricKeyAlgorithmProvider::OpenAlgorithm(SymmetricAlgorithmNames::AesCbcPkcs7());
+        auto aesKey = aesCbcPkcs7Algorithm.CreateSymmetricKey(keyMaterial);
         auto ivBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(ivVec.data(), ivVec.size()));
         auto encryptedBuffer = CryptographicBuffer::CreateFromByteArray(
             array_view<const uint8_t>(encryptedVec.data(), encryptedVec.size())
