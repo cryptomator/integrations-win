@@ -320,7 +320,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
 
         // Ensure the input is long enough to contain IV (16 bytes), ciphertext, and HMAC (32 bytes)
         if (ciphertextVec.size() < ivSize + hmacSize) {
-            throw std::runtime_error("Invalid ciphertext");
+            throw std::invalid_argument("Ciphertext must be at least 48 bytes long");
         }
 
         // Take the random challenge and sign it by Windows Hello
