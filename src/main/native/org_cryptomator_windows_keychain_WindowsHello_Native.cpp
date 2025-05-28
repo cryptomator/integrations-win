@@ -35,8 +35,10 @@ void ProtectMemory(std::vector<uint8_t>& data) {
         throw std::invalid_argument("Data to protect must not be empty");
     } else if (data.size() % CRYPTPROTECTMEMORY_BLOCK_SIZE != 0) {
         throw std::invalid_argument("Data to protect must have a size being a multiple of CRYPTPROTECTMEMORY_BLOCK_SIZE (16 bytes).");
-    } else if (CryptProtectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
-        throw std::runtime_error("Failed to protect data: " ); //TODO: error code!
+    } else if (!CryptProtectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
+        //clear the original data to prevent memory leaks
+        std::fill(data.begin(), data.end(), 0); // Clear the original data
+        throw_last_error();
     }
 }
 
@@ -46,7 +48,7 @@ void UnprotectMemory(std::vector<uint8_t>& data) {
     } else if (data.size() % CRYPTPROTECTMEMORY_BLOCK_SIZE != 0) {
         throw std::invalid_argument("Data to unprotect must have a size being a multiple of CRYPTPROTECTMEMORY_BLOCK_SIZE (16 bytes).");
     } else if (!CryptUnprotectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
-        throw std::runtime_error("Failed to unprotect data: " ); //TODO: error code!
+        throw_last_error();
     }
 }
 
