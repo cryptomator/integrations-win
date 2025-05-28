@@ -37,7 +37,7 @@ void ProtectMemory(std::vector<uint8_t>& data) {
         throw std::invalid_argument("Data to protect must have a size being a multiple of CRYPTPROTECTMEMORY_BLOCK_SIZE (16 bytes).");
     } else if (!CryptProtectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
         //clear the original data to prevent memory leaks
-        std::fill(data.begin(), data.end(), 0); // Clear the original data
+        SecureZeroMemory(data.data(), data.size());
         throw std::runtime_error("Failed to protect data. Error code: " + std::to_string(GetLastError()) );
     }
 }
@@ -144,8 +144,8 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
 
     result.resize(keySizeInBytes);
     auto buffer = CryptographicBuffer::CreateFromByteArray(result);
-    std::fill(previousBlock.begin(), previousBlock.end(), 0);
-    std::fill(result.begin(), result.end(), 0);
+    SecureZeroMemory(previousBlock.data(), previousBlock.size());
+    SecureZeroMemory(result.data(), result.size());
     return buffer;
 }
 
@@ -186,21 +186,21 @@ IBuffer getOrCreateKey(const std::wstring& keyId, IBuffer salt) {
             auto signatureData = it->second;
             UnprotectMemory(signatureData);
             signature = CryptographicBuffer::CreateFromByteArray(signatureData);
-            std::fill(signatureData.begin(), signatureData.end(), 0);
+            SecureZeroMemory(signatureData.data(), signatureData.size());
             foundInCache = true;
         }
     }
     if (!foundInCache) {
         signature = getSignature(keyId);
-        auto protectedCopy = iBufferToVector(signature);
+        auto copyToProtect = iBufferToVector(signature);
         // cache
         try {
-            ProtectMemory(protectedCopy);
+            ProtectMemory(copyToProtect);
             std::lock_guard<std::mutex> lock(cacheMutex);
-            keyCache[keyId] = protectedCopy;
-            std::fill(protectedCopy.begin(), protectedCopy.end(), 0);
+            keyCache[keyId] = copyToProtect;
+            SecureZeroMemory(copyToProtect.data(), copyToProtect.size());
         } catch(const std::exception& e) {
-            std::fill(protectedCopy.begin(), protectedCopy.end(), 0);
+            SecureZeroMemory(copyToProtect.data(), copyToProtect.size());
             throw e;
         }
     }
@@ -281,27 +281,27 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         std::copy(dataToAuthenticate.begin(), dataToAuthenticate.end(), output.begin());
         std::copy(hmac.begin(), hmac.end(), output.begin() + dataToAuthenticate.size());
 
-        std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
+        SecureZeroMemory(cleartextVec.data(), cleartextVec.size());
         return vectorToJbyteArray(env, output);
     }
     catch (winrt::hresult_error const& hre) {
-        std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
+        SecureZeroMemory(cleartextVec.data(), cleartextVec.size());
         HRESULT hr = hre.code();
         winrt::hstring message = hre.message();
         std::cerr << "Error: " << winrt::to_string(message) << " (HRESULT: 0x" << std::hex << hr << ")" << std::endl;
         return NULL;
     }
     catch(const std::logic_error& le) {
-        std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
+        SecureZeroMemory(cleartextVec.data(), cleartextVec.size());
         return NULL; //user cancelled
     }
     catch (const std::exception& e) {
-        std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
+        SecureZeroMemory(cleartextVec.data(), cleartextVec.size());
         std::cerr << "Warning: " << e.what() << std::endl;
         return NULL;
     }
     catch (...) {
-        std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
+        SecureZeroMemory(cleartextVec.data(), cleartextVec.size());
         std::cerr << "Caught an unknown exception" << std::endl;
         return NULL;
     }
@@ -347,7 +347,9 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         std::vector<uint8_t> computedHmac = iBufferToVector(computedHmacBuffer);
 
         // Compare HMACs
-        if (computedHmac != hmac) {
+        bool verify_success = computedHmac == hmac;
+        SecureZeroMemory(computedHmac.data(), computedHmac.size());
+        if (!verify_success) {
             throw std::runtime_error("HMAC verification failed.");
         }
 
@@ -359,8 +361,6 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
             array_view<const uint8_t>(encrypted.data(), encrypted.size())
         );
         auto decryptedBuffer = CryptographicEngine::Decrypt(aesKey, encryptedBuffer, ivBuffer);
-
-        std::fill(computedHmac.begin(), computedHmac.end(), 0);
 
 
         jbyteArray decryptedArray = env->NewByteArray(decryptedBuffer.Length());
