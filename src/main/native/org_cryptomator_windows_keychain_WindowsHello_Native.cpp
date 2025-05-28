@@ -244,48 +244,42 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
 
         winrt::init_apartment(winrt::apartment_type::single_threaded);
 
-        // Use Windows Hello to create the key material
+        // Create key material using Windows Hello
         auto toReleaseKeyId = (LPCWSTR)env->GetByteArrayElements(keyId, NULL);
         const std::wstring keyIdentifier(toReleaseKeyId);
         env->ReleaseByteArrayElements(keyId, (jbyte*) toReleaseKeyId, JNI_ABORT);
         IBuffer keyMaterial = getOrCreateKey(keyIdentifier, saltBuffer);
 
         //encrypt
-        auto iv = CryptographicBuffer::GenerateRandom(16); // 128-bit IV for AES-CBC
+        auto ivBuffer = CryptographicBuffer::GenerateRandom(16); // 128-bit IV for AES-CBC
         auto aesCbcPkcs7Algorithm = SymmetricKeyAlgorithmProvider::OpenAlgorithm(SymmetricAlgorithmNames::AesCbcPkcs7());
         auto aesKey = aesCbcPkcs7Algorithm.CreateSymmetricKey(keyMaterial);
-        auto dataBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(cleartextVec.data(), cleartextVec.size()));
-        auto encryptedBuffer = CryptographicEngine::Encrypt(aesKey, dataBuffer, iv);
+        auto dataBuffer = CryptographicBuffer::CreateFromByteArray(cleartextVec);
+        auto encryptedBuffer = CryptographicEngine::Encrypt(aesKey, dataBuffer, ivBuffer);
 
         // Compute HMAC over (IV || ciphertext)
         auto macProvider = MacAlgorithmProvider::OpenAlgorithm(MacAlgorithmNames::HmacSha256());
         auto hmacKey = macProvider.CreateKey(keyMaterial);
 
         // Concatenate IV and ciphertext into a single buffer
-        std::vector<uint8_t> ivVec = iBufferToVector(iv);
-        std::vector<uint8_t> encryptedVec = iBufferToVector(encryptedBuffer);
-        std::vector<uint8_t> dataToAuthenticate(ivVec.size() + encryptedVec.size());
-        std::copy(ivVec.begin(), ivVec.end(), dataToAuthenticate.begin());
-        std::copy(encryptedVec.begin(), encryptedVec.end(), dataToAuthenticate.begin() + ivVec.size());
+        std::vector<uint8_t> iv = iBufferToVector(ivBuffer);
+        std::vector<uint8_t> encrypted = iBufferToVector(encryptedBuffer);
+        std::vector<uint8_t> dataToAuthenticate(iv.size() + encrypted.size());
+        std::copy(iv.begin(), iv.end(), dataToAuthenticate.begin());
+        std::copy(encrypted.begin(), encrypted.end(), dataToAuthenticate.begin() + iv.size());
 
-        // Create a buffer from the concatenated vector
-        auto dataToAuthenticateBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(dataToAuthenticate.data(), dataToAuthenticate.size()));
-        auto hmac = CryptographicEngine::Sign(hmacKey, dataToAuthenticateBuffer);
+        // Create HMAC for IV+Ciphertext
+        auto dataToAuthenticateBuffer = CryptographicBuffer::CreateFromByteArray(dataToAuthenticate);
+        auto hmacBuffer = CryptographicEngine::Sign(hmacKey, dataToAuthenticateBuffer);
 
         // Combine IV, ciphertext, and HMAC into the final buffer
-        std::vector<uint8_t> hmacVec = iBufferToVector(hmac);
-        std::vector<uint8_t> output(dataToAuthenticate.size() + hmacVec.size());
+        std::vector<uint8_t> hmac = iBufferToVector(hmacBuffer);
+        std::vector<uint8_t> output(dataToAuthenticate.size() + hmac.size());
         std::copy(dataToAuthenticate.begin(), dataToAuthenticate.end(), output.begin());
-        std::copy(hmacVec.begin(), hmacVec.end(), output.begin() + dataToAuthenticate.size());
+        std::copy(hmac.begin(), hmac.end(), output.begin() + dataToAuthenticate.size());
 
         std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
-        std::fill(ivVec.begin(), ivVec.end(), 0);
-        std::fill(encryptedVec.begin(), encryptedVec.end(), 0);
-        std::fill(dataToAuthenticate.begin(), dataToAuthenticate.end(), 0);
-        std::fill(hmacVec.begin(), hmacVec.end(), 0);
-
         return vectorToJbyteArray(env, output);
-
     }
     catch (winrt::hresult_error const& hre) {
         HRESULT hr = hre.code();
@@ -325,13 +319,12 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         // Create the keyMaterial with Windows Hello
         auto toReleaseKeyId = (LPCWSTR)env->GetByteArrayElements(keyId, NULL);
         const std::wstring keyIdentifier(toReleaseKeyId);
-        env->ReleaseByteArrayElements(keyId, (jbyte*)toReleaseKeyId, JNI_ABORT);
         IBuffer keyMaterial = getOrCreateKey(keyIdentifier, saltBuffer);
 
         // Split the input data
-        std::vector<uint8_t> ivVec(ciphertextVec.begin(), ciphertextVec.begin() + ivSize);
-        std::vector<uint8_t> encryptedVec(ciphertextVec.begin() + ivSize, ciphertextVec.end() - hmacSize);
-        std::vector<uint8_t> hmacVec(ciphertextVec.end() - hmacSize, ciphertextVec.end());
+        std::vector<uint8_t> iv(ciphertextVec.begin(), ciphertextVec.begin() + ivSize);
+        std::vector<uint8_t> encrypted(ciphertextVec.begin() + ivSize, ciphertextVec.end() - hmacSize);
+        std::vector<uint8_t> hmac(ciphertextVec.end() - hmacSize, ciphertextVec.end());
 
         // Recreate the data to authenticate (IV || ciphertext)
         std::vector<uint8_t> dataToAuthenticate(ciphertextVec.begin(), ciphertextVec.end() - hmacSize);
@@ -340,29 +333,24 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         auto macProvider = MacAlgorithmProvider::OpenAlgorithm(MacAlgorithmNames::HmacSha256());
         auto hmacKey = macProvider.CreateKey(keyMaterial);
         auto dataToAuthenticateBuffer = CryptographicBuffer::CreateFromByteArray(dataToAuthenticate);
-        auto computedHmac = CryptographicEngine::Sign(hmacKey, dataToAuthenticateBuffer);
-        std::vector<uint8_t> computedHmacVec = iBufferToVector(computedHmac);
+        auto computedHmacBuffer = CryptographicEngine::Sign(hmacKey, dataToAuthenticateBuffer);
+        std::vector<uint8_t> computedHmac = iBufferToVector(computedHmacBuffer);
 
         // Compare HMACs
-        if (computedHmacVec != hmacVec) {
+        if (computedHmac != hmac) {
             throw std::runtime_error("HMAC verification failed.");
         }
 
         // Decrypt ciphertext
         auto aesCbcPkcs7Algorithm = SymmetricKeyAlgorithmProvider::OpenAlgorithm(SymmetricAlgorithmNames::AesCbcPkcs7());
         auto aesKey = aesCbcPkcs7Algorithm.CreateSymmetricKey(keyMaterial);
-        auto ivBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(ivVec.data(), ivVec.size()));
+        auto ivBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(iv.data(), iv.size()));
         auto encryptedBuffer = CryptographicBuffer::CreateFromByteArray(
-            array_view<const uint8_t>(encryptedVec.data(), encryptedVec.size())
+            array_view<const uint8_t>(encrypted.data(), encrypted.size())
         );
         auto decryptedBuffer = CryptographicEngine::Decrypt(aesKey, encryptedBuffer, ivBuffer);
 
-        std::fill(ciphertextVec.begin(), ciphertextVec.end(), 0);
-        std::fill(ivVec.begin(), ivVec.end(), 0);
-        std::fill(encryptedVec.begin(), encryptedVec.end(), 0);
-        std::fill(hmacVec.begin(), hmacVec.end(), 0);
-        std::fill(dataToAuthenticate.begin(), dataToAuthenticate.end(), 0);
-        std::fill(computedHmacVec.begin(), computedHmacVec.end(), 0);
+        std::fill(computedHmac.begin(), computedHmac.end(), 0);
 
 
         jbyteArray decryptedArray = env->NewByteArray(decryptedBuffer.Length());
