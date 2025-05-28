@@ -38,7 +38,7 @@ void ProtectMemory(std::vector<uint8_t>& data) {
     } else if (!CryptProtectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
         //clear the original data to prevent memory leaks
         std::fill(data.begin(), data.end(), 0); // Clear the original data
-        throw_last_error();
+        throw std::runtime_error("Failed to protect data. Error code: " + std::to_string(GetLastError()) );
     }
 }
 
@@ -48,7 +48,7 @@ void UnprotectMemory(std::vector<uint8_t>& data) {
     } else if (data.size() % CRYPTPROTECTMEMORY_BLOCK_SIZE != 0) {
         throw std::invalid_argument("Data to unprotect must have a size being a multiple of CRYPTPROTECTMEMORY_BLOCK_SIZE (16 bytes).");
     } else if (!CryptUnprotectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
-        throw_last_error();
+        throw std::runtime_error("Failed to unprotect data. Error code: " + std::to_string(GetLastError()) );
     }
 }
 
@@ -157,7 +157,7 @@ IBuffer getSignature(const std::wstring& keyId) {
     if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
         result = KeyCredentialManager::OpenAsync(keyId).get();
     } else if (result.Status() != KeyCredentialStatus::Success) {
-        throw std::runtime_error("Failed to retrieve Windows Hello credential."); //TODO: error code
+        throw std::runtime_error("Failed to retrieve WindowsHello credential. Error code: " + std::to_string(GetLastError()) );
     }
 
     auto challengeBuffer = CryptographicBuffer::ConvertStringToBinary(HELLO_CHALLENGE, BinaryStringEncoding::Utf16LE);
@@ -165,7 +165,7 @@ IBuffer getSignature(const std::wstring& keyId) {
 
     if (signature.Status() != KeyCredentialStatus::Success) {
         if (signature.Status() != KeyCredentialStatus::UserCanceled) {
-            throw std::runtime_error("Failed to sign challenge using Windows Hello. Reason:"); //TODO: reason
+            throw std::runtime_error("Failed to sign challenge with WindowsHello. Error code: " + std::to_string(GetLastError()) );
         } else {
             throw std::runtime_error("User canceled operation"); //TODO: can we catch/prevent this?
         }
