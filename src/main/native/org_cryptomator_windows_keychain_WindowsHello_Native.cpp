@@ -340,9 +340,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         // Compute HMAC to verify integrity
         auto macProvider = MacAlgorithmProvider::OpenAlgorithm(MacAlgorithmNames::HmacSha256());
         auto hmacKey = macProvider.CreateKey(keyMaterial);
-        auto dataToAuthenticateBuffer = CryptographicBuffer::CreateFromByteArray(
-            array_view<const uint8_t>(dataToAuthenticate.data(), dataToAuthenticate.size())
-        );
+        auto dataToAuthenticateBuffer = CryptographicBuffer::CreateFromByteArray(dataToAuthenticate);
         auto computedHmac = CryptographicEngine::Sign(hmacKey, dataToAuthenticateBuffer);
         std::vector<uint8_t> computedHmacVec = iBufferToVector(computedHmac);
 
