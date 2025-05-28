@@ -6,25 +6,19 @@ import org.cryptomator.windows.common.WinStrings;
 class WindowsHello implements WindowsKeychainAccessBase.PassphraseCryptor {
 
 	private final byte[] keyId;
-	private final byte[] fixedChallenge = new byte[] {
-		'1', '2', '3', '4',
-		'5', '6', '7', '8',
-		'9', '0', 'A', 'B',
-		'C', 'D', 'E', 'F'
-	};
 
 	public WindowsHello(String keyId) {
 		this.keyId = WinStrings.getNullTerminatedUTF16Representation(keyId);
 	}
 
 	@Override
-	public byte[] encrypt(byte[] cleartext, byte[] challenge) {
-		return Native.INSTANCE.encrypt(keyId, cleartext, fixedChallenge);
+	public byte[] encrypt(byte[] cleartext, byte[] salt) {
+		return Native.INSTANCE.encrypt(keyId, cleartext, salt);
 	}
 
 	@Override
-	public byte[] decrypt(byte[] ciphertext, byte[] challenge) {
-		return Native.INSTANCE.decrypt(keyId, ciphertext, fixedChallenge);
+	public byte[] decrypt(byte[] ciphertext, byte[] salt) {
+		return Native.INSTANCE.decrypt(keyId, ciphertext, salt);
 	}
 
 	public boolean isSupported() {
@@ -41,9 +35,9 @@ class WindowsHello implements WindowsKeychainAccessBase.PassphraseCryptor {
 
 		public native boolean isSupported();
 
-		public native byte[] encrypt(byte[] keyId, byte[] cleartext, byte[] challenge);
+		public native byte[] encrypt(byte[] keyId, byte[] cleartext, byte[] salt);
 
-		public native byte[] decrypt(byte[] keyId, byte[] ciphertext, byte[] challenge);
+		public native byte[] decrypt(byte[] keyId, byte[] ciphertext, byte[] salt);
 	}
 
 }

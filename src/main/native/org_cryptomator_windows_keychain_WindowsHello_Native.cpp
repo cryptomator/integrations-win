@@ -27,6 +27,7 @@ static std::atomic<int> g_promptFocusCount{ 0 };
 static std::mutex cacheMutex;
 static std::unordered_map<std::wstring, std::vector<uint8_t>> keyCache;
 static auto HKDF_INFO = L"org.cryptomator.windows.keychain.windowsHello";
+static auto HELLO_CHALLENGE = L"CryptobotAndRalph3000";
 
 // Helper methods to handle KeyCredential
 void ProtectMemory(std::vector<uint8_t>& data) {
@@ -154,7 +155,7 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
 
 
 // Sign the challenge with the user's Windows Hello credentials
-IBuffer getSignature(const std::wstring& keyId, const IBuffer& challengeBuffer) {
+IBuffer getSignature(const std::wstring& keyId) {
     auto result = KeyCredentialManager::RequestCreateAsync(keyId, KeyCredentialCreationOption::FailIfExists).get();
 
     if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
@@ -163,6 +164,7 @@ IBuffer getSignature(const std::wstring& keyId, const IBuffer& challengeBuffer) 
         throw std::runtime_error("Failed to retrieve Windows Hello credential."); //TODO: error code
     }
 
+    auto challengeBuffer = CryptographicBuffer::ConvertStringToBinary(HELLO_CHALLENGE, BinaryStringEncoding::Utf16LE);
     const auto signature = result.Credential().RequestSignAsync(challengeBuffer).get();
 
     if (signature.Status() != KeyCredentialStatus::Success) {
@@ -177,26 +179,24 @@ IBuffer getSignature(const std::wstring& keyId, const IBuffer& challengeBuffer) 
 }
 
 
-IBuffer getOrCreateKey(const std::wstring& keyId, const std::vector<uint8_t>& challenge) {
-
-    auto challengeBuffer = CryptographicBuffer::CreateFromByteArray(
-        array_view<const uint8_t>(challenge.data(), challenge.size()));
-
-    std::vector<uint8_t> signatureData;
+IBuffer getOrCreateKey(const std::wstring& keyId, IBuffer salt) {
+    IBuffer signature;
     bool foundInCache = false;
     {
         // Lock for thread safety
         std::lock_guard<std::mutex> lock(cacheMutex);
         auto it = keyCache.find(keyId);
         if (it != keyCache.end()) {
-            signatureData = it->second;
-            UnprotectMemory(signatureData);
+            auto signatureData = it->second;
+            UnprotectMemory(signatureData); //TODO: is this inplace? And do we have to protect it again?
+            signature = CryptographicBuffer::CreateFromByteArray(signatureData);
+            std::fill(signatureData.begin(), signatureData.end(), 0);
             foundInCache = true;
         }
     }
     if (!foundInCache) {
-        signatureData = iBufferToVector(getSignature(keyId, challengeBuffer));
-        auto protectedCopy = signatureData;
+        auto signature = getSignature(keyId);
+        auto protectedCopy = iBufferToVector(signature);
         // cache
         try {
             ProtectMemory(protectedCopy);
@@ -208,12 +208,9 @@ IBuffer getOrCreateKey(const std::wstring& keyId, const std::vector<uint8_t>& ch
         }
     }
 
-    auto signatureBuffer = CryptographicBuffer::CreateFromByteArray(
-        array_view<const uint8_t>(signatureData.data(), signatureData.size()));
-
     // Derive the encryption/decryption key using HKDF
     IBuffer info = CryptographicBuffer::ConvertStringToBinary(HKDF_INFO, BinaryStringEncoding::Utf8);
-    return DeriveKeyUsingHKDF(signatureBuffer, challengeBuffer, 32, info); // needs to be 32 bytes for SHA256
+    return DeriveKeyUsingHKDF(signature, salt, 32, info); // needs to be 32 bytes for SHA256
 }
 
 
@@ -245,21 +242,20 @@ jboolean JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_
 
 // Encrypts data using Windows Hello KeyCredentialManager API
 jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_encrypt
-(JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray cleartext, jbyteArray challenge) {
+(JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray cleartext, jbyteArray salt) {
     queueSecurityPromptFocus();
     try {
         // Convert Java byte arrays to C++ vectors
         std::vector<uint8_t> cleartextVec = jbyteArrayToVector(env, cleartext);
-        std::vector<uint8_t> challengeVec = jbyteArrayToVector(env, challenge);
+        auto saltBuffer =  CryptographicBuffer::CreateFromByteArray(jbyteArrayToVector(env, salt));
 
         winrt::init_apartment(winrt::apartment_type::single_threaded);
 
         auto toReleaseKeyId = (LPCWSTR)env->GetByteArrayElements(keyId, NULL);
         const std::wstring keyIdentifier(toReleaseKeyId);
 
-        // Take the random challenge and sign it by Windows Hello
-        // to create the key.
-        IBuffer keyMaterial = getOrCreateKey(keyIdentifier, challengeVec);
+        // Use Windows Hello to create the key material
+        IBuffer keyMaterial = getOrCreateKey(keyIdentifier, saltBuffer);
 
         //encrypt
         auto iv = CryptographicBuffer::GenerateRandom(16); // 128-bit IV for AES-CBC
@@ -290,7 +286,6 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         std::copy(hmacVec.begin(), hmacVec.end(), output.begin() + dataToAuthenticate.size());
 
         std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
-        std::fill(challengeVec.begin(), challengeVec.end(), 0);
         std::fill(ivVec.begin(), ivVec.end(), 0);
         std::fill(encryptedVec.begin(), encryptedVec.end(), 0);
         std::fill(dataToAuthenticate.begin(), dataToAuthenticate.end(), 0);
@@ -318,12 +313,12 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
 
 // Decrypts data using Windows Hello KeyCredentialManager API
 jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_decrypt
-(JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray ciphertext, jbyteArray challenge) {
+(JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray ciphertext, jbyteArray salt) {
     queueSecurityPromptFocus();
     try {
         // Convert Java byte arrays to C++ vectors
         std::vector<uint8_t> ciphertextVec = jbyteArrayToVector(env, ciphertext);
-        std::vector<uint8_t> challengeVec = jbyteArrayToVector(env, challenge);
+        auto saltBuffer =  CryptographicBuffer::CreateFromByteArray(jbyteArrayToVector(env, salt));
 
         winrt::init_apartment(winrt::apartment_type::single_threaded);
 
@@ -339,7 +334,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         // to create the key.
         auto toReleaseKeyId = (LPCWSTR)env->GetByteArrayElements(keyId, NULL);
         const std::wstring keyIdentifier(toReleaseKeyId);
-        IBuffer keyMaterial = getOrCreateKey(keyIdentifier, challengeVec);
+        IBuffer keyMaterial = getOrCreateKey(keyIdentifier, saltBuffer);
 
         // Split the input data
         std::vector<uint8_t> ivVec(ciphertextVec.begin(), ciphertextVec.begin() + ivSize);
@@ -373,7 +368,6 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         auto decryptedBuffer = CryptographicEngine::Decrypt(aesKey, encryptedBuffer, ivBuffer);
 
         std::fill(ciphertextVec.begin(), ciphertextVec.end(), 0);
-        std::fill(challengeVec.begin(), challengeVec.end(), 0);
         std::fill(ivVec.begin(), ivVec.end(), 0);
         std::fill(encryptedVec.begin(), encryptedVec.end(), 0);
         std::fill(hmacVec.begin(), hmacVec.end(), 0);
