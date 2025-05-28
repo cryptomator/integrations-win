@@ -146,7 +146,10 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
     }
 
     result.resize(keySizeInBytes);
-    return CryptographicBuffer::CreateFromByteArray(result);
+    auto buffer = CryptographicBuffer::CreateFromByteArray(result);
+    std::fill(previousBlock.begin(), previousBlock.end(), 0);
+    std::fill(result.begin(), result.end(), 0);
+    return buffer;
 }
 
 
