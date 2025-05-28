@@ -133,7 +133,7 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
     std::vector<uint8_t> previousBlock = std::vector<uint8_t>(0);
 
     for (uint8_t i = 0; i < N; i++) {
-        std::vector<uint8_t> input(previousBlock);
+        auto input = previousBlock;
         if (info.Length() > 0) {
             input.insert(input.end(), info.data(), info.data() + info.Length());
         }
@@ -195,7 +195,7 @@ IBuffer getOrCreateKey(const std::wstring& keyId, IBuffer salt) {
         }
     }
     if (!foundInCache) {
-        auto signature = getSignature(keyId);
+        signature = getSignature(keyId);
         auto protectedCopy = iBufferToVector(signature);
         // cache
         try {
