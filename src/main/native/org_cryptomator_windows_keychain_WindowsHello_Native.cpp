@@ -167,7 +167,7 @@ IBuffer getSignature(const std::wstring& keyId) {
         if (signature.Status() != KeyCredentialStatus::UserCanceled) {
             throw std::runtime_error("Failed to sign challenge with WindowsHello. Error code: " + std::to_string(GetLastError()) );
         } else {
-            throw std::runtime_error("User canceled operation"); //TODO: can we catch/prevent this?
+            throw std::logic_error("User canceled operation");
         }
     }
 
@@ -199,8 +199,9 @@ IBuffer getOrCreateKey(const std::wstring& keyId, IBuffer salt) {
             std::lock_guard<std::mutex> lock(cacheMutex);
             keyCache[keyId] = protectedCopy;
             std::fill(protectedCopy.begin(), protectedCopy.end(), 0);
-        } catch(...) {
+        } catch(const std::exception& e) {
             std::fill(protectedCopy.begin(), protectedCopy.end(), 0);
+            throw e;
         }
     }
 
@@ -290,6 +291,10 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         std::cerr << "Error: " << winrt::to_string(message) << " (HRESULT: 0x" << std::hex << hr << ")" << std::endl;
         return NULL;
     }
+    catch(const std::logic_error& le) {
+        std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
+        return NULL; //user cancelled
+    }
     catch (const std::exception& e) {
         std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
         std::cerr << "Warning: " << e.what() << std::endl;
@@ -359,18 +364,19 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
 
 
         jbyteArray decryptedArray = env->NewByteArray(decryptedBuffer.Length());
-        if (decryptedArray == nullptr) {
-            return nullptr;
+        if (decryptedArray != nullptr) {
+            env->SetByteArrayRegion(decryptedArray, 0, decryptedBuffer.Length(), reinterpret_cast<const jbyte*>(decryptedBuffer.data()));
         }
-        env->SetByteArrayRegion(decryptedArray, 0, decryptedBuffer.Length(), reinterpret_cast<const jbyte*>(decryptedBuffer.data()));
         return decryptedArray;
-
     }
     catch (winrt::hresult_error const& hre) {
         HRESULT hr = hre.code();
         winrt::hstring message = hre.message();
         std::cerr << "Error: " << winrt::to_string(message) << " (HRESULT: 0x" << std::hex << hr << ")" << std::endl;
         return NULL;
+    }
+    catch(const std::logic_error& le) {
+        return NULL; //user cancelled
     }
     catch (const std::exception& e) {
         std::cerr << "Warning: " << e.what() << std::endl;
