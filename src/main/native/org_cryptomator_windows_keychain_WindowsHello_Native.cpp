@@ -138,13 +138,11 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
         }
         input.push_back(i + 1);
 
-        auto inputBuffer = CryptographicBuffer::CreateFromByteArray(input);
-        auto blockBuffer = CryptographicEngine::Sign(expandKey, inputBuffer);
+        auto t_i = CryptographicEngine::Sign(expandKey, CryptographicBuffer::CreateFromByteArray(input));
 
-        std::vector<uint8_t> block;
-        block.insert(block.end(), blockBuffer.data(), blockBuffer.data() + blockBuffer.Length());
-        previousBlock = block;
-        result.insert(result.end(), block.begin(), block.end());
+        previousBlock.clear();
+        previousBlock.insert(previousBlock.end(), t_i.data(), t_i.data() + t_i.Length());
+        result.insert(result.end(), previousBlock.begin(), previousBlock.end());
     }
 
     result.resize(keySizeInBytes);
