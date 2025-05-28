@@ -244,10 +244,10 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
 
         winrt::init_apartment(winrt::apartment_type::single_threaded);
 
+        // Use Windows Hello to create the key material
         auto toReleaseKeyId = (LPCWSTR)env->GetByteArrayElements(keyId, NULL);
         const std::wstring keyIdentifier(toReleaseKeyId);
-
-        // Use Windows Hello to create the key material
+        env->ReleaseByteArrayElements(keyId, (jbyte*) toReleaseKeyId, JNI_ABORT);
         IBuffer keyMaterial = getOrCreateKey(keyIdentifier, saltBuffer);
 
         //encrypt
@@ -283,7 +283,6 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         std::fill(encryptedVec.begin(), encryptedVec.end(), 0);
         std::fill(dataToAuthenticate.begin(), dataToAuthenticate.end(), 0);
         std::fill(hmacVec.begin(), hmacVec.end(), 0);
-        env->ReleaseByteArrayElements(keyId, (jbyte*) toReleaseKeyId, JNI_ABORT);
 
         return vectorToJbyteArray(env, output);
 
@@ -323,10 +322,10 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
             throw std::invalid_argument("Ciphertext must be at least 48 bytes long");
         }
 
-        // Take the random challenge and sign it by Windows Hello
-        // to create the key.
+        // Create the keyMaterial with Windows Hello
         auto toReleaseKeyId = (LPCWSTR)env->GetByteArrayElements(keyId, NULL);
         const std::wstring keyIdentifier(toReleaseKeyId);
+        env->ReleaseByteArrayElements(keyId, (jbyte*)toReleaseKeyId, JNI_ABORT);
         IBuffer keyMaterial = getOrCreateKey(keyIdentifier, saltBuffer);
 
         // Split the input data
@@ -364,7 +363,6 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         std::fill(hmacVec.begin(), hmacVec.end(), 0);
         std::fill(dataToAuthenticate.begin(), dataToAuthenticate.end(), 0);
         std::fill(computedHmacVec.begin(), computedHmacVec.end(), 0);
-        env->ReleaseByteArrayElements(keyId, (jbyte*)toReleaseKeyId, JNI_ABORT);
 
 
         jbyteArray decryptedArray = env->NewByteArray(decryptedBuffer.Length());
