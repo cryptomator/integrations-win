@@ -26,8 +26,8 @@ using namespace Windows::Storage::Streams;
 static std::atomic<int> g_promptFocusCount{ 0 };
 static std::mutex cacheMutex;
 static std::unordered_map<std::wstring, std::vector<uint8_t>> keyCache;
-static auto HKDF_INFO = L"org.cryptomator.windows.keychain.windowsHello";
-static auto HELLO_CHALLENGE = L"CryptobotAndRalph3000";
+static constexpr auto HKDF_INFO = L"org.cryptomator.windows.keychain.windowsHello";
+static constexpr auto HELLO_CHALLENGE = L"CryptobotAndRalph3000";
 
 // Helper methods to handle KeyCredential
 void ProtectMemory(std::vector<uint8_t>& data) {
@@ -72,13 +72,6 @@ jbyteArray vectorToJbyteArray(JNIEnv* env, const std::vector<uint8_t>& vec) {
 }
 
 
-IBuffer vectorToIBuffer(const std::vector<uint8_t>& vec) {
-    DataWriter writer;
-    writer.WriteBytes(array_view<const uint8_t>(vec));
-    return writer.DetachBuffer();
-}
-
-
 std::vector<uint8_t> iBufferToVector(const IBuffer& buffer) {
     auto reader = DataReader::FromBuffer(buffer);
     if (!buffer || reader.UnconsumedBufferLength() == 0) {
@@ -111,7 +104,8 @@ void queueSecurityPromptFocus(int delay = 500) {
 }
 
 
-IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32_t keySizeInBytes, const IBuffer& info) {
+IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32_t keySizeInBytes) {
+    auto info = CryptographicBuffer::ConvertStringToBinary(HKDF_INFO, BinaryStringEncoding::Utf8);
     auto macProvider = MacAlgorithmProvider::OpenAlgorithm(L"HMAC_SHA256"); //MacLength is 32 bytes for SHA256
 
     // HKDF-extract
@@ -154,7 +148,7 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
 }
 
 
-// Sign the challenge with the user's Windows Hello credentials
+// Sign the fixed challenge with the user's Windows Hello credentials
 IBuffer getSignature(const std::wstring& keyId) {
     auto result = KeyCredentialManager::RequestCreateAsync(keyId, KeyCredentialCreationOption::FailIfExists).get();
 
@@ -188,7 +182,7 @@ IBuffer getOrCreateKey(const std::wstring& keyId, IBuffer salt) {
         auto it = keyCache.find(keyId);
         if (it != keyCache.end()) {
             auto signatureData = it->second;
-            UnprotectMemory(signatureData); //TODO: is this inplace? And do we have to protect it again?
+            UnprotectMemory(signatureData);
             signature = CryptographicBuffer::CreateFromByteArray(signatureData);
             std::fill(signatureData.begin(), signatureData.end(), 0);
             foundInCache = true;
@@ -204,13 +198,12 @@ IBuffer getOrCreateKey(const std::wstring& keyId, IBuffer salt) {
             keyCache[keyId] = protectedCopy;
             std::fill(protectedCopy.begin(), protectedCopy.end(), 0);
         } catch(...) {
-            std::fill(protectedCopy.begin(), protectedCopy.end(), 0); //TODO: RAII
+            std::fill(protectedCopy.begin(), protectedCopy.end(), 0);
         }
     }
 
     // Derive the encryption/decryption key using HKDF
-    IBuffer info = CryptographicBuffer::ConvertStringToBinary(HKDF_INFO, BinaryStringEncoding::Utf8);
-    return DeriveKeyUsingHKDF(signature, salt, 32, info); // needs to be 32 bytes for SHA256
+    return DeriveKeyUsingHKDF(signature, salt, 32); // needs to be 32 bytes for SHA256
 }
 
 
