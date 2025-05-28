@@ -262,8 +262,8 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         auto hmacKey = macProvider.CreateKey(keyMaterial);
 
         // Concatenate IV and ciphertext into a single buffer
-        std::vector<uint8_t> iv = iBufferToVector(ivBuffer);
-        std::vector<uint8_t> encrypted = iBufferToVector(encryptedBuffer);
+        auto iv = iBufferToVector(ivBuffer);
+        auto encrypted = iBufferToVector(encryptedBuffer);
         std::vector<uint8_t> dataToAuthenticate(iv.size() + encrypted.size());
         std::copy(iv.begin(), iv.end(), dataToAuthenticate.begin());
         std::copy(encrypted.begin(), encrypted.end(), dataToAuthenticate.begin() + iv.size());
@@ -273,7 +273,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         auto hmacBuffer = CryptographicEngine::Sign(hmacKey, dataToAuthenticateBuffer);
 
         // Combine IV, ciphertext, and HMAC into the final buffer
-        std::vector<uint8_t> hmac = iBufferToVector(hmacBuffer);
+        auto hmac = iBufferToVector(hmacBuffer);
         std::vector<uint8_t> output(dataToAuthenticate.size() + hmac.size());
         std::copy(dataToAuthenticate.begin(), dataToAuthenticate.end(), output.begin());
         std::copy(hmac.begin(), hmac.end(), output.begin() + dataToAuthenticate.size());
