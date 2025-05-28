@@ -244,7 +244,7 @@ jboolean JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_
 
 
 // Encrypts data using Windows Hello KeyCredentialManager API
-jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_encrypt_
+jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_encrypt
 (JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray cleartext, jbyteArray challenge) {
     queueSecurityPromptFocus();
     try {
