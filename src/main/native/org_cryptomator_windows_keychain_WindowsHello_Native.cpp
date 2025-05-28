@@ -237,9 +237,9 @@ jboolean JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_
 jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_encrypt
 (JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray cleartext, jbyteArray salt) {
     queueSecurityPromptFocus();
+    std::vector<uint8_t> cleartextVec = jbyteArrayToVector(env, cleartext);
     try {
         // Convert Java byte arrays to C++ vectors
-        std::vector<uint8_t> cleartextVec = jbyteArrayToVector(env, cleartext);
         auto saltBuffer =  CryptographicBuffer::CreateFromByteArray(jbyteArrayToVector(env, salt));
 
         winrt::init_apartment(winrt::apartment_type::single_threaded);
@@ -282,16 +282,19 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         return vectorToJbyteArray(env, output);
     }
     catch (winrt::hresult_error const& hre) {
+        std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
         HRESULT hr = hre.code();
         winrt::hstring message = hre.message();
         std::cerr << "Error: " << winrt::to_string(message) << " (HRESULT: 0x" << std::hex << hr << ")" << std::endl;
         return NULL;
     }
     catch (const std::exception& e) {
+        std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
         std::cerr << "Warning: " << e.what() << std::endl;
         return NULL;
     }
     catch (...) {
+        std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
         std::cerr << "Caught an unknown exception" << std::endl;
         return NULL;
     }
