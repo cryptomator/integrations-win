@@ -368,7 +368,13 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         std::fill(computedHmacVec.begin(), computedHmacVec.end(), 0);
         env->ReleaseByteArrayElements(keyId, (jbyte*)toReleaseKeyId, JNI_ABORT);
 
-        return vectorToJbyteArray(env, iBufferToVector(decryptedBuffer));
+
+        jbyteArray decryptedArray = env->NewByteArray(decryptedBuffer.Length());
+        if (decryptedArray == nullptr) {
+            return nullptr;
+        }
+        env->SetByteArrayRegion(decryptedArray, 0, decryptedBuffer.Length(), reinterpret_cast<const jbyte*>(decryptedBuffer.data()));
+        return decryptedArray;
 
     }
     catch (winrt::hresult_error const& hre) {
