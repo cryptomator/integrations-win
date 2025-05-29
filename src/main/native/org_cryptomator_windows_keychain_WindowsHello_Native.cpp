@@ -106,7 +106,7 @@ void queueSecurityPromptFocus(int delay = 500) {
 }
 
 
-IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32_t keySizeInBytes) {
+IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt) {
     auto info = CryptographicBuffer::ConvertStringToBinary(HKDF_INFO, BinaryStringEncoding::Utf8);
     auto macProvider = MacAlgorithmProvider::OpenAlgorithm(L"HMAC_SHA256"); //MacLength is 32 bytes for SHA256
 
@@ -119,11 +119,8 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
     if (expandKey.KeySize() < macProvider.MacLength()) {
         throw std::runtime_error("Key provided by HMAC_SHA256 implementation is shorter than the HMAC length.");
     }
-    auto maxKeySize = 255 * macProvider.MacLength();
-    if (keySizeInBytes > maxKeySize) {
-        throw std::runtime_error("HKDF requires keySizeInBytes to be at most " + std::to_string(maxKeySize) + " bytes.");
-    }
 
+    auto keySizeInBytes = 32; //HKDF requires the keysize to be smaller than 255*macLength, but this is trivially fulfilled here
     int N = std::ceil(keySizeInBytes / macProvider.MacLength());
     std::vector<uint8_t> result;
     std::vector<uint8_t> previousBlock = std::vector<uint8_t>(0);
@@ -206,7 +203,7 @@ IBuffer getOrCreateKey(const std::wstring& keyId, IBuffer salt) {
     }
 
     // Derive the encryption/decryption key using HKDF
-    return DeriveKeyUsingHKDF(signature, salt, 32); // needs to be 32 bytes for SHA256
+    return DeriveKeyUsingHKDF(signature, salt);
 }
 
 
