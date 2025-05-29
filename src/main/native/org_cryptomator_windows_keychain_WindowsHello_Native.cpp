@@ -207,6 +207,18 @@ IBuffer getOrCreateKey(const std::wstring& keyId, IBuffer salt) {
 }
 
 
+/**
+ * Checks if Windows Hello is supported on the current system.
+ * @param env The JNI environment pointer.
+ * @param obj The Java object instance.
+ * @return JNI_TRUE if Windows Hello is supported, JNI_FALSE otherwise.
+ *
+ * This function initializes the Windows Runtime environment and checks if the KeyCredentialManager API is supported.
+ * It returns JNI_TRUE if the API is available, indicating that Windows Hello can be used for secure key management.
+ * If an error occurs during the check, it catches exceptions and returns JNI_FALSE.
+ *
+ * @note This function is designed to be called from Java via JNI and requires the appropriate Java class and method signatures.
+ */
 jboolean JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_isSupported
 (JNIEnv* env, jobject obj) {
     try {
@@ -233,7 +245,26 @@ jboolean JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_
 }
 
 
-// Encrypts data using Windows Hello KeyCredentialManager API
+/**
+ * Encrypts data using Windows Hello KeyCredentialManager API.
+ *
+ * @param env The JNI environment pointer.
+ * @param obj The Java object instance.
+ * @param keyId The identifier for the key credential used for key derivation.
+ * @param cleartext The data to encrypt.
+ * @param salt The salt to use for key derivation.
+ * @return A byte array consisting of IV + encrypted data + HMAC, or NULL if an error occurs.
+ *
+ *
+ * This function uses Windows Hello to securely encrypt data.
+ * It generates a symmetric key based on the provided keyId and salt.
+ * For key generation a fixed challenge is signed with the user's Windows Hello credentials and the resulting signature is used to derive a key using HKDF with HMAC-SHA256.
+ * Then it encrypts the cleartext data using AES-CBC with PKCS7 padding, and computes an HMAC for integrity verification.
+ * The final output is a concatenation of IV, ciphertext, and HMAC.
+ * If the encryption fails or the user cancels the operation, it returns NULL. The function also ensures that sensitive data is securely zeroed out after use to prevent memory leaks.
+ *
+ * @note This function is designed to be called from Java via JNI and requires the appropriate Java class and method signatures.
+ */
 jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_encrypt
 (JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray cleartext, jbyteArray salt) {
     queueSecurityPromptFocus();
@@ -304,7 +335,27 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
     }
 }
 
-// Decrypts data using Windows Hello KeyCredentialManager API
+/**
+ * Decrypts data using Windows Hello KeyCredentialManager API.
+ *
+ * @param env The JNI environment pointer.
+ * @param obj The Java object instance.
+ * @param keyId The identifier for the key credential used for key derivation.
+ * @param cleartext The data to decrypt.
+ * @param salt The salt to use for key derivation.
+ * @return A byte array containing the decrypted data, or NULL if an error occurs.
+ *
+ *
+ * This function decrypts data encrypted with {@link Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_encrypt encrypt}.
+ * It retrieves the symmetric key based on the provided keyId and salt, which was used during encryption.
+ * It verifies the integrity of the encrypted data using HMAC and decrypts the ciphertext using AES-CBC with PKCS7 padding.
+ * The function expects the input data to be in the format of IV + ciphertext + HMAC.
+ *
+ * If the decryption fails or the user cancels the WindowsHello authentication , it returns NULL.
+ * The function also ensures that sensitive data is securely zeroed out after use to prevent memory leaks.
+ *
+ * @note This function is designed to be called from Java via JNI and requires the appropriate Java class and method signatures.
+ */
 jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_decrypt
 (JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray ciphertext, jbyteArray salt) {
     queueSecurityPromptFocus();
