@@ -27,7 +27,7 @@ static std::atomic<int> g_promptFocusCount{ 0 };
 static std::mutex cacheMutex;
 static std::unordered_map<std::wstring, std::vector<uint8_t>> keyCache;
 static constexpr auto HKDF_INFO = L"org.cryptomator.windows.keychain.windowsHello";
-static constexpr auto HELLO_CHALLENGE = L"CryptobotAndRalph3000";
+static constexpr auto HELLO_CHALLENGE = L"Cryptobot_says:Thank_you,_purejava!";
 
 // Helper methods to handle KeyCredential
 void ProtectMemory(std::vector<uint8_t>& data) {
