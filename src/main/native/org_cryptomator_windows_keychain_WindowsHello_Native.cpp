@@ -288,7 +288,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         std::cerr << "Error: " << winrt::to_string(message) << " (HRESULT: 0x" << std::hex << hr << ")" << std::endl;
         return NULL;
     }
-    catch(const std::logic_error& le) {
+    catch(const std::logic_error& le) { //tad' hacky: Logic error must only be thrown,if the user cancels the operation.
         SecureZeroMemory(cleartextVec.data(), cleartextVec.size());
         return NULL; //user cancelled
     }
@@ -372,7 +372,7 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
         std::cerr << "Error: " << winrt::to_string(message) << " (HRESULT: 0x" << std::hex << hr << ")" << std::endl;
         return NULL;
     }
-    catch(const std::logic_error& le) {
+    catch(const std::logic_error& le) { //tad' hacky: Logic error must only be thrown,if the user cancels the operation.
         return NULL; //user cancelled
     }
     catch (const std::exception& e) {
