@@ -12,13 +12,13 @@ class WindowsHello implements WindowsKeychainAccessBase.PassphraseCryptor {
 	}
 
 	@Override
-	public byte[] encrypt(byte[] cleartext, byte[] challenge) {
-		return Native.INSTANCE.setEncryptionKey(keyId, cleartext, challenge);
+	public byte[] encrypt(byte[] cleartext, byte[] salt) {
+		return Native.INSTANCE.encrypt(keyId, cleartext, salt);
 	}
 
 	@Override
-	public byte[] decrypt(byte[] ciphertext, byte[] challenge) {
-		return Native.INSTANCE.getEncryptionKey(keyId, ciphertext, challenge);
+	public byte[] decrypt(byte[] ciphertext, byte[] salt) {
+		return Native.INSTANCE.decrypt(keyId, ciphertext, salt);
 	}
 
 	public boolean isSupported() {
@@ -35,9 +35,9 @@ class WindowsHello implements WindowsKeychainAccessBase.PassphraseCryptor {
 
 		public native boolean isSupported();
 
-		public native byte[] setEncryptionKey(byte[] keyId, byte[] cleartext, byte[] challenge);
+		public native byte[] encrypt(byte[] keyId, byte[] cleartext, byte[] salt);
 
-		public native byte[] getEncryptionKey(byte[] keyId, byte[] ciphertext, byte[] challenge);
+		public native byte[] decrypt(byte[] keyId, byte[] ciphertext, byte[] salt);
 	}
 
 }

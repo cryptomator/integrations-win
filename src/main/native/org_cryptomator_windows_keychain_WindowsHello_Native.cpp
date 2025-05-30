@@ -6,6 +6,9 @@
 #include <winrt/Windows.Security.Cryptography.Core.h>
 #include <winrt/Windows.Storage.Streams.h>
 #include <windows.h>
+#include <wincrypt.h>
+#include <unordered_map>
+#include <mutex>
 #include <thread>
 #include <chrono>
 #include <string>
@@ -21,7 +24,33 @@ using namespace Windows::Security::Cryptography::Core;
 using namespace Windows::Storage::Streams;
 
 static std::atomic<int> g_promptFocusCount{ 0 };
-static auto HKDF_INFO = L"org.cryptomator.windows.keychain.windowsHello";
+static std::mutex cacheMutex;
+static std::unordered_map<std::wstring, std::vector<uint8_t>> keyCache;
+static constexpr auto HKDF_INFO = L"org.cryptomator.windows.keychain.windowsHello";
+static constexpr auto HELLO_CHALLENGE = L"Cryptobot_says:Thank_you,_purejava!";
+
+// Helper methods to handle KeyCredential
+void ProtectMemory(std::vector<uint8_t>& data) {
+    if (data.empty()) {
+        throw std::invalid_argument("Data to protect must not be empty");
+    } else if (data.size() % CRYPTPROTECTMEMORY_BLOCK_SIZE != 0) {
+        throw std::invalid_argument("Data to protect must have a size being a multiple of CRYPTPROTECTMEMORY_BLOCK_SIZE (16 bytes).");
+    } else if (!CryptProtectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
+        //clear the original data to prevent memory leaks
+        SecureZeroMemory(data.data(), data.size());
+        throw std::runtime_error("Failed to protect data. Error code: " + std::to_string(GetLastError()) );
+    }
+}
+
+void UnprotectMemory(std::vector<uint8_t>& data) {
+    if (data.empty()) {
+        throw std::invalid_argument("Data to unprotect must not be empty");
+    } else if (data.size() % CRYPTPROTECTMEMORY_BLOCK_SIZE != 0) {
+        throw std::invalid_argument("Data to unprotect must have a size being a multiple of CRYPTPROTECTMEMORY_BLOCK_SIZE (16 bytes).");
+    } else if (!CryptUnprotectMemory(data.data(), static_cast<DWORD>(data.size()), CRYPTPROTECTMEMORY_SAME_PROCESS)) {
+        throw std::runtime_error("Failed to unprotect data. Error code: " + std::to_string(GetLastError()) );
+    }
+}
 
 // Helper methods for conversion
 std::vector<uint8_t> jbyteArrayToVector(JNIEnv* env, jbyteArray array) {
@@ -42,13 +71,6 @@ jbyteArray vectorToJbyteArray(JNIEnv* env, const std::vector<uint8_t>& vec) {
     }
     env->SetByteArrayRegion(array, 0, vec.size(), reinterpret_cast<const jbyte*>(vec.data()));
     return array;
-}
-
-
-IBuffer vectorToIBuffer(const std::vector<uint8_t>& vec) {
-    DataWriter writer;
-    writer.WriteBytes(array_view<const uint8_t>(vec));
-    return writer.DetachBuffer();
 }
 
 
@@ -84,7 +106,8 @@ void queueSecurityPromptFocus(int delay = 500) {
 }
 
 
-IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32_t keySizeInBytes, const IBuffer& info) {
+IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt) {
+    auto info = CryptographicBuffer::ConvertStringToBinary(HKDF_INFO, BinaryStringEncoding::Utf8);
     auto macProvider = MacAlgorithmProvider::OpenAlgorithm(L"HMAC_SHA256"); //MacLength is 32 bytes for SHA256
 
     // HKDF-extract
@@ -96,75 +119,106 @@ IBuffer DeriveKeyUsingHKDF(const IBuffer& inputData, const IBuffer& salt, uint32
     if (expandKey.KeySize() < macProvider.MacLength()) {
         throw std::runtime_error("Key provided by HMAC_SHA256 implementation is shorter than the HMAC length.");
     }
-    auto maxKeySize = 255 * macProvider.MacLength();
-    if (keySizeInBytes > maxKeySize) {
-        throw std::runtime_error("HKDF requires keySizeInBytes to be at most " + std::to_string(maxKeySize) + " bytes.");
-    }
 
+    auto keySizeInBytes = 32; //HKDF requires the keysize to be smaller than 255*macLength, but this is trivially fulfilled here
     int N = std::ceil(keySizeInBytes / macProvider.MacLength());
     std::vector<uint8_t> result;
     std::vector<uint8_t> previousBlock = std::vector<uint8_t>(0);
 
     for (uint8_t i = 0; i < N; i++) {
-        std::vector<uint8_t> input(previousBlock);
+        auto input = previousBlock;
         if (info.Length() > 0) {
             input.insert(input.end(), info.data(), info.data() + info.Length());
         }
         input.push_back(i + 1);
 
-        auto inputBuffer = CryptographicBuffer::CreateFromByteArray(input);
-        auto blockBuffer = CryptographicEngine::Sign(expandKey, inputBuffer);
+        auto t_i = CryptographicEngine::Sign(expandKey, CryptographicBuffer::CreateFromByteArray(input));
 
-        std::vector<uint8_t> block;
-        block.insert(block.end(), blockBuffer.data(), blockBuffer.data() + blockBuffer.Length());
-        previousBlock = block;
-        result.insert(result.end(), block.begin(), block.end());
+        previousBlock.clear();
+        previousBlock.insert(previousBlock.end(), t_i.data(), t_i.data() + t_i.Length());
+        result.insert(result.end(), previousBlock.begin(), previousBlock.end());
     }
 
     result.resize(keySizeInBytes);
-    return CryptographicBuffer::CreateFromByteArray(result);
+    auto buffer = CryptographicBuffer::CreateFromByteArray(result);
+    SecureZeroMemory(previousBlock.data(), previousBlock.size());
+    SecureZeroMemory(result.data(), result.size());
+    return buffer;
 }
 
 
-bool deriveEncryptionKey(const std::wstring keyId, const std::vector<uint8_t>& challenge, IBuffer& key) {
-    auto challengeBuffer = CryptographicBuffer::CreateFromByteArray(
-        array_view<const uint8_t>(challenge.data(), challenge.size()));
+// Sign the fixed challenge with the user's Windows Hello credentials
+IBuffer getSignature(const std::wstring& keyId) {
+    auto result = KeyCredentialManager::RequestCreateAsync(keyId, KeyCredentialCreationOption::FailIfExists).get();
 
-    try {
-        // The first time this is used a key-pair will be generated using the common name
-        auto result = KeyCredentialManager::RequestCreateAsync(keyId,
-            KeyCredentialCreationOption::FailIfExists).get();
-
-        if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
-            result = KeyCredentialManager::OpenAsync(keyId).get();
-        }
-        else if (result.Status() != KeyCredentialStatus::Success) {
-            std::cerr << "Failed to retrieve Windows Hello credential." << std::endl;
-            return false;
-        }
-
-        const auto signature = result.Credential().RequestSignAsync(challengeBuffer).get();
-        if (signature.Status() != KeyCredentialStatus::Success) {
-            if (signature.Status() != KeyCredentialStatus::UserCanceled) {
-                std::cerr << "Failed to sign challenge using Windows Hello." << std::endl;
-            }
-            return false;
-        }
-
-        // Derive the encryption/decryption key using HKDF
-        const auto response = signature.Result();
-        IBuffer info = CryptographicBuffer::ConvertStringToBinary(HKDF_INFO, BinaryStringEncoding::Utf8);
-        key = DeriveKeyUsingHKDF(response, challengeBuffer, 32, info); // needs to be 32 bytes for SHA256
-        return true;
-
+    if (result.Status() == KeyCredentialStatus::CredentialAlreadyExists) {
+        result = KeyCredentialManager::OpenAsync(keyId).get();
+    } else if (result.Status() != KeyCredentialStatus::Success) {
+        throw std::runtime_error("Failed to retrieve WindowsHello credential. Error code: " + std::to_string(GetLastError()) );
     }
-    catch (winrt::hresult_error const& ex) {
-        std::cerr << winrt::to_string(ex.message()) << std::endl;
-        return false;
+
+    auto challengeBuffer = CryptographicBuffer::ConvertStringToBinary(HELLO_CHALLENGE, BinaryStringEncoding::Utf16LE);
+    const auto signature = result.Credential().RequestSignAsync(challengeBuffer).get();
+
+    if (signature.Status() != KeyCredentialStatus::Success) {
+        if (signature.Status() != KeyCredentialStatus::UserCanceled) {
+            throw std::runtime_error("Failed to sign challenge with WindowsHello. Error code: " + std::to_string(GetLastError()) );
+        } else {
+            throw std::logic_error("User canceled operation");
+        }
     }
+
+    return signature.Result();
 }
 
 
+IBuffer getOrCreateKey(const std::wstring& keyId, IBuffer salt) {
+    IBuffer signature;
+    bool foundInCache = false;
+    {
+        // Lock for thread safety
+        std::lock_guard<std::mutex> lock(cacheMutex);
+        auto it = keyCache.find(keyId);
+        if (it != keyCache.end()) {
+            auto signatureData = it->second;
+            UnprotectMemory(signatureData);
+            signature = CryptographicBuffer::CreateFromByteArray(signatureData);
+            SecureZeroMemory(signatureData.data(), signatureData.size());
+            foundInCache = true;
+        }
+    }
+    if (!foundInCache) {
+        signature = getSignature(keyId);
+        auto copyToProtect = iBufferToVector(signature);
+        // cache
+        try {
+            ProtectMemory(copyToProtect);
+            std::lock_guard<std::mutex> lock(cacheMutex);
+            keyCache[keyId] = copyToProtect;
+            SecureZeroMemory(copyToProtect.data(), copyToProtect.size());
+        } catch(const std::exception& e) {
+            SecureZeroMemory(copyToProtect.data(), copyToProtect.size());
+            throw e;
+        }
+    }
+
+    // Derive the encryption/decryption key using HKDF
+    return DeriveKeyUsingHKDF(signature, salt);
+}
+
+
+/**
+ * Checks if Windows Hello is supported on the current system.
+ * @param env The JNI environment pointer.
+ * @param obj The Java object instance.
+ * @return JNI_TRUE if Windows Hello is supported, JNI_FALSE otherwise.
+ *
+ * This function initializes the Windows Runtime environment and checks if the KeyCredentialManager API is supported.
+ * It returns JNI_TRUE if the API is available, indicating that Windows Hello can be used for secure key management.
+ * If an error occurs during the check, it catches exceptions and returns JNI_FALSE.
+ *
+ * @note This function is designed to be called from Java via JNI and requires the appropriate Java class and method signatures.
+ */
 jboolean JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_isSupported
 (JNIEnv* env, jobject obj) {
     try {
@@ -191,90 +245,124 @@ jboolean JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_
 }
 
 
-// Encrypts data using Windows Hello KeyCredentialManager API
-jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_setEncryptionKey
-(JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray cleartext, jbyteArray challenge) {
+/**
+ * Encrypts data using Windows Hello KeyCredentialManager API.
+ *
+ * @param env The JNI environment pointer.
+ * @param obj The Java object instance.
+ * @param keyId The identifier for the key credential used for key derivation.
+ * @param cleartext The data to encrypt.
+ * @param salt The salt to use for key derivation.
+ * @return A byte array consisting of IV + encrypted data + HMAC, or NULL if an error occurs.
+ *
+ *
+ * This function uses Windows Hello to securely encrypt data.
+ * It generates a symmetric key based on the provided keyId and salt.
+ * For key generation a fixed challenge is signed with the user's Windows Hello credentials and the resulting signature is used to derive a key using HKDF with HMAC-SHA256.
+ * Then it encrypts the cleartext data using AES-CBC with PKCS7 padding, and computes an HMAC for integrity verification.
+ * The final output is a concatenation of IV, ciphertext, and HMAC.
+ * If the encryption fails or the user cancels the operation, it returns NULL. The function also ensures that sensitive data is securely zeroed out after use to prevent memory leaks.
+ *
+ * @note This function is designed to be called from Java via JNI and requires the appropriate Java class and method signatures.
+ */
+jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_encrypt
+(JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray cleartext, jbyteArray salt) {
     queueSecurityPromptFocus();
+    std::vector<uint8_t> cleartextVec = jbyteArrayToVector(env, cleartext);
     try {
         // Convert Java byte arrays to C++ vectors
-        std::vector<uint8_t> cleartextVec = jbyteArrayToVector(env, cleartext);
-        std::vector<uint8_t> challengeVec = jbyteArrayToVector(env, challenge);
+        auto saltBuffer =  CryptographicBuffer::CreateFromByteArray(jbyteArrayToVector(env, salt));
 
         winrt::init_apartment(winrt::apartment_type::single_threaded);
 
+        // Create key material using Windows Hello
         auto toReleaseKeyId = (LPCWSTR)env->GetByteArrayElements(keyId, NULL);
         const std::wstring keyIdentifier(toReleaseKeyId);
+        env->ReleaseByteArrayElements(keyId, (jbyte*) toReleaseKeyId, JNI_ABORT);
+        IBuffer keyMaterial = getOrCreateKey(keyIdentifier, saltBuffer);
 
-        // Take the random challenge and sign it by Windows Hello
-        // to create the key.
-        IBuffer key;
-        if (!deriveEncryptionKey(keyIdentifier, challengeVec, key)) {
-            throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
-        }
-
-        auto iv = CryptographicBuffer::GenerateRandom(16); // 128-bit IV for AES-CBC
-        auto algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
-        auto aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
-        auto aesKey = aesProvider.CreateSymmetricKey(key);
-        auto dataBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(cleartextVec.data(), cleartextVec.size()));
-        auto encryptedBuffer = CryptographicEngine::Encrypt(aesKey, dataBuffer, iv);
+        //encrypt
+        auto ivBuffer = CryptographicBuffer::GenerateRandom(16); // 128-bit IV for AES-CBC
+        auto aesCbcPkcs7Algorithm = SymmetricKeyAlgorithmProvider::OpenAlgorithm(SymmetricAlgorithmNames::AesCbcPkcs7());
+        auto aesKey = aesCbcPkcs7Algorithm.CreateSymmetricKey(keyMaterial);
+        auto dataBuffer = CryptographicBuffer::CreateFromByteArray(cleartextVec);
+        auto encryptedBuffer = CryptographicEngine::Encrypt(aesKey, dataBuffer, ivBuffer);
 
         // Compute HMAC over (IV || ciphertext)
         auto macProvider = MacAlgorithmProvider::OpenAlgorithm(MacAlgorithmNames::HmacSha256());
-        auto hmacKey = macProvider.CreateKey(key);
+        auto hmacKey = macProvider.CreateKey(keyMaterial);
 
         // Concatenate IV and ciphertext into a single buffer
-        std::vector<uint8_t> ivVec = iBufferToVector(iv);
-        std::vector<uint8_t> encryptedVec = iBufferToVector(encryptedBuffer);
-        std::vector<uint8_t> dataToAuthenticate(ivVec.size() + encryptedVec.size());
-        std::copy(ivVec.begin(), ivVec.end(), dataToAuthenticate.begin());
-        std::copy(encryptedVec.begin(), encryptedVec.end(), dataToAuthenticate.begin() + ivVec.size());
+        auto iv = iBufferToVector(ivBuffer);
+        auto encrypted = iBufferToVector(encryptedBuffer);
+        std::vector<uint8_t> dataToAuthenticate(iv.size() + encrypted.size());
+        std::copy(iv.begin(), iv.end(), dataToAuthenticate.begin());
+        std::copy(encrypted.begin(), encrypted.end(), dataToAuthenticate.begin() + iv.size());
 
-        // Create a buffer from the concatenated vector
-        auto dataToAuthenticateBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(dataToAuthenticate.data(), dataToAuthenticate.size()));
-        auto hmac = CryptographicEngine::Sign(hmacKey, dataToAuthenticateBuffer);
+        // Create HMAC for IV+Ciphertext
+        auto dataToAuthenticateBuffer = CryptographicBuffer::CreateFromByteArray(dataToAuthenticate);
+        auto hmacBuffer = CryptographicEngine::Sign(hmacKey, dataToAuthenticateBuffer);
 
         // Combine IV, ciphertext, and HMAC into the final buffer
-        std::vector<uint8_t> hmacVec = iBufferToVector(hmac);
-        std::vector<uint8_t> output(dataToAuthenticate.size() + hmacVec.size());
+        auto hmac = iBufferToVector(hmacBuffer);
+        std::vector<uint8_t> output(dataToAuthenticate.size() + hmac.size());
         std::copy(dataToAuthenticate.begin(), dataToAuthenticate.end(), output.begin());
-        std::copy(hmacVec.begin(), hmacVec.end(), output.begin() + dataToAuthenticate.size());
+        std::copy(hmac.begin(), hmac.end(), output.begin() + dataToAuthenticate.size());
 
-        std::fill(cleartextVec.begin(), cleartextVec.end(), 0);
-        std::fill(challengeVec.begin(), challengeVec.end(), 0);
-        std::fill(ivVec.begin(), ivVec.end(), 0);
-        std::fill(encryptedVec.begin(), encryptedVec.end(), 0);
-        std::fill(dataToAuthenticate.begin(), dataToAuthenticate.end(), 0);
-        std::fill(hmacVec.begin(), hmacVec.end(), 0);
-        env->ReleaseByteArrayElements(keyId, (jbyte*) toReleaseKeyId, JNI_ABORT);
-
+        SecureZeroMemory(cleartextVec.data(), cleartextVec.size());
         return vectorToJbyteArray(env, output);
-
     }
     catch (winrt::hresult_error const& hre) {
+        SecureZeroMemory(cleartextVec.data(), cleartextVec.size());
         HRESULT hr = hre.code();
         winrt::hstring message = hre.message();
         std::cerr << "Error: " << winrt::to_string(message) << " (HRESULT: 0x" << std::hex << hr << ")" << std::endl;
         return NULL;
     }
+    catch(const std::logic_error& le) { //tad' hacky: Logic error must only be thrown,if the user cancels the operation.
+        SecureZeroMemory(cleartextVec.data(), cleartextVec.size());
+        return NULL; //user cancelled
+    }
     catch (const std::exception& e) {
+        SecureZeroMemory(cleartextVec.data(), cleartextVec.size());
         std::cerr << "Warning: " << e.what() << std::endl;
         return NULL;
     }
     catch (...) {
+        SecureZeroMemory(cleartextVec.data(), cleartextVec.size());
         std::cerr << "Caught an unknown exception" << std::endl;
         return NULL;
     }
 }
 
-// Decrypts data using Windows Hello KeyCredentialManager API
-jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_getEncryptionKey
-(JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray ciphertext, jbyteArray challenge) {
+/**
+ * Decrypts data using Windows Hello KeyCredentialManager API.
+ *
+ * @param env The JNI environment pointer.
+ * @param obj The Java object instance.
+ * @param keyId The identifier for the key credential used for key derivation.
+ * @param cleartext The data to decrypt.
+ * @param salt The salt to use for key derivation.
+ * @return A byte array containing the decrypted data, or NULL if an error occurs.
+ *
+ *
+ * This function decrypts data encrypted with {@link Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_encrypt encrypt}.
+ * It retrieves the symmetric key based on the provided keyId and salt, which was used during encryption.
+ * It verifies the integrity of the encrypted data using HMAC and decrypts the ciphertext using AES-CBC with PKCS7 padding.
+ * The function expects the input data to be in the format of IV + ciphertext + HMAC.
+ *
+ * If the decryption fails or the user cancels the WindowsHello authentication , it returns NULL.
+ * The function also ensures that sensitive data is securely zeroed out after use to prevent memory leaks.
+ *
+ * @note This function is designed to be called from Java via JNI and requires the appropriate Java class and method signatures.
+ */
+jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Native_decrypt
+(JNIEnv* env, jobject obj, jbyteArray keyId, jbyteArray ciphertext, jbyteArray salt) {
     queueSecurityPromptFocus();
     try {
         // Convert Java byte arrays to C++ vectors
         std::vector<uint8_t> ciphertextVec = jbyteArrayToVector(env, ciphertext);
-        std::vector<uint8_t> challengeVec = jbyteArrayToVector(env, challenge);
+        auto saltBuffer =  CryptographicBuffer::CreateFromByteArray(jbyteArrayToVector(env, salt));
 
         winrt::init_apartment(winrt::apartment_type::single_threaded);
 
@@ -283,68 +371,60 @@ jbyteArray JNICALL Java_org_cryptomator_windows_keychain_WindowsHello_00024Nativ
 
         // Ensure the input is long enough to contain IV (16 bytes), ciphertext, and HMAC (32 bytes)
         if (ciphertextVec.size() < ivSize + hmacSize) {
-            throw std::runtime_error("Invalid ciphertext");
+            throw std::invalid_argument("Ciphertext must be at least 48 bytes long");
         }
 
-        // Take the random challenge and sign it by Windows Hello
-        // to create the key.
+        // Create the keyMaterial with Windows Hello
         auto toReleaseKeyId = (LPCWSTR)env->GetByteArrayElements(keyId, NULL);
         const std::wstring keyIdentifier(toReleaseKeyId);
-        IBuffer key;
-        if (!deriveEncryptionKey(keyIdentifier, challengeVec, key)) {
-            throw std::runtime_error("Failed to generate the encryption key with the Windows Hello credential.");
-        }
-
-        auto algorithmName = SymmetricAlgorithmNames::AesCbcPkcs7();
-        auto aesProvider = SymmetricKeyAlgorithmProvider::OpenAlgorithm(algorithmName);
-        auto aesKey = aesProvider.CreateSymmetricKey(key);
+        IBuffer keyMaterial = getOrCreateKey(keyIdentifier, saltBuffer);
 
         // Split the input data
-        std::vector<uint8_t> ivVec(ciphertextVec.begin(), ciphertextVec.begin() + ivSize);
-        std::vector<uint8_t> encryptedVec(ciphertextVec.begin() + ivSize, ciphertextVec.end() - hmacSize);
-        std::vector<uint8_t> hmacVec(ciphertextVec.end() - hmacSize, ciphertextVec.end());
+        std::vector<uint8_t> iv(ciphertextVec.begin(), ciphertextVec.begin() + ivSize);
+        std::vector<uint8_t> encrypted(ciphertextVec.begin() + ivSize, ciphertextVec.end() - hmacSize);
+        std::vector<uint8_t> hmac(ciphertextVec.end() - hmacSize, ciphertextVec.end());
 
         // Recreate the data to authenticate (IV || ciphertext)
         std::vector<uint8_t> dataToAuthenticate(ciphertextVec.begin(), ciphertextVec.end() - hmacSize);
 
         // Compute HMAC to verify integrity
         auto macProvider = MacAlgorithmProvider::OpenAlgorithm(MacAlgorithmNames::HmacSha256());
-        auto hmacKey = macProvider.CreateKey(key);
-        auto dataToAuthenticateBuffer = CryptographicBuffer::CreateFromByteArray(
-            array_view<const uint8_t>(dataToAuthenticate.data(), dataToAuthenticate.size())
-        );
-        auto computedHmac = CryptographicEngine::Sign(hmacKey, dataToAuthenticateBuffer);
-        std::vector<uint8_t> computedHmacVec = iBufferToVector(computedHmac);
+        auto hmacKey = macProvider.CreateKey(keyMaterial);
+        auto dataToAuthenticateBuffer = CryptographicBuffer::CreateFromByteArray(dataToAuthenticate);
+        auto computedHmacBuffer = CryptographicEngine::Sign(hmacKey, dataToAuthenticateBuffer);
+        std::vector<uint8_t> computedHmac = iBufferToVector(computedHmacBuffer);
 
         // Compare HMACs
-        if (computedHmacVec != hmacVec) {
+        bool verify_success = computedHmac == hmac;
+        SecureZeroMemory(computedHmac.data(), computedHmac.size());
+        if (!verify_success) {
             throw std::runtime_error("HMAC verification failed.");
         }
 
         // Decrypt ciphertext
-        auto ivBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(ivVec.data(), ivVec.size()));
+        auto aesCbcPkcs7Algorithm = SymmetricKeyAlgorithmProvider::OpenAlgorithm(SymmetricAlgorithmNames::AesCbcPkcs7());
+        auto aesKey = aesCbcPkcs7Algorithm.CreateSymmetricKey(keyMaterial);
+        auto ivBuffer = CryptographicBuffer::CreateFromByteArray(array_view<const uint8_t>(iv.data(), iv.size()));
         auto encryptedBuffer = CryptographicBuffer::CreateFromByteArray(
-            array_view<const uint8_t>(encryptedVec.data(), encryptedVec.size())
+            array_view<const uint8_t>(encrypted.data(), encrypted.size())
         );
         auto decryptedBuffer = CryptographicEngine::Decrypt(aesKey, encryptedBuffer, ivBuffer);
 
-        std::fill(ciphertextVec.begin(), ciphertextVec.end(), 0);
-        std::fill(challengeVec.begin(), challengeVec.end(), 0);
-        std::fill(ivVec.begin(), ivVec.end(), 0);
-        std::fill(encryptedVec.begin(), encryptedVec.end(), 0);
-        std::fill(hmacVec.begin(), hmacVec.end(), 0);
-        std::fill(dataToAuthenticate.begin(), dataToAuthenticate.end(), 0);
-        std::fill(computedHmacVec.begin(), computedHmacVec.end(), 0);
-        env->ReleaseByteArrayElements(keyId, (jbyte*)toReleaseKeyId, JNI_ABORT);
 
-        return vectorToJbyteArray(env, iBufferToVector(decryptedBuffer));
-
+        jbyteArray decryptedArray = env->NewByteArray(decryptedBuffer.Length());
+        if (decryptedArray != nullptr) {
+            env->SetByteArrayRegion(decryptedArray, 0, decryptedBuffer.Length(), reinterpret_cast<const jbyte*>(decryptedBuffer.data()));
+        }
+        return decryptedArray;
     }
     catch (winrt::hresult_error const& hre) {
         HRESULT hr = hre.code();
         winrt::hstring message = hre.message();
         std::cerr << "Error: " << winrt::to_string(message) << " (HRESULT: 0x" << std::hex << hr << ")" << std::endl;
         return NULL;
+    }
+    catch(const std::logic_error& le) { //tad' hacky: Logic error must only be thrown,if the user cancels the operation.
+        return NULL; //user cancelled
     }
     catch (const std::exception& e) {
         std::cerr << "Warning: " << e.what() << std::endl;
