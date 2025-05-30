@@ -1,5 +1,7 @@
 package org.cryptomator.windows.keychain;
 
+import org.cryptomator.integrations.common.DisplayName;
+import org.cryptomator.integrations.common.LocalizedDisplayName;
 import org.cryptomator.integrations.common.OperatingSystem;
 import org.cryptomator.integrations.common.Priority;
 import org.cryptomator.integrations.keychain.KeychainAccessProvider;
@@ -11,6 +13,7 @@ import org.cryptomator.windows.common.Localization;
  */
 @Priority(1000)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
+@LocalizedDisplayName(bundle = "WinIntegrationsBundle", key = "org.cryptomator.windows.keychain.displayName")
 public final class WindowsProtectedKeychainAccess extends WindowsKeychainAccessBase {
 
 	private static final String KEYCHAIN_PATHS_PROPERTY = "cryptomator.integrationsWin.keychainPaths";
@@ -18,11 +21,6 @@ public final class WindowsProtectedKeychainAccess extends WindowsKeychainAccessB
 	//no-arg constructuor required for ServiceLoader
 	public WindowsProtectedKeychainAccess() {
 		super(new FileKeychain(KEYCHAIN_PATHS_PROPERTY),new WinDataProtection());
-	}
-
-	@Override
-	public String displayName() {
-		return Localization.get().getString("org.cryptomator.windows.keychain.displayName");
 	}
 
 }

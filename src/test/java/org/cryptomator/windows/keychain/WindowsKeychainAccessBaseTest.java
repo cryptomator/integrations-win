@@ -1,5 +1,6 @@
 package org.cryptomator.windows.keychain;
 
+import org.cryptomator.integrations.common.DisplayName;
 import org.cryptomator.integrations.keychain.KeychainAccessException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -76,15 +77,12 @@ public class WindowsKeychainAccessBaseTest {
 		Assertions.assertArrayEquals(new char[] {'a', 'b', 'c'}, result);
 	}
 
+	@DisplayName("TestProvider")
 	static class TestProvider extends WindowsKeychainAccessBase {
 
 		public TestProvider(Keychain keychain, PassphraseCryptor passphraseCryptor) {
 			super(keychain, passphraseCryptor);
 		}
 
-		@Override
-		public String displayName() {
-			return "TestProvider";
-		}
 	}
 }

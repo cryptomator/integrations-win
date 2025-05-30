@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 22
+          java-version: 24
           cache: 'maven'
       - name: Enforce project version ${{ github.event.release.tag_name }}
         run: mvn versions:set -B -DnewVersion="${{ github.event.release.tag_name }}"
