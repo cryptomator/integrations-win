@@ -18,19 +18,24 @@ public class NativeLibLoader {
 
 	/**
 	 * Attempts to load the .dll file required for native calls.
+	 *
 	 * @throws UnsatisfiedLinkError If loading the library failed.
 	 */
 	public static synchronized void loadLib() {
 		if (!loaded) {
 			var arch = System.getProperty("os.arch");
-			String LIBNAME = "";
+			final String LIBNAME;
 			if (arch.contains("amd64")) {
 				LOG.debug("Loading library for x86_64 architecture");
 				LIBNAME = X64_LIB;
 			} else if (arch.contains("aarch64")) {
 				LOG.debug("Loading library for aarch64 architecture");
 				LIBNAME = ARM64_LIB;
+			} else {
+				LOG.warn("Unrecognized architecture: {}. Defaulting to x86_64 architecture", arch);
+				LIBNAME = X64_LIB;
 			}
+
 			try (var dll = NativeLibLoader.class.getResourceAsStream(LIBNAME)) {
 				Objects.requireNonNull(dll);
 				Path tmpPath = Files.createTempFile("lib", ".dll");
