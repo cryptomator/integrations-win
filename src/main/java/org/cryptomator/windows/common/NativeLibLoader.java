@@ -14,7 +14,6 @@ public class NativeLibLoader {
 	private static final Logger LOG = LoggerFactory.getLogger(NativeLibLoader.class);
 	private static final String X64_LIB = "/integrations-x64.dll";
 	private static final String ARM64_LIB = "/integrations-arm64.dll";
-	private static String LIBNAME;
 	private static volatile boolean loaded = false;
 
 	/**
@@ -24,6 +23,7 @@ public class NativeLibLoader {
 	public static synchronized void loadLib() {
 		if (!loaded) {
 			var arch = System.getProperty("os.arch");
+			String LIBNAME = "";
 			if (arch.contains("amd64")) {
 				LOG.debug("Loading library for x86_64 architecture");
 				LIBNAME = X64_LIB;
