@@ -121,6 +121,13 @@
 								<include>*.h</include>
 							</includes>
 						</fileset>
+						<fileset>
+							<directory>${project.basedir}/src/main/resources</directory>
+							<followSymlinks>false</followSymlinks>
+							<includes>
+								<include>*.dll</include>
+							</includes>
+						</fileset>
 					</filesets>
 				</configuration>
 			</plugin>
