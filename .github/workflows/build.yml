@@ -28,13 +28,12 @@ jobs:
         run: mvn -B clean test -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
       - name: Codesign DLL on release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: skymatic/code-sign-action@v3
+        uses: infeo/workflows/.github/actions/win-sign-action@2572ec671e55288ba840618e89e3d6cf2df701b2
         with:
-          certificate: ${{ secrets.WIN_CODESIGN_P12_BASE64 }}
-          password: ${{ secrets.WIN_CODESIGN_P12_PW }}
-          certificatesha1: 5FC94CE149E5B511E621F53A060AC67CBD446B3A
-          timestampUrl: 'http://timestamp.digicert.com'
-          folder: ./src/main/resources
+          base-dir: src/main/resources
+          file-extensions: dll
+          username: ${{ secrets.WIN_CODESIGN_USERNAME }}
+          password: ${{ secrets.WIN_CODESIGN_PW }}
       - name: Package and Install
         id: packAndInstall
         run: mvn -B install -DskipNativeCompile
