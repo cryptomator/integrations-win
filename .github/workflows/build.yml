@@ -27,12 +27,14 @@ jobs:
         id: buildAndTest
         run: mvn -B clean test -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
       - name: Codesign DLL on release
-        uses: infeo/workflows/.github/actions/win-sign-action@2572ec671e55288ba840618e89e3d6cf2df701b2
+        uses: skymatic/workflows/.github/actions/win-sign-action@450e322ff2214d0be0b079b63343c894f3ef735f
         with:
           base-dir: src/main/resources
           file-extensions: dll
           username: ${{ secrets.WIN_CODESIGN_USERNAME }}
           password: ${{ secrets.WIN_CODESIGN_PW }}
+          sign-description: 'Cryptomator'
+          sign-url: 'https://cryptomator.org'
       - name: Package and Install
         id: packAndInstall
         run: mvn -B install -DskipNativeCompile
