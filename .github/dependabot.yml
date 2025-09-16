@@ -16,7 +16,8 @@ updates:
         patterns:
           - "org.apache.maven.plugins:*"
           - "org.owasp:dependency-check-maven"
-          - "org.sonatype.plugins:nexus-staging-maven-plugin"
+          - "org.sonatype.central:central-publishing-maven-plugin"
+          - "me.fabriciorby:maven-surefire-junit5-tree-reporter"
           - "org.codehaus.mojo:exec-maven-plugin"
           - "io.github.coffeelibs:jextract-maven-plugin"
       java-production-dependencies:
@@ -27,7 +28,8 @@ updates:
           - "org.mockito:*"
           - "org.apache.maven.plugins:*"
           - "org.owasp:dependency-check-maven"
-          - "org.sonatype.plugins:nexus-staging-maven-plugin"
+          - "org.sonatype.central:central-publishing-maven-plugin"
+          - "me.fabriciorby:maven-surefire-junit5-tree-reporter"
           - "org.codehaus.mojo:exec-maven-plugin"
           - "io.github.coffeelibs:jextract-maven-plugin"
   - package-ecosystem: "github-actions"
