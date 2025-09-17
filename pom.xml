@@ -237,7 +237,7 @@
 					<statelessTestsetInfoReporter
 							implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5StatelessTestsetInfoTreeReporter">
 					</statelessTestsetInfoReporter>
-					<argLine>-javaagent:"${net.bytebuddy:byte-buddy-agent:jar}"</argLine>
+					<argLine>-javaagent:"${org.mockito:mockito-core:jar}"</argLine>
 				</configuration>
 			</plugin>
 			<plugin>
