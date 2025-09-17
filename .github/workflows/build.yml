@@ -13,8 +13,8 @@ jobs:
     name: Build and Test
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: 24
@@ -28,13 +28,14 @@ jobs:
         run: mvn -B clean test -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
       - name: Codesign DLL on release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: skymatic/code-sign-action@v3
+        uses: skymatic/workflows/.github/actions/win-sign-action@450e322ff2214d0be0b079b63343c894f3ef735f
         with:
-          certificate: ${{ secrets.WIN_CODESIGN_P12_BASE64 }}
-          password: ${{ secrets.WIN_CODESIGN_P12_PW }}
-          certificatesha1: 5FC94CE149E5B511E621F53A060AC67CBD446B3A
-          timestampUrl: 'http://timestamp.digicert.com'
-          folder: ./src/main/resources
+          base-dir: src/main/resources
+          file-extensions: dll
+          username: ${{ secrets.WIN_CODESIGN_USERNAME }}
+          password: ${{ secrets.WIN_CODESIGN_PW }}
+          sign-description: 'Cryptomator'
+          sign-url: 'https://cryptomator.org'
       - name: Package and Install
         id: packAndInstall
         run: mvn -B install -DskipNativeCompile
@@ -49,3 +50,5 @@ jobs:
           prerelease: true
           token: ${{ secrets.CRYPTOBOT_RELEASE_TOKEN }}
           generate_release_notes: true
+          body: |
+            For a list of all notable changes, read the [changelog](/CHANGELOG.md).
