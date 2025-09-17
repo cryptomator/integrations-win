@@ -9,4 +9,7 @@ Changes to prior versions can be found on the [Github release page](https://gith
 
 ## [Unreleased]
 
-No changes yet.
+* Update `com.fasterxml.jackson.core:jackson-databind` from 2.19.0 to 2.20.0
+* Update `com.fasterxml.jackson.core:jackson-annotations` from 2.19.0 to 2.20
+* Update `org.cryptomator:integrations-api` from 1.6.0 to 1.7.0
+
