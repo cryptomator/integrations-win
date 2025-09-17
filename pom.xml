@@ -42,8 +42,8 @@
 		<jackson.version>2.19.0</jackson.version>
 
 		<!-- test dependencies -->
-		<junit.jupiter.version>5.12.2</junit.jupiter.version>
-		<mockito.version>5.17.0</mockito.version>
+		<junit.jupiter.version>5.13.4</junit.jupiter.version>
+		<mockito.version>5.19.0</mockito.version>
 
 		<!-- build plugin dependencies -->
 		<mvn-clean.version>3.4.1</mvn-clean.version>
