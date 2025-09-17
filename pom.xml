@@ -37,9 +37,10 @@
 		<project.jdk.version>24</project.jdk.version>
 
 		<!-- runtime dependencies -->
-		<api.version>1.6.0</api.version>
+		<api.version>1.7.0</api.version>
 		<slf4j.version>2.0.17</slf4j.version>
-		<jackson.version>2.19.0</jackson.version>
+		<jackson.version>2.20.0</jackson.version>
+		<jackson-annotations.version>2.20</jackson-annotations.version>
 
 		<!-- test dependencies -->
 		<junit.jupiter.version>5.13.4</junit.jupiter.version>
@@ -95,7 +96,7 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>
-			<version>${jackson.version}</version>
+			<version>${jackson-annotations.version}</version>
 		</dependency>
 
 		<!-- JUnit / Mockito / Hamcrest -->
