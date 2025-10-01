@@ -43,8 +43,8 @@
 		<jackson-annotations.version>2.20</jackson-annotations.version>
 
 		<!-- test dependencies -->
-		<junit.jupiter.version>5.13.4</junit.jupiter.version>
-		<mockito.version>5.19.0</mockito.version>
+		<junit.jupiter.version>6.0.0</junit.jupiter.version>
+		<mockito.version>5.20.0</mockito.version>
 
 		<!-- build plugin dependencies -->
 		<mvn-clean.version>3.5.0</mvn-clean.version>
