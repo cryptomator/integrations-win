@@ -39,7 +39,7 @@ jobs:
       - name: Package and Install
         id: packAndInstall
         run: mvn -B install -DskipNativeCompile
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: artifacts
           path: target/*.jar
