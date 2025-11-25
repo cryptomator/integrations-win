@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -117,6 +117,7 @@
     <ClInclude Include="src\main\headers\org_cryptomator_windows_autostart_WinShellLinks_Native.h" />
     <ClInclude Include="src\main\headers\org_cryptomator_windows_keychain_WinDataProtection_Native.h" />
     <ClInclude Include="src\main\headers\org_cryptomator_windows_keychain_WindowsHello_Native.h" />
+    <ClInclude Include="src\main\headers\org_cryptomator_windows_notify_WinToasts_Native.h" />
     <ClInclude Include="src\main\headers\org_cryptomator_windows_uiappearance_WinAppearance_Native.h" />
     <ClInclude Include="src\main\resources\ktmw32_helper.h" />
   </ItemGroup>
@@ -125,6 +126,10 @@
     <ClCompile Include="src\main\native\org_cryptomator_windows_keychain_WinDataProtection_Native.cpp" />
     <ClCompile Include="src\main\native\org_cryptomator_windows_keychain_WindowsHello_Native.cpp" />
     <ClCompile Include="src\main\native\org_cryptomator_windows_uiappearance_WinAppearance_Native.cpp" />
+    <ClCompile Include="src\main\native\org_cryptomator_windows_notify_WinToasts_Native.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
