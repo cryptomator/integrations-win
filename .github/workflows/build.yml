@@ -13,7 +13,7 @@ jobs:
     name: Build and Test
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
@@ -28,7 +28,7 @@ jobs:
         run: mvn -B clean test -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
       - name: Codesign DLL on release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: skymatic/workflows/.github/actions/win-sign-action@450e322ff2214d0be0b079b63343c894f3ef735f
+        uses: skymatic/workflows/.github/actions/win-sign-action@2d0c27a7b04c605afe1ca85e37c0e86517defcc9
         with:
           base-dir: src/main/resources
           file-extensions: dll
@@ -39,7 +39,7 @@ jobs:
       - name: Package and Install
         id: packAndInstall
         run: mvn -B install -DskipNativeCompile
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: artifacts
           path: target/*.jar
