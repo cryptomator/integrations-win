@@ -15,14 +15,13 @@ This project uses the following JVM properties:
 ### Requirements
 
 * JDK 22
-* Maven
 * MSVC 2022 toolset (e.g. by installing Visual Studio 2022, Workset "Desktop development with C++" and component "MSVC v143 VS 2022 C++ ARM64/ARM64EC-Buildtools")
 * Make (`choco install make`)
 
 ### Build
 Open a terminal and run
 ```
-mvn clean verify
+./mvnw clean verify
 ```
 
 If building the dll fails with "cl.exe cannot be found", you have to specify the developer command file directory as a property, e.g. `-DdevCommandFileDir=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\"`.
