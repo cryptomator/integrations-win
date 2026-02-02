@@ -10,7 +10,7 @@ env:
 jobs:
   build:
     name: Build and Test
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     permissions:
       contents: read
       id-token: write # OIDC token for the attestations step
@@ -30,7 +30,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: ./mvnw versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
       - name: Build and Test
-        run: ./mvnw -B verify --no-transfer-progress
+        run: ./mvnw -B verify --no-transfer-progress -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
       - name: Calculate Checksums
         id: checksums
         run: |
@@ -53,7 +53,7 @@ jobs:
 
   deploy-central:
     name: Deploy to Maven Central
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     permissions:
       id-token: write # OIDC token for sigstore signing
       contents: read # Required for sigstore signing
@@ -77,18 +77,15 @@ jobs:
         run: |
           PROJECT_VERSION=$(./mvnw help:evaluate "-Dexpression=project.version" -q -DforceStdout)
           test "${PROJECT_VERSION: -9}" = "-SNAPSHOT"
-      - name: Build and Test
-        id: buildAndTest
-        run: ./mvnw -B clean compile -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
-      - name: Download JAR with signed dll
+      - name: Download JAR with signed DLLs
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: artifacts
-      - name: Extract DLLs from jar
+      - name: Extract DLLs from JAR
         run: |
           jar --extract --file=./artifacts -c ./src/main/resources 'integrations-x64.dll' 'integrations-arm64.dll'
       - name: Deploy to Maven Central
-        run: ./mvnw deploy -B -DskipTests -DskipNativeCompile -Psign,deploy-central --no-transfer-progress
+        run: ./mvnw deploy -B -DskipTests -DskipNativeCompile -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}" -Psign,deploy-central --no-transfer-progress 
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
@@ -98,7 +95,7 @@ jobs:
 
   deploy-github:
     name: Deploy to GitHub Packages
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     permissions:
       packages: write # Required for the deploy to GitHub Packages step
       id-token: write # OIDC token for sigstore signing
@@ -120,8 +117,15 @@ jobs:
         run: |
           PROJECT_VERSION=$(./mvnw help:evaluate "-Dexpression=project.version" -q -DforceStdout)
           test "${PROJECT_VERSION: -9}" = "-SNAPSHOT"
+      - name: Download JAR with signed DLLs
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: artifacts
+      - name: Extract DLLs from JAR
+        run: |
+          jar --extract --file=./artifacts -c ./src/main/resources 'integrations-x64.dll' 'integrations-arm64.dll'
       - name: Deploy to GitHub Packages
-        run: ./mvnw deploy -B -DskipTests -Psign,deploy-github --no-transfer-progress
+        run: ./mvnw deploy -B -DskipTests -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}" -Psign,deploy-github --no-transfer-progress
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.RELEASES_GPG_PASSPHRASE }}
