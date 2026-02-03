@@ -7,6 +7,9 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Etc/UTC"
+    ignore:
+      - dependency-name: "org.apache.maven.plugins:maven-surefire-plugin"
+        versions: [ "3.5.4" ] # incompatible with junit-tree reporter
     groups:
       java-test-dependencies:
         patterns:
