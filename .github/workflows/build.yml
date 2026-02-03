@@ -7,6 +7,10 @@ on:
 env:
   JAVA_VERSION: 25
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     name: Build and Test
@@ -30,7 +34,9 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: ./mvnw versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
       - name: Build and Test
-        run: ./mvnw -B verify --no-transfer-progress -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
+        run: ./mvnw -B test --no-transfer-progress -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
+      - name: Create JAR
+        run: ./mvnw -B verify --no-transfer-progress -DskipTests -DskipNativeCompile -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
       - name: Calculate Checksums
         id: checksums
         run: |
@@ -83,7 +89,8 @@ jobs:
           name: artifacts
       - name: Extract DLLs from JAR
         run: |
-          jar --extract --file=./artifacts -c ./src/main/resources 'integrations-x64.dll' 'integrations-arm64.dll'
+          JAR_PATH=$(ls ./*.jar | grep -v -E '(-sources|-javadoc)\.jar$' | head -n1)
+          jar --extract --file="$JAR_PATH" -C ./src/main/resources integrations-x64.dll integrations-arm64.dll
       - name: Deploy to Maven Central
         run: ./mvnw deploy -B -DskipTests -DskipNativeCompile -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}" -Psign,deploy-central --no-transfer-progress 
         env:
@@ -123,7 +130,8 @@ jobs:
           name: artifacts
       - name: Extract DLLs from JAR
         run: |
-          jar --extract --file=./artifacts -c ./src/main/resources 'integrations-x64.dll' 'integrations-arm64.dll'
+          JAR_PATH=$(ls ./*.jar | grep -v -E '(-sources|-javadoc)\.jar$' | head -n1)
+          jar --extract --file="$JAR_PATH" -C ./src/main/resources integrations-x64.dll integrations-arm64.dll
       - name: Deploy to GitHub Packages
         run: ./mvnw deploy -B -DskipTests -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}" -Psign,deploy-github --no-transfer-progress
         env:
