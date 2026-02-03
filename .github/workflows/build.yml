@@ -35,6 +35,34 @@ jobs:
         run: ./mvnw versions:set --file ./pom.xml -DnewVersion=${GITHUB_REF##*/}
       - name: Build and Test
         run: ./mvnw -B test --no-transfer-progress -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
+      - name: Sign DLLs with Azure Trusted Signing
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: azure/artifact-signing-action@fc390cf8ed0f14e248a542af1d838388a47c7a7c # v0.5.10
+        with:
+          files: |
+            ${{ github.workspace }}\main\resources\integrations-x64.dll
+            ${{ github.workspace }}\main\resources\integrations-arm64.dll
+          append-signature: false
+          description: Cryptomator Windows Integrations DLL
+          description-url: https://github.com/cryptomator/integrations-win
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          trusted-signing-account-name: cryptomatorSigning
+          certificate-profile-name: production
+          endpoint: https://weu.codesigning.azure.net/
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          exclude-environment-credential: false
+          exclude-workload-identity-credential: true
+          exclude-managed-identity-credential: true
+          exclude-shared-token-cache-credential: true
+          exclude-visual-studio-credential: true
+          exclude-visual-studio-code-credential: true
+          exclude-azure-cli-credential: true
+          exclude-azure-powershell-credential: true
+          exclude-azure-developer-cli-credential: true
+          exclude-interactive-browser-credential: true
       - name: Create JAR
         run: ./mvnw -B verify --no-transfer-progress -DskipTests -DskipNativeCompile -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
       - name: Calculate Checksums
