@@ -37,7 +37,7 @@ jobs:
         run: ./mvnw -B test --no-transfer-progress -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
       - name: Sign DLLs with Azure Trusted Signing
         if: startsWith(github.ref, 'refs/tags/')
-        uses: azure/artifact-signing-action@fc390cf8ed0f14e248a542af1d838388a47c7a7c # v0.5.10
+        uses: azure/artifact-signing-action@db7a3a6bd3912025c705162fb7475389f5b69ec6 # v1.0.0
         with:
           files: |
             ${{ github.workspace }}src\main\resources\integrations-x64.dll
@@ -79,7 +79,7 @@ jobs:
           "@ | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
       - name: Attest
         if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8 # v3.1.0
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
         with:
           subject-path: |
             target/*.jar
