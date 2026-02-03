@@ -133,7 +133,7 @@ jobs:
           JAR_PATH=$(ls ./*.jar | grep -v -E '(-sources|-javadoc)\.jar$' | head -n1)
           jar --extract --file="$JAR_PATH" -C ./src/main/resources integrations-x64.dll integrations-arm64.dll
       - name: Deploy to GitHub Packages
-        run: ./mvnw deploy -B -DskipTests -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}" -Psign,deploy-github --no-transfer-progress
+        run: ./mvnw deploy -B -DskipTests -DskipNativeCompile -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}" -Psign,deploy-github --no-transfer-progress
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.RELEASES_GPG_PASSPHRASE }}
