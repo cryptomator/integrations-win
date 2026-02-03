@@ -67,12 +67,11 @@ jobs:
         run: ./mvnw -B verify --no-transfer-progress -DskipTests -DskipNativeCompile -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
       - name: Calculate Checksums
         id: checksums
+        shell: pwsh
         run: |
-          {
-            echo 'sha256<<EOF'
-            shasum -a256 target/*.jar
-            echo EOF
-          } >> $GITHUB_OUTPUT
+          $sha256 = Get-FileHash -Algorithm SHA256 -Path (Get-ChildItem -Path "target" -Filter "*.jar").FullName | `
+              ForEach-Object { $_.Hash.ToString() + "  ." + $_.Path.Substring($_.Path.LastIndexOf("\")) }
+          Write-Output $sha256 | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
       - name: Attest
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8 # v3.1.0
