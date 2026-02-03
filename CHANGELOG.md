@@ -13,6 +13,7 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
 
 ### Changed
 * Pin CI actions  ([#132](https://github.com/cryptomator/integrations-win/pull/132))
+* Switch signing certificate and process to Azure ([#132](https://github.com/cryptomator/integrations-win/pull/132))
 
 
 ## [1.5.1] - 2025-09-17
