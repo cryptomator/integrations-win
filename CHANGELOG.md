@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The changelog starts with version 1.5.1.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/integrations-win/releases).
 
-## [Unreleased]
+## [Unreleased](https://github.com/cryptomator/integrations-win/compare/1.5.1...HEAD)
 ### Added
 * Maven wrapper ([#131](https://github.com/cryptomator/integrations-win/pull/131))
 
@@ -20,7 +20,7 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
   - `com.fasterxml.jackson.core:jackson-annotations` from 2.20 to 2.21
 
 
-## [1.5.1] - 2025-09-17
+## [1.5.1](https://github.com/cryptomator/integrations-win/releases/1.5.1) - 2025-09-17
 ### Changed
 
 * Update `com.fasterxml.jackson.core:jackson-databind` from 2.19.0 to 2.20.0
