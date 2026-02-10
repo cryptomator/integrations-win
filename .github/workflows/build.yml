@@ -40,15 +40,15 @@ jobs:
         uses: azure/artifact-signing-action@db7a3a6bd3912025c705162fb7475389f5b69ec6 # v1.0.0
         with:
           files: |
-            ${{ github.workspace }}src\main\resources\integrations-x64.dll
-            ${{ github.workspace }}src\main\resources\integrations-arm64.dll
+            ${{ github.workspace }}\src\main\resources\integrations-x64.dll
+            ${{ github.workspace }}\src\main\resources\integrations-arm64.dll
           append-signature: false
           description: Cryptomator Windows Integrations DLL
           description-url: https://github.com/cryptomator/integrations-win
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-          trusted-signing-account-name: cryptomatorSigning
+          signing-account-name: cryptomatorSigning
           certificate-profile-name: production
           endpoint: https://weu.codesigning.azure.net/
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
