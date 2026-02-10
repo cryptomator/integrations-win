@@ -1,0 +1,2 @@
+org.cryptomator.windows.keychain.WindowsProtectedKeychainAccess
+org.cryptomator.windows.keychain.WindowsHelloKeychainAccess
