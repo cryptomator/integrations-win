@@ -14,7 +14,7 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
 ### Changed
 * Pin CI actions  ([#132](https://github.com/cryptomator/integrations-win/pull/132))
 * Switch signing certificate and process to Azure ([#132](https://github.com/cryptomator/integrations-win/pull/132))
-* **[Breaking]** Switch compile target to JDK 25 (class file format 65) ([#136](https://github.com/cryptomator/integrations-win/pull/136))
+* **[Breaking]** Switch compile target to JDK 25 (class file format 69) ([#136](https://github.com/cryptomator/integrations-win/pull/136))
 * Update dependencies
   - `com.fasterxml.jackson.core:jackson-databind` from 2.20.0 to 2.20.1
   - `com.fasterxml.jackson.core:jackson-annotations` from 2.20 to 2.21
