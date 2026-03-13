@@ -37,7 +37,7 @@ jobs:
         run: ./mvnw -B test --no-transfer-progress -DdevCommandFileDir="${{ vars.MSVC_DEV_FILES_DIR }}"
       - name: Sign DLLs with Azure Trusted Signing
         if: startsWith(github.ref, 'refs/tags/')
-        uses: azure/artifact-signing-action@db7a3a6bd3912025c705162fb7475389f5b69ec6 # v1.0.0
+        uses: azure/artifact-signing-action@87c2e83e6868da99d3380aa309851b32ed9a8346 # v1.1.0
         with:
           files: |
             ${{ github.workspace }}\src\main\resources\integrations-x64.dll
@@ -79,12 +79,12 @@ jobs:
           "@ | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
       - name: Attest
         if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-path: |
             target/*.jar
             target/*.pom
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: artifacts
           path: target/*.jar
@@ -116,7 +116,7 @@ jobs:
           PROJECT_VERSION=$(./mvnw help:evaluate "-Dexpression=project.version" -q -DforceStdout)
           test "${PROJECT_VERSION: -9}" = "-SNAPSHOT"
       - name: Download JAR with signed DLLs
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: artifacts
       - name: Extract singed DLLs from JAR into src dir, skipping native compile
@@ -157,7 +157,7 @@ jobs:
           PROJECT_VERSION=$(./mvnw help:evaluate "-Dexpression=project.version" -q -DforceStdout)
           test "${PROJECT_VERSION: -9}" = "-SNAPSHOT"
       - name: Download JAR with signed DLLs
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: artifacts
       - name: Extract singed DLLs from JAR into src dir, skipping native compile
