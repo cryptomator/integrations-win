@@ -119,7 +119,7 @@ jobs:
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: artifacts
-      - name: Extract DLLs from JAR
+      - name: Extract singed DLLs from JAR into src dir, skipping native compile
         run: |
           JAR_PATH=$(ls ./*.jar | grep -v -E '(-sources|-javadoc)\.jar$' | head -n1)
           jar --extract --file="$JAR_PATH" --dir ./src/main/resources integrations-x64.dll integrations-arm64.dll
@@ -160,7 +160,7 @@ jobs:
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: artifacts
-      - name: Extract DLLs from JAR
+      - name: Extract singed DLLs from JAR into src dir, skipping native compile
         run: |
           JAR_PATH=$(ls ./*.jar | grep -v -E '(-sources|-javadoc)\.jar$' | head -n1)
           jar --extract --file="$JAR_PATH" --dir ./src/main/resources integrations-x64.dll integrations-arm64.dll
