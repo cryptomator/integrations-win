@@ -37,27 +37,27 @@
 		<project.jdk.version>25</project.jdk.version>
 
 		<!-- runtime dependencies -->
-		<api.version>1.7.0</api.version>
+		<api.version>1.8.0</api.version>
 		<slf4j.version>2.0.17</slf4j.version>
-		<jackson.version>2.21.0</jackson.version>
+		<jackson.version>2.21.2</jackson.version>
 		<jackson-annotations.version>2.21</jackson-annotations.version>
 
 		<!-- test dependencies -->
-		<junit.jupiter.version>6.0.2</junit.jupiter.version>
-		<mockito.version>5.21.0</mockito.version>
+		<junit.jupiter.version>6.0.3</junit.jupiter.version>
+		<mockito.version>5.23.0</mockito.version>
 
 		<!-- build plugin dependencies -->
 		<mvn-clean.version>3.5.0</mvn-clean.version>
 		<mvn-compiler.version>3.15.0</mvn-compiler.version>
-		<mvn-dependency.version>3.9.0</mvn-dependency.version>
+		<mvn-dependency.version>3.10.0</mvn-dependency.version>
 		<mvn-deploy.version>3.1.4</mvn-deploy.version>
 		<mvn-enforcer.version>3.6.2</mvn-enforcer.version>
-		<mvn-failsafe.version>3.5.4</mvn-failsafe.version>
+		<mvn-failsafe.version>3.5.5</mvn-failsafe.version>
 		<mvn-javadoc.version>3.12.0</mvn-javadoc.version>
 		<mvn-gpg.version>3.2.8</mvn-gpg.version>
-		<mvn-resources.version>3.4.0</mvn-resources.version>
+		<mvn-resources.version>3.5.0</mvn-resources.version>
 		<mvn-source.version>3.4.0</mvn-source.version>
-		<mvn-surefire.version>3.5.3</mvn-surefire.version> <!-- Update blocked by https://github.com/fabriciorby/maven-surefire-junit5-tree-reporter/issues/68 . Check also dependabot file  -->
+		<mvn-surefire.version>3.5.5</mvn-surefire.version> <!-- Update blocked by https://github.com/fabriciorby/maven-surefire-junit5-tree-reporter/issues/68 . Check also dependabot file  -->
 		<exec-maven.version>3.6.3</exec-maven.version>
 		<dependency-check.version>12.2.0</dependency-check.version>
 		<central-publishing.version>0.10.0</central-publishing.version>
