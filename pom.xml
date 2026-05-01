@@ -39,7 +39,7 @@
 		<!-- runtime dependencies -->
 		<api.version>1.8.0</api.version>
 		<slf4j.version>2.0.17</slf4j.version>
-		<jackson.version>2.21.2</jackson.version>
+		<jackson.version>2.21.3</jackson.version>
 		<jackson-annotations.version>2.21</jackson-annotations.version>
 
 		<!-- test dependencies -->
@@ -59,7 +59,7 @@
 		<mvn-source.version>3.4.0</mvn-source.version>
 		<mvn-surefire.version>3.5.5</mvn-surefire.version> <!-- Update blocked by https://github.com/fabriciorby/maven-surefire-junit5-tree-reporter/issues/68 . Check also dependabot file  -->
 		<exec-maven.version>3.6.3</exec-maven.version>
-		<dependency-check.version>12.2.0</dependency-check.version>
+		<dependency-check.version>12.2.1</dependency-check.version>
 		<central-publishing.version>0.10.0</central-publishing.version>
 		<jextract-maven.version>0.4.4</jextract-maven.version>
 		<junit-tree-reporter.version>1.5.1</junit-tree-reporter.version>
