@@ -32,10 +32,10 @@ jobs:
         java-version: ${{ env.JAVA_VERSION }}
         cache: 'maven'
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+      uses: github/codeql-action/init@e46ed2cbd01164d986452f91f178727624ae40d7 # v4.35.3
       with:
         languages: java
     - name: Build
       run: ./mvnw -B compile -DskipTests -DdevCommandFileDir="${{ env.MSVC_DEV_FILES_DIR }}"
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+      uses: github/codeql-action/analyze@e46ed2cbd01164d986452f91f178727624ae40d7 # v4.35.3
