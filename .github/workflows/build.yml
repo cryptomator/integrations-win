@@ -14,7 +14,7 @@ defaults:
 jobs:
   build:
     name: Build and Test
-    runs-on: windows-latest
+    runs-on: windows-2022
     permissions:
       contents: read
       id-token: write # OIDC token for the attestations step
@@ -91,7 +91,7 @@ jobs:
 
   deploy-central:
     name: Deploy to Maven Central
-    runs-on: windows-latest
+    runs-on: windows-2022
     permissions:
       id-token: write # OIDC token for sigstore signing
       contents: read # Required for sigstore signing
@@ -134,7 +134,7 @@ jobs:
 
   deploy-github:
     name: Deploy to GitHub Packages
-    runs-on: windows-latest
+    runs-on: windows-2022
     permissions:
       packages: write # Required for the deploy to GitHub Packages step
       id-token: write # OIDC token for sigstore signing
