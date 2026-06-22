@@ -8,6 +8,9 @@ The changelog starts with version 1.5.1.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/integrations-win/releases).
 
 ## [Unreleased]
+No changes yet.
+
+## [1.6.1](https://github.com/cryptomator/integrations-win/releases/1.6.1) - 2026-06-22
 ### Changed
 * Update dependencies
   - `org.cryptomator:integrations-api` from 1.7.0 to 1.9.0
