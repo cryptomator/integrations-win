@@ -10,8 +10,9 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
 ## [Unreleased]
 ### Changed
 * Update dependencies
-  - `org.cryptomator:integrations-api` from 1.7.0 to 1.8.0
-  - `com.fasterxml.jackson.core:jackson-databind` from 2.21.0 to 2.21.2
+  - `org.cryptomator:integrations-api` from 1.7.0 to 1.9.0
+  - `com.fasterxml.jackson.core:jackson-databind` from 2.21.0 to 2.21.4
+  - `org.slf4j:slf4j-*` from 2.0.17 to 2.0.18
 
 
 ## [1.6.0](https://github.com/cryptomator/integrations-win/releases/1.6.0) - 2026-02-17
