@@ -39,11 +39,11 @@
 		<!-- runtime dependencies -->
 		<api.version>1.9.0</api.version>
 		<slf4j.version>2.0.18</slf4j.version>
-		<jackson.version>2.21.4</jackson.version>
+		<jackson.version>2.21.5</jackson.version>
 		<jackson-annotations.version>2.21</jackson-annotations.version>
 
 		<!-- test dependencies -->
-		<junit.jupiter.version>6.1.0</junit.jupiter.version>
+		<junit.jupiter.version>6.1.2</junit.jupiter.version>
 		<mockito.version>5.23.0</mockito.version>
 
 		<!-- build plugin dependencies -->
