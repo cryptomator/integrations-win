@@ -8,7 +8,9 @@ The changelog starts with version 1.5.1.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/integrations-win/releases).
 
 ## [Unreleased]
-No changes yet.
+### Changed
+* Update dependencies
+  - `com.fasterxml.jackson.core:jackson-databind` from 2.21.4 to 2.21.6
 
 ## [1.6.1](https://github.com/cryptomator/integrations-win/releases/1.6.1) - 2026-06-23
 ### Changed
