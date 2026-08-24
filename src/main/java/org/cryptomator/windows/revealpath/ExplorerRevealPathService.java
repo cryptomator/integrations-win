@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 @Priority(100)
 @OperatingSystem(OperatingSystem.Value.WINDOWS)
@@ -28,7 +28,7 @@ public class ExplorerRevealPathService implements RevealPathService {
 			}
 
 			var process = pb.start();
-			if (process.waitFor(5000, TimeUnit.MILLISECONDS)) {
+			if (process.waitFor(Duration.ofSeconds(5))) {
 				int exitValue = process.exitValue();
 				if (process.exitValue() != 1) { //explorer.exe seems to return always 1
 					throw new RevealFailedException("Explorer.exe exited with value " + exitValue);

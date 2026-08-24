@@ -28,14 +28,14 @@ public class WinUiAppearanceProviderTest {
 		Theme myTheme = Assertions.assertDoesNotThrow(appearanceProvider::getSystemTheme);
 
 		Assertions.assertNotNull(myTheme);
-		System.out.println("current theme: " + myTheme.name());
+		IO.println("current theme: " + myTheme.name());
 	}
 
 	@Test
 	@DisplayName("add theme listener, wait 10s, remove theme listener")
 	@Disabled
 	public void testAddAndRemoveListener() {
-		UiAppearanceListener listener = theme -> System.out.println(theme.toString());
+		UiAppearanceListener listener = theme -> IO.println(theme.toString());
 		appearanceProvider.addListener(listener);
 		try {
 			Thread.sleep(10_000);
@@ -48,7 +48,7 @@ public class WinUiAppearanceProviderTest {
 	@Test
 	@DisplayName("test removing a non-registered listener is a no-op")
 	public void testRemoveListenerIfNoneIsRegistered() {
-		UiAppearanceListener listener = theme -> System.out.println(theme.toString());
+		UiAppearanceListener listener = theme -> IO.println(theme.toString());
 		appearanceProvider.removeListener(listener);
 	}
 
