@@ -10,7 +10,7 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
 ## [Unreleased]
 ### Changed
 * Update dependencies
-  - `com.fasterxml.jackson.core:jackson-databind` from 2.21.4 to 2.21.6
+  - `com.fasterxml.jackson.core:jackson-databind` from 2.21.4 to 2.21.7
 
 ## [1.6.1](https://github.com/cryptomator/integrations-win/releases/1.6.1) - 2026-06-23
 ### Changed
