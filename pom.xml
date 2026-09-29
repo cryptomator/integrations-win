@@ -38,7 +38,7 @@
 
 		<!-- runtime dependencies -->
 		<api.version>1.9.1</api.version>
-		<slf4j.version>2.0.18</slf4j.version>
+		<slf4j.version>2.0.20</slf4j.version>
 		<jackson.version>2.21.7</jackson.version>
 		<jackson-annotations.version>2.21</jackson-annotations.version>
 
