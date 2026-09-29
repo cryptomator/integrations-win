@@ -25,14 +25,11 @@ class WinAppearance {
 
 	private Theme getSystemThemeInternal() throws IllegalStateException {
 		// TODO refactor using switch expressions, once we upgraded to JDK 14+
-		switch (Native.INSTANCE.getCurrentTheme()) {
-			case 0:
-				return Theme.DARK;
-			case 1:
-				return Theme.LIGHT;
-			default:
-				return DEFAULT_THEME;
-		}
+		return switch (Native.INSTANCE.getCurrentTheme()) {
+			case 0 -> Theme.DARK;
+			case 1 -> Theme.LIGHT;
+			default -> DEFAULT_THEME;
+		};
 	}
 
 	public Thread startObserving(Consumer<Theme> listener) {

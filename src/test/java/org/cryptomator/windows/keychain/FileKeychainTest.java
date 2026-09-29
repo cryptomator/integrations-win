@@ -10,7 +10,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -125,11 +124,11 @@ public class FileKeychainTest {
 	public void loadInternalUsesFirstFittingPath() throws KeychainAccessException {
 		var fileKeychain = spy(new FileKeychain(keychainPaths));
 
-		when(fileKeychain.parse(keychainPaths.get(0))).thenReturn(Optional.empty());
+		when(fileKeychain.parse(keychainPaths.getFirst())).thenReturn(Optional.empty());
 		when(fileKeychain.parse(keychainPaths.get(1))).thenReturn(Optional.of(Map.of()));
 
 		fileKeychain.loadInternal();
-		verify(fileKeychain).parse(keychainPaths.get(0));
+		verify(fileKeychain).parse(keychainPaths.getFirst());
 		verify(fileKeychain).parse(keychainPaths.get(1));
 		verify(fileKeychain, never()).parse(keychainPaths.get(2));
 	}
@@ -138,7 +137,7 @@ public class FileKeychainTest {
 	public void saveUsesFirstPath() throws KeychainAccessException {
 		var fileKeychain = new FileKeychain(keychainPaths);
 		fileKeychain.save();
-		Assertions.assertTrue(Files.exists(keychainPaths.get(0)));
+		Assertions.assertTrue(Files.exists(keychainPaths.getFirst()));
 		Assertions.assertTrue(Files.notExists(keychainPaths.get(1)));
 		Assertions.assertTrue(Files.notExists(keychainPaths.get(2)));
 	}
@@ -153,7 +152,7 @@ public class FileKeychainTest {
 	@Test
 	public void parseSuccess() throws KeychainAccessException, IOException {
 		var keychainFile = keychainFileDir.resolve("realJson.json");
-		Files.writeString(keychainFile, CONTENT, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+		Files.writeString(keychainFile, CONTENT, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
 
 		var result = fileKeychain.parse(keychainFile);
 
@@ -164,7 +163,7 @@ public class FileKeychainTest {
 	@Test
 	public void parseWrongJson() throws KeychainAccessException, IOException {
 		var keychainFile = keychainFileDir.resolve("realJson.json");
-		Files.writeString(keychainFile, CONTENT.substring(0, 20), StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+		Files.writeString(keychainFile, CONTENT.substring(0, 20), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
 
 		var result = fileKeychain.parse(keychainFile);
 
