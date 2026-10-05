@@ -89,3 +89,4 @@ bld/
 # exclude compile outputs not used by projects
 *.exp
 *.lib
+.vscode/
