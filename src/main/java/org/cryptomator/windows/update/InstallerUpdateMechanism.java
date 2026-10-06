@@ -14,11 +14,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.security.SignatureException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -37,7 +37,7 @@ public class InstallerUpdateMechanism extends DownloadUpdateMechanism {
 	// written by the Cryptomator installer. Package managers (winget, Chocolatey, ...) set the INSTALLTYPE installer property to a different value, opting out of self-updates.
 	private static final String INSTALL_TYPE_REG_KEY = "SOFTWARE\\Skymatic GmbH\\Cryptomator";
 	private static final String INSTALL_TYPE_REG_VALUE = "InstallType";
-	private static final String EXPECTED_SIGNER_SUBJECT_PATTERN = "CN=Skymatic GmbH,*";
+	private static final String EXPECTED_SIGNER = "Skymatic GmbH"; // common name of the code signing certificate
 	private static final Path SYSTEM32 = Path.of(Optional.ofNullable(System.getenv("SystemRoot")).orElse("C:\\Windows"), "System32");
 
 	private final Supplier<String> installType;
@@ -85,30 +85,18 @@ public class InstallerUpdateMechanism extends DownloadUpdateMechanism {
 	}
 
 	private UpdateStep verify(Path workDir, Path assetPath) throws IOException {
-		// Verify the Authenticode signature of the downloaded installer. The script must not contain double quotes, as it is passed as a command line argument.
-		var script = """
-				$s = Get-AuthenticodeSignature -LiteralPath $env:INSTALLER_PATH; \
-				Write-Output $s.Status, $s.SignerCertificate.Subject; \
-				if ($s.Status -ne 'Valid' -or $s.SignerCertificate.Subject -notlike $env:EXPECTED_SIGNER) { exit 1 }""";
-		var processBuilder = new ProcessBuilder(List.of(SYSTEM32.resolve("WindowsPowerShell\\v1.0\\powershell.exe").toString(), "-NoProfile", "-NonInteractive", "-Command", script));
-		processBuilder.directory(workDir.toFile());
-		processBuilder.redirectErrorStream(true);
-		processBuilder.environment().remove("PSModulePath"); // inherited PowerShell 7 module paths prevent Windows PowerShell from loading its own modules
-		processBuilder.environment().put("INSTALLER_PATH", assetPath.toString());
-		processBuilder.environment().put("EXPECTED_SIGNER", EXPECTED_SIGNER_SUBJECT_PATTERN);
-		Process p = processBuilder.start();
+		String signer;
 		try {
-			p.getOutputStream().close();
-			var output = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8).strip();
-			if (p.waitFor() != 0) {
-				LOG.error("Checking signature of {} failed, exit code: {}, output: {}", assetPath, p.exitValue(), output);
-				throw new UpdateFailedException("Invalid Signature.");
-			}
-			LOG.debug("Verified installer {}: {}", assetPath, output);
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			throw new InterruptedIOException("Signature verification interrupted");
+			signer = Authenticode.getVerifiedSignerName(assetPath);
+		} catch (SignatureException e) {
+			LOG.error("Checking signature of {} failed.", assetPath, e);
+			throw new UpdateFailedException("Invalid Signature.", e);
 		}
+		if (!EXPECTED_SIGNER.equals(signer)) {
+			LOG.error("Installer {} is signed by unexpected signer {}.", assetPath, signer);
+			throw new UpdateFailedException("Invalid Signature.");
+		}
+		LOG.debug("Verified installer {}, signed by {}.", assetPath, signer);
 		return UpdateStep.of(Localization.get().getString("org.cryptomator.windows.update.installer.restarting"), () -> this.restart(workDir, assetPath));
 	}
 
