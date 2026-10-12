@@ -47,8 +47,23 @@ public class RegistryKey implements AutoCloseable {
 	 * @throws RegistryValueException if winreg.h:RegGetValueW returns a result != ERROR_SUCCESS
 	 */
 	public String getStringValue(String name, boolean isExpandable) throws RegistryValueException {
+		return getStringValue(null, name, isExpandable);
+	}
+
+	/**
+	 * Gets a REG_SZ or REG_EXPAND_SZ value of a subkey of this registry key, only requiring read access to the subkey.
+	 * <p>
+	 * The size of the data is restricted to at most  {@value MAX_DATA_SIZE}. If the the value exceeds the size, a runtime exception is thrown.
+	 *
+	 * @param subkey       name/path of the subkey containing the value or {@code null} to read the value of this key
+	 * @param name         name of the value
+	 * @param isExpandable flag indicating if the value is of type REG_EXPAND_SZ
+	 * @return the data of the value
+	 * @throws RegistryValueException if winreg.h:RegGetValueW returns a result != ERROR_SUCCESS
+	 */
+	public String getStringValue(String subkey, String name, boolean isExpandable) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
-			var data = getValue(arena, name, isExpandable ? RRF_RT_REG_EXPAND_SZ() : RRF_RT_REG_SZ());
+			var data = getValue(arena, subkey, name, isExpandable ? RRF_RT_REG_EXPAND_SZ() : RRF_RT_REG_SZ());
 			return data.getString(0, StandardCharsets.UTF_16LE);
 		}
 	}
@@ -62,12 +77,13 @@ public class RegistryKey implements AutoCloseable {
 	 */
 	public int getDwordValue(String name) throws RegistryValueException {
 		try (var arena = Arena.ofConfined()) {
-			var data = getValue(arena, name, RRF_RT_REG_DWORD());
+			var data = getValue(arena, null, name, RRF_RT_REG_DWORD());
 			return data.get(ValueLayout.JAVA_INT, 0);
 		}
 	}
 
-	private MemorySegment getValue(Arena arena, String name, int dwFlags) throws RegistryValueException {
+	private MemorySegment getValue(Arena arena, String subkey, String name, int dwFlags) throws RegistryValueException {
+		var lpSubKey = subkey == null ? NULL : arena.allocateFrom(subkey, StandardCharsets.UTF_16LE);
 		var lpValueName = arena.allocateFrom(name, StandardCharsets.UTF_16LE);
 		var lpDataSize = arena.allocateFrom(ValueLayout.JAVA_INT, 0);
 
@@ -82,14 +98,14 @@ public class RegistryKey implements AutoCloseable {
 			lpData = arena.allocate(bufferSize);
 			lpDataSize.set(ValueLayout.JAVA_INT, 0, bufferSize);
 
-			result = Winreg_h.RegGetValueW(handle, NULL, lpValueName, dwFlags, NULL, lpData, lpDataSize);
+			result = Winreg_h.RegGetValueW(handle, lpSubKey, lpValueName, dwFlags, NULL, lpData, lpDataSize);
 
 		} while (result == ERROR_MORE_DATA());
 
 		if (result == ERROR_SUCCESS()) {
 			return lpData;
 		} else {
-			throw new RegistryValueException("winreg_h:RegGetValue", path, name, result);
+			throw new RegistryValueException("winreg_h:RegGetValue", subkey == null ? path : path + "\\" + subkey, name, result);
 		}
 	}
 
