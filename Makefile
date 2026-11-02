@@ -1,4 +1,4 @@
-# NMAKE makefile. Run it from a Visual Studio developer prompt (vcvars64.bat or vcvarsamd64_arm64.bat), e.g. `nmake /nologo install ARCH=arm64`
+# NMAKE makefile. Expects a Visual Studio developer environment, so prefer build.cmd over calling this directly, e.g. `build.cmd arm64 10.0.26100.0 17.0`.
 ARCH = x64
 HEADERS = /I"src\main\headers" \
 	/I"$(JAVA_HOME)\include" \
