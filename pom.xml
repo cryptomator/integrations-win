@@ -387,7 +387,7 @@
 								<configuration>
 									<arguments>
 										<argument>/c</argument>
-										<argument>"${devCommandFileDir}\vcvars64.bat" &amp;&amp; make install</argument>
+										<argument>"${devCommandFileDir}\vcvars64.bat" &amp;&amp; nmake /nologo install</argument>
 									</arguments>
 								</configuration>
 							</execution>
@@ -400,7 +400,7 @@
 								<configuration>
 									<arguments>
 										<argument>/c</argument>
-										<argument>"${devCommandFileDir}\vcvarsamd64_arm64.bat" &amp;&amp; make install ARCH=arm64</argument>
+										<argument>"${devCommandFileDir}\vcvarsamd64_arm64.bat" &amp;&amp; nmake /nologo install ARCH=arm64</argument>
 									</arguments>
 								</configuration>
 							</execution>
