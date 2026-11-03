@@ -64,9 +64,13 @@
 		<jextract-maven.version>0.4.4</jextract-maven.version>
 		<junit-tree-reporter.version>1.5.1</junit-tree-reporter.version>
 
+		<!-- native toolchain pins, build.cmd and the Makefile have no defaults of their own -->
+		<win.sdk.version>10.0.22621.0</win.sdk.version>
+		<vs.minVersion>17.0</vs.minVersion>
+
 		<!-- jextract props -->
-		<win.umHeaderPath>C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\um</win.umHeaderPath>
-		<jextract.executable>C:\Users\Arbeit\Programs\jextract-22\bin\jextract.bat</jextract.executable>
+		<win.umHeaderPath>C:\Program Files (x86)\Windows Kits\10\Include\${win.sdk.version}\um</win.umHeaderPath>
+		<jextract.executable>jextract</jextract.executable>
 	</properties>
 
 	<licenses>
@@ -361,9 +365,6 @@
 					<name>!skipNativeCompile</name>
 				</property>
 			</activation>
-			<properties>
-				<devCommandFileDir>C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\</devCommandFileDir>
-			</properties>
 			<build>
 				<plugins>
 					<plugin>
@@ -387,7 +388,10 @@
 								<configuration>
 									<arguments>
 										<argument>/c</argument>
-										<argument>"${devCommandFileDir}\vcvars64.bat" &amp;&amp; make install</argument>
+										<argument>.\build.cmd</argument>
+										<argument>x64</argument>
+										<argument>${win.sdk.version}</argument>
+										<argument>${vs.minVersion}</argument>
 									</arguments>
 								</configuration>
 							</execution>
@@ -400,7 +404,10 @@
 								<configuration>
 									<arguments>
 										<argument>/c</argument>
-										<argument>"${devCommandFileDir}\vcvarsamd64_arm64.bat" &amp;&amp; make install ARCH=arm64</argument>
+										<argument>.\build.cmd</argument>
+										<argument>arm64</argument>
+										<argument>${win.sdk.version}</argument>
+										<argument>${vs.minVersion}</argument>
 									</arguments>
 								</configuration>
 							</execution>
