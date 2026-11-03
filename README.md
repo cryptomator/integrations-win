@@ -15,8 +15,8 @@ This project uses the following JVM properties:
 ### Requirements
 
 * JDK 25
-* MSVC 2022 toolset (e.g. by installing Visual Studio 2022, Workset "Desktop development with C++" and component "MSVC v143 VS 2022 C++ ARM64/ARM64EC-Buildtools")
-* Make (`choco install make`)
+* Visual Studio 2022 or newer, workload "Desktop development with C++", including both the x64 and the ARM64 C++ toolset (component "MSVC C++ ARM64/ARM64EC build tools")
+* Windows SDK 10.0.22621.0
 
 ### Build
 Open a terminal and run
@@ -24,4 +24,9 @@ Open a terminal and run
 ./mvnw clean verify
 ```
 
-If building the dll fails with "cl.exe cannot be found", you have to specify the developer command file directory as a property, e.g. `-DdevCommandFileDir=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\"`.
+The native DLLs are built by `build.cmd`. The Windows SDK version and the minimum Visual Studio version are specified in `pom.xml`. To build a single architecture by hand, run from the repository root:
+```
+build.cmd x64 10.0.22621.0 17.0
+```
+
+If Visual Studio is installed where `vswhere` does not find it, set the environment variable `VSINSTALLDIR` to the installation root (the directory containing `VC\Auxiliary\Build\vcvarsall.bat`); detection is then skipped.
