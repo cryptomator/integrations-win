@@ -119,7 +119,7 @@ public class InstallerUpdateMechanism extends DownloadUpdateMechanism {
 				  "%SYS32%\\PING.EXE" -n 2 127.0.0.1 >nul
 				  goto waitForExit
 				)
-				echo Running %INSTALLER_TYPE% installer %INSTALLER_PATH%
+				echo Running %INSTALLER_TYPE% installer "%INSTALLER_PATH%"
 				if /i "%INSTALLER_TYPE%"=="msi" (
 				  start "" /wait "%SYS32%\\msiexec.exe" /i "%INSTALLER_PATH%" /passive /norestart INSTALLDIR="%CRYPTOMATOR_INSTALL_DIR%" /l*v "%~dp0installer.log"
 				) else (
