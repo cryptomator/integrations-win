@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.SignatureException;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -37,22 +38,32 @@ public class InstallerUpdateMechanism extends DownloadUpdateMechanism {
 	// written by the Cryptomator installer. Package managers (winget, Chocolatey, ...) set the INSTALLTYPE installer property to a different value, opting out of self-updates.
 	private static final String INSTALL_TYPE_REG_KEY = "SOFTWARE\\Skymatic GmbH\\Cryptomator";
 	private static final String INSTALL_TYPE_REG_VALUE = "InstallType";
-	private static final String EXPECTED_SIGNER = "Skymatic GmbH"; // common name of the code signing certificate
+	// the installer's signature must chain up to this root CA and the signing certificate must contain this EKU (with Azure Artifact Signing: the durable identity, which stays the same across certificate renewals)
+	private static final String DURABLE_IDENTITY_EKU_PROPERTY = "cryptomator.integrationsWin.updateDurableIdentityEku";
+	private static final String ROOT_CA_THUMBPRINT_PROPERTY = "cryptomator.integrationsWin.updateRootCaThumbprint";
 	private static final Path SYSTEM32 = Path.of(Optional.ofNullable(System.getenv("SystemRoot")).orElse("C:\\Windows"), "System32");
 
 	private final Supplier<String> installType;
+	private final String durableIdentityEku;
+	private final String rootCaThumbprint;
 
 	public InstallerUpdateMechanism() {
-		this(InstallerUpdateMechanism::readInstallType);
+		this(InstallerUpdateMechanism::readInstallType, System.getProperty(DURABLE_IDENTITY_EKU_PROPERTY), System.getProperty(ROOT_CA_THUMBPRINT_PROPERTY));
 	}
 
 	// visible for testing
-	InstallerUpdateMechanism(Supplier<String> installType) {
+	InstallerUpdateMechanism(Supplier<String> installType, String durableIdentityEku, String rootCaThumbprint) {
 		this.installType = installType;
+		this.durableIdentityEku = durableIdentityEku;
+		this.rootCaThumbprint = rootCaThumbprint;
 	}
 
 	@Override
 	protected DownloadUpdateInfo checkForUpdate(String currentVersion, LatestVersionResponse response) {
+		if (isNullOrBlank(durableIdentityEku) || isNullOrBlank(rootCaThumbprint)) {
+			LOG.warn("Properties {} and {} must be set to verify installers, not updating.", DURABLE_IDENTITY_EKU_PROPERTY, ROOT_CA_THUMBPRINT_PROPERTY);
+			return null;
+		}
 		String arch = switch (System.getProperty("os.arch")) {
 			case "aarch64", "arm64" -> "arm64";
 			default -> "x64";
@@ -85,18 +96,14 @@ public class InstallerUpdateMechanism extends DownloadUpdateMechanism {
 	}
 
 	private UpdateStep verify(Path workDir, Path assetPath) throws IOException {
-		String signer;
+		X509Certificate signer;
 		try {
-			signer = Authenticode.getVerifiedSignerName(assetPath);
+			signer = Authenticode.verify(assetPath, durableIdentityEku, rootCaThumbprint);
 		} catch (SignatureException e) {
 			LOG.error("Checking signature of {} failed.", assetPath, e);
 			throw new UpdateFailedException("Invalid Signature.", e);
 		}
-		if (!EXPECTED_SIGNER.equals(signer)) {
-			LOG.error("Installer {} is signed by unexpected signer {}.", assetPath, signer);
-			throw new UpdateFailedException("Invalid Signature.");
-		}
-		LOG.debug("Verified installer {}, signed by {}.", assetPath, signer);
+		LOG.debug("Verified installer {}, signed by {}.", assetPath, signer.getSubjectX500Principal());
 		return UpdateStep.of(Localization.get().getString("org.cryptomator.windows.update.installer.restarting"), () -> this.restart(workDir, assetPath));
 	}
 
@@ -142,6 +149,10 @@ public class InstallerUpdateMechanism extends DownloadUpdateMechanism {
 		processBuilder.start();
 
 		return UpdateStep.EXIT;
+	}
+
+	private static boolean isNullOrBlank(String s) {
+		return s == null || s.isBlank();
 	}
 
 	private static String readInstallType() {

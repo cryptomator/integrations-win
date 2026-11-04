@@ -20,6 +20,8 @@ public class InstallerUpdateMechanismTest {
 	private static final Asset EXE = new Asset("Cryptomator-1.19.3-x64.exe", "sha256:00", 1, "https://example.com/Cryptomator-1.19.3-x64.exe");
 	private static final Asset MSI = new Asset("Cryptomator-1.19.3-x64.msi", "sha256:00", 1, "https://example.com/Cryptomator-1.19.3-x64.msi");
 	private static final LatestVersionResponse RESPONSE = new LatestVersionResponse(new LatestVersion("1.19.4", "1.19.3", "1.19.2"), List.of(DMG, EXE, MSI));
+	private static final String EKU = "1.2.3.4";
+	private static final String ROOT_THUMBPRINT = "0000000000000000000000000000000000000000";
 
 	@BeforeAll
 	public static void setup() {
@@ -29,7 +31,7 @@ public class InstallerUpdateMechanismTest {
 	@ParameterizedTest
 	@CsvSource({"EXE, Cryptomator-1.19.3-x64.exe", "MSI, Cryptomator-1.19.3-x64.msi", "msi, Cryptomator-1.19.3-x64.msi"})
 	public void testAssetMatchesInstallType(String installType, String expectedAsset) {
-		var mechanism = new InstallerUpdateMechanism(() -> installType);
+		var mechanism = new InstallerUpdateMechanism(() -> installType, EKU, ROOT_THUMBPRINT);
 
 		var updateInfo = mechanism.checkForUpdate("1.19.2", RESPONSE);
 
@@ -43,7 +45,7 @@ public class InstallerUpdateMechanismTest {
 	@NullAndEmptySource
 	@ValueSource(strings = {"winget", "chocolatey", "managed"})
 	public void testNoUpdateIfNotSelfManaged(String installType) {
-		var mechanism = new InstallerUpdateMechanism(() -> installType);
+		var mechanism = new InstallerUpdateMechanism(() -> installType, EKU, ROOT_THUMBPRINT);
 
 		var updateInfo = mechanism.checkForUpdate("1.19.2", RESPONSE);
 
@@ -53,7 +55,7 @@ public class InstallerUpdateMechanismTest {
 	@ParameterizedTest
 	@CsvSource({"1.19.3", "1.20.0"})
 	public void testNoUpdateIfUpToDate(String currentVersion) {
-		var mechanism = new InstallerUpdateMechanism(() -> "MSI");
+		var mechanism = new InstallerUpdateMechanism(() -> "MSI", EKU, ROOT_THUMBPRINT);
 
 		var updateInfo = mechanism.checkForUpdate(currentVersion, RESPONSE);
 
@@ -62,10 +64,20 @@ public class InstallerUpdateMechanismTest {
 
 	@Test
 	public void testNoUpdateIfAssetMissing() {
-		var mechanism = new InstallerUpdateMechanism(() -> "MSI");
+		var mechanism = new InstallerUpdateMechanism(() -> "MSI", EKU, ROOT_THUMBPRINT);
 		var response = new LatestVersionResponse(RESPONSE.latestVersion(), List.of(DMG, EXE));
 
 		var updateInfo = mechanism.checkForUpdate("1.19.2", response);
+
+		Assertions.assertNull(updateInfo);
+	}
+
+	@ParameterizedTest
+	@CsvSource(value = {"NULL, " + ROOT_THUMBPRINT, "1.2.3.4, NULL", "'', " + ROOT_THUMBPRINT, "1.2.3.4, ' '"}, nullValues = "NULL")
+	public void testNoUpdateIfSignerNotConfigured(String eku, String rootThumbprint) {
+		var mechanism = new InstallerUpdateMechanism(() -> "MSI", eku, rootThumbprint);
+
+		var updateInfo = mechanism.checkForUpdate("1.19.2", RESPONSE);
 
 		Assertions.assertNull(updateInfo);
 	}
