@@ -64,10 +64,12 @@ public class InstallerUpdateMechanism extends DownloadUpdateMechanism {
 			LOG.warn("Properties {} and {} must be set to verify installers, not updating.", DURABLE_IDENTITY_EKU_PROPERTY, ROOT_CA_THUMBPRINT_PROPERTY);
 			return null;
 		}
-		String arch = switch (System.getProperty("os.arch")) {
-			case "aarch64", "arm64" -> "arm64";
-			default -> "x64";
-		};
+		// Currently, only x64 installers are released, which also run on ARM64 systems (via emulation). Re-enable once native ARM64 installers are published.
+		//String arch = switch (System.getProperty("os.arch")) {
+		//	case "aarch64", "arm64" -> "arm64";
+		//	default -> "x64";
+		//};
+		String arch = "x64";
 		// stick to the installer type used for the current installation, so that the entry in "Apps & Features" stays accurate
 		String installType = this.installType.get();
 		String extension = switch (installType == null ? "" : installType.toUpperCase(Locale.ROOT)) {
