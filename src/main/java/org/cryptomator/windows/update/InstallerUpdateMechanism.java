@@ -139,7 +139,8 @@ public class InstallerUpdateMechanism extends DownloadUpdateMechanism {
 				""".replace("\n", "\r\n");
 		Path scriptPath = workDir.resolve("install.cmd");
 		Files.writeString(scriptPath, script, StandardCharsets.US_ASCII, StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW);
-		var processBuilder = new ProcessBuilder(List.of(SYSTEM32.resolve("cmd.exe").toString(), "/c", scriptPath.toString()));
+		// pass the script relative to the working directory, as cmd.exe would interpret special characters (e.g. `&`) in an absolute path. /d disables AutoRun commands, which could change the directory.
+		var processBuilder = new ProcessBuilder(List.of(SYSTEM32.resolve("cmd.exe").toString(), "/d", "/c", scriptPath.getFileName().toString()));
 		processBuilder.directory(workDir.toFile());
 		processBuilder.redirectErrorStream(true);
 		processBuilder.redirectOutput(workDir.resolve("install.log").toFile());
