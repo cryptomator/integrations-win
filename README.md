@@ -9,6 +9,10 @@ This project uses the following JVM properties:
 * `cryptomator.integrationsWin.windowsHelloKeyId` - Identifier for the Windows Hello keypair
 * `cryptomator.integrationsWin.windowsHelloKeychainPaths` - Locations of the file-based windowsHello keychain
 * `cryptomator.integrationsWin.keychainPaths` - List of file paths, which are checked for data encrypted with the Windows data protection api
+* `cryptomator.integrationsWin.updateDurableIdentityEku` - OID of an extended key usage, which the code signing certificate of a downloaded installer must contain. With Azure Artifact Signing, this is the durable identity of the signing account, which stays the same across certificate renewals (e.g. `1.3.6.1.4.1.311.97.986645502.209118791.449271898.355477593` for Skymatic GmbH). Required by `InstallerUpdateMechanism`.
+* `cryptomator.integrationsWin.updateRootCaThumbprint` - SHA-1 thumbprint (40 hex characters, without spaces) of the root certificate, at which the certificate chain of a downloaded installer's signature must end (e.g. `F40042E2E5F7E8EF8189FED15519AECE42C3BFA2` for Microsoft Identity Verification Root Certificate Authority 2020). Required by `InstallerUpdateMechanism`.
+
+`InstallerUpdateMechanism` only updates if both of the `update…` properties are set.
 
 ## Building
 

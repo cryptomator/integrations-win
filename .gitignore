@@ -1,6 +1,7 @@
 *.class
 *.jar
 *.dll
+!src/test/resources/**/*.dll
 *.obj
 *.lib
 *.exp

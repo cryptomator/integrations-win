@@ -48,6 +48,22 @@ public class WindowsRegistryIT {
 	}
 
 	@Test
+	@DisplayName("Read value of HKLM subkey without write access succeeds")
+	@Order(1)
+	public void testGetStringValueOfSubkey() throws RegistryValueException {
+		var buildNumber = RegistryKey.HKEY_LOCAL_MACHINE.getStringValue("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", "CurrentBuildNumber", false);
+		Assertions.assertTrue(buildNumber.matches("\\d+"));
+	}
+
+	@Test
+	@DisplayName("Read value of not existing subkey fails")
+	@Order(1)
+	public void testGetStringValueOfNotExistingSubkey() {
+		var winException = Assertions.assertThrows(RegistryValueException.class, () -> RegistryKey.HKEY_LOCAL_MACHINE.getStringValue("i\\do\\not\\exist", "foo", false));
+		Assertions.assertEquals(ERROR_FILE_NOT_FOUND(), winException.getSystemErrorCode());
+	}
+
+	@Test
 	@DisplayName("Create and no commit leads to rollback")
 	@Order(1)
 	public void testCreateNotExistingRollback() throws WindowsException {

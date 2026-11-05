@@ -9,7 +9,8 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
 
 ## Unreleased
 
-No changes yet.
+### Added
+* Update mechanism `InstallerUpdateMechanism`, which downloads, verifies and runs the EXE or MSI installer matching the current installation. Self-updates are only performed if the registry value `HKLM\SOFTWARE\Skymatic GmbH\Cryptomator\InstallType` is `EXE` or `MSI`, and the expected signer of the installer is configured via the JVM properties `cryptomator.integrationsWin.updateDurableIdentityEku` and `cryptomator.integrationsWin.updateRootCaThumbprint`.
 
 
 ## [1.6.2](https://github.com/cryptomator/integrations-win/releases/1.6.2) - 2026-09-29 
