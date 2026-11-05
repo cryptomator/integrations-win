@@ -1,17 +1,24 @@
 package org.cryptomator.windows.update;
 
+import org.cryptomator.integrations.update.DownloadUpdateInfo;
 import org.cryptomator.integrations.update.DownloadUpdateMechanism.Asset;
 import org.cryptomator.integrations.update.DownloadUpdateMechanism.LatestVersion;
 import org.cryptomator.integrations.update.DownloadUpdateMechanism.LatestVersionResponse;
+import org.cryptomator.integrations.update.UpdateFailedException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.SignatureException;
 import java.util.List;
 
 public class InstallerUpdateMechanismTest {
@@ -80,6 +87,19 @@ public class InstallerUpdateMechanismTest {
 		var updateInfo = mechanism.checkForUpdate("1.19.2", RESPONSE);
 
 		Assertions.assertNull(updateInfo);
+	}
+
+	@Test
+	public void testSecondStepRejectsUnsignedInstaller(@TempDir Path workDir) throws IOException, InterruptedException {
+		var mechanism = new InstallerUpdateMechanism(() -> "MSI", EKU, ROOT_THUMBPRINT);
+		var assetPath = Files.writeString(workDir.resolve(MSI.name()), "not an installer");
+
+		var step = mechanism.secondStep(workDir, assetPath, new DownloadUpdateInfo(mechanism, "1.19.3", MSI));
+		step.start();
+		step.await();
+
+		var e = Assertions.assertThrows(UpdateFailedException.class, step::nextStep);
+		Assertions.assertInstanceOf(SignatureException.class, e.getCause());
 	}
 
 }
