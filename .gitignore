@@ -1,6 +1,7 @@
 *.class
 *.jar
 *.dll
+!src/test/resources/**/*.dll
 *.obj
 *.lib
 *.exp
@@ -89,3 +90,4 @@ bld/
 # exclude compile outputs not used by projects
 *.exp
 *.lib
+.vscode/

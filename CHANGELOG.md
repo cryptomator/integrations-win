@@ -7,7 +7,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The changelog starts with version 1.5.1.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/integrations-win/releases).
 
-## [1.6.2](https://github.com/cryptomator/integrations-win/releases/1.6.2) - 2026-09-29 
+## [1.7.0](https://github.com/cryptomator/integrations-win/releases/tag/1.7.0) - 2026-11-10
+
+### Added
+* Implementation for the [update API](https://github.com/cryptomator/integrations-api/blob/develop/src/main/java/org/cryptomator/integrations/update/UpdateMechanism.java): `InstallerUpdateMechanism`, which downloads, verifies and runs the EXE or MSI installer matching the current installation. Requires the expected signer of the installer to be configured via the JVM properties `cryptomator.integrationsWin.updateDurableIdentityEku` and `cryptomator.integrationsWin.updateRootCaThumbprint`. The x64 installer is used on all architectures ([#164](https://github.com/cryptomator/integrations-win/pull/164))
+
+### Changed
+* Refactored native build: no GNU Make or hard-coded Visual Studio path needed, `build.cmd` locates Visual Studio via `vswhere` and uses `nmake` ([#169](https://github.com/cryptomator/integrations-win/pull/169))
+* Update dependencies
+  - `org.cryptomator:integrations-api` from 1.9.1 to 1.10.1
+  - `com.fasterxml.jackson.core:jackson-databind` from 2.21.7 to 2.21.8
+
+
+## [1.6.2](https://github.com/cryptomator/integrations-win/releases/1.6.2) - 2026-09-29
 ### Changed
 * Update dependencies
   - `org.cryptomator:integrations-api` from 1.9.0 to 1.9.1
@@ -27,7 +39,7 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
 * Maven wrapper ([#131](https://github.com/cryptomator/integrations-win/pull/131))
 
 ### Changed
-* Pin CI actions  ([#132](https://github.com/cryptomator/integrations-win/pull/132))
+* Pin CI actions ([#132](https://github.com/cryptomator/integrations-win/pull/132))
 * Switch signing certificate and process to Azure ([#132](https://github.com/cryptomator/integrations-win/pull/132))
 * **[Breaking]** Switch compile target to JDK 25 (class file format 69) ([#136](https://github.com/cryptomator/integrations-win/pull/136))
 * Update dependencies
