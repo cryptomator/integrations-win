@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The changelog starts with version 1.5.1.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/integrations-win/releases).
 
-## Unreleased
+## [1.7.0](https://github.com/cryptomator/integrations-win/releases/tag/1.7.0) - 2026-11-10
 
 ### Added
 * Implementation for the [update API](https://github.com/cryptomator/integrations-api/blob/develop/src/main/java/org/cryptomator/integrations/update/UpdateMechanism.java): `InstallerUpdateMechanism`, which downloads, verifies and runs the EXE or MSI installer matching the current installation. Requires the expected signer of the installer to be configured via the JVM properties `cryptomator.integrationsWin.updateDurableIdentityEku` and `cryptomator.integrationsWin.updateRootCaThumbprint`. The x64 installer is used on all architectures ([#164](https://github.com/cryptomator/integrations-win/pull/164))
