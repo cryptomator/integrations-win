@@ -9,7 +9,11 @@ Changes to prior versions can be found on the [GitHub release page](https://gith
 
 ## [Unreleased](https://github.com/cryptomator/integrations-win/compare/1.7.0...HEAD)
 
-No changes yet.
+### Changed
+* Refactored `InstallerUpdateMechanism`: It requires [win-updater](https://github.com/cryptomator/win-updater) helper. The helper must be located next to the running app binary and its file name is set via the JVM property `cryptomator.integrationsWin.updateHelperName`
+
+### Security
+* Fixed that another process of the same user could swap the downloaded installer after its signature was verified and before it was run
 
 
 ## [1.7.0](https://github.com/cryptomator/integrations-win/releases/tag/1.7.0) - 2026-11-10
