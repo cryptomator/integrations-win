@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The changelog starts with version 1.5.1.
 Changes to prior versions can be found on the [GitHub release page](https://github.com/cryptomator/integrations-win/releases).
 
+## [1.8.0](https://github.com/cryptomator/integrations-win/releases/tag/1.8.0) - 2026-11-18
+
+### Changed
+* Refactored `InstallerUpdateMechanism`: Replaced script-based update by calling a binary, requiring the external [win-updater](https://github.com/cryptomator/win-updater). The binary must be located next to the running app binary and its file name is set via the JVM property `cryptomator.integrationsWin.updateHelperName` ([#177](https://github.com/cryptomator/integrations-win/pull/177))
+
+### Security
+* Fixed that another process of the same user could swap the downloaded installer after its signature was verified and before it was run ([#177](https://github.com/cryptomator/integrations-win/pull/177))
+
+
 ## [1.7.0](https://github.com/cryptomator/integrations-win/releases/tag/1.7.0) - 2026-11-10
 
 ### Added
